@@ -19,7 +19,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize authentication services
 	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
 	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
-	authHandlers := NewAuthHandlers(authService, oauthService, logger)
+	authHandlers := NewAuthHandlers(authService, oauthService)
 
 	router.GET("/health", func(c *gin.Context) {
 		if err := database.Health(); err != nil {

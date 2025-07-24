@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth';
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 interface LoginFormData {
-  username: string;
+  email: string;
   password: string;
   mfaCode?: string;
   remember?: boolean;
@@ -30,7 +30,7 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       clearError();
-      await login(data.username, data.password, data.mfaCode);
+      await login(data.email, data.password, data.mfaCode);
       router.push('/dashboard');
     } catch (err: unknown) {
       if (
