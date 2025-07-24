@@ -175,4 +175,167 @@ export const orgApi = {
   }>) => apiClient.patch(`/organizations/${org}`, data),
 };
 
+// Issue API methods
+export const issueApi = {
+  // List issues
+  getIssues: (owner: string, repo: string, params?: {
+    state?: 'open' | 'closed';
+    sort?: 'created' | 'updated' | 'comments';
+    direction?: 'asc' | 'desc';
+    page?: number;
+    per_page?: number;
+    assignee?: string;
+    creator?: string;
+    milestone?: string;
+    labels?: string;
+    since?: string;
+  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/issues`, params),
+
+  // Search issues
+  searchIssues: (owner: string, repo: string, query: string, params?: {
+    state?: 'open' | 'closed';
+    sort?: 'created' | 'updated' | 'comments';
+    direction?: 'asc' | 'desc';
+    page?: number;
+    per_page?: number;
+  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/issues/search`, { q: query, ...params }),
+
+  // Get specific issue
+  getIssue: (owner: string, repo: string, number: number) =>
+    apiClient.get(`/repositories/${owner}/${repo}/issues/${number}`),
+
+  // Create issue
+  createIssue: (owner: string, repo: string, data: {
+    title: string;
+    body?: string;
+    assignee_id?: string;
+    milestone_id?: string;
+    label_ids?: string[];
+  }) => apiClient.post(`/repositories/${owner}/${repo}/issues`, data),
+
+  // Update issue
+  updateIssue: (owner: string, repo: string, number: number, data: {
+    title?: string;
+    body?: string;
+    state?: 'open' | 'closed';
+    state_reason?: string;
+    assignee_id?: string;
+    milestone_id?: string;
+    label_ids?: string[];
+  }) => apiClient.patch(`/repositories/${owner}/${repo}/issues/${number}`, data),
+
+  // Close issue
+  closeIssue: (owner: string, repo: string, number: number, reason?: string) =>
+    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/close`, { reason: reason || '' }),
+
+  // Reopen issue
+  reopenIssue: (owner: string, repo: string, number: number) =>
+    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/reopen`),
+
+  // Lock issue
+  lockIssue: (owner: string, repo: string, number: number, reason?: string) =>
+    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/lock`, { reason: reason || '' }),
+
+  // Unlock issue
+  unlockIssue: (owner: string, repo: string, number: number) =>
+    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/unlock`),
+};
+
+// Comment API methods
+export const commentApi = {
+  // Get comments for an issue
+  getComments: (owner: string, repo: string, issueNumber: number, params?: {
+    page?: number;
+    per_page?: number;
+  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/issues/${issueNumber}/comments`, params),
+
+  // Get specific comment
+  getComment: (owner: string, repo: string, issueNumber: number, commentId: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/issues/${issueNumber}/comments/${commentId}`),
+
+  // Create comment
+  createComment: (owner: string, repo: string, issueNumber: number, body: string) =>
+    apiClient.post(`/repositories/${owner}/${repo}/issues/${issueNumber}/comments`, { body }),
+
+  // Update comment
+  updateComment: (owner: string, repo: string, issueNumber: number, commentId: string, body: string) =>
+    apiClient.patch(`/repositories/${owner}/${repo}/issues/${issueNumber}/comments/${commentId}`, { body }),
+
+  // Delete comment
+  deleteComment: (owner: string, repo: string, issueNumber: number, commentId: string) =>
+    apiClient.delete(`/repositories/${owner}/${repo}/issues/${issueNumber}/comments/${commentId}`),
+};
+
+// Label API methods
+export const labelApi = {
+  // Get all labels
+  getLabels: (owner: string, repo: string, params?: {
+    page?: number;
+    per_page?: number;
+  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/labels`, params),
+
+  // Get specific label
+  getLabel: (owner: string, repo: string, name: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/labels/${name}`),
+
+  // Create label
+  createLabel: (owner: string, repo: string, data: {
+    name: string;
+    color: string;
+    description?: string;
+  }) => apiClient.post(`/repositories/${owner}/${repo}/labels`, data),
+
+  // Update label
+  updateLabel: (owner: string, repo: string, name: string, data: {
+    name?: string;
+    color?: string;
+    description?: string;
+  }) => apiClient.patch(`/repositories/${owner}/${repo}/labels/${name}`, data),
+
+  // Delete label
+  deleteLabel: (owner: string, repo: string, name: string) =>
+    apiClient.delete(`/repositories/${owner}/${repo}/labels/${name}`),
+};
+
+// Milestone API methods
+export const milestoneApi = {
+  // Get all milestones
+  getMilestones: (owner: string, repo: string, params?: {
+    state?: 'open' | 'closed';
+    page?: number;
+    per_page?: number;
+  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/milestones`, params),
+
+  // Get specific milestone
+  getMilestone: (owner: string, repo: string, number: number) =>
+    apiClient.get(`/repositories/${owner}/${repo}/milestones/${number}`),
+
+  // Create milestone
+  createMilestone: (owner: string, repo: string, data: {
+    title: string;
+    description?: string;
+    due_on?: string;
+  }) => apiClient.post(`/repositories/${owner}/${repo}/milestones`, data),
+
+  // Update milestone
+  updateMilestone: (owner: string, repo: string, number: number, data: {
+    title?: string;
+    description?: string;
+    state?: 'open' | 'closed';
+    due_on?: string;
+  }) => apiClient.patch(`/repositories/${owner}/${repo}/milestones/${number}`, data),
+
+  // Delete milestone
+  deleteMilestone: (owner: string, repo: string, number: number) =>
+    apiClient.delete(`/repositories/${owner}/${repo}/milestones/${number}`),
+
+  // Close milestone
+  closeMilestone: (owner: string, repo: string, number: number) =>
+    apiClient.post(`/repositories/${owner}/${repo}/milestones/${number}/close`),
+
+  // Reopen milestone
+  reopenMilestone: (owner: string, repo: string, number: number) =>
+    apiClient.post(`/repositories/${owner}/${repo}/milestones/${number}/reopen`),
+};
+
 export default api;
