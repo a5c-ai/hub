@@ -23,20 +23,6 @@ import { useAuthStore } from '@/store/auth';
 import { useRepositoryStore } from '@/store/repository';
 import { formatRelativeTime } from '@/lib/utils';
 
-const filterMenuItems = [
-  { label: 'All', onClick: () => {} },
-  { label: 'Public', onClick: () => {} },
-  { label: 'Private', onClick: () => {} },
-  { label: 'Forks', onClick: () => {} },
-  { label: 'Archived', onClick: () => {} },
-];
-
-const sortMenuItems = [
-  { label: 'Recently updated', onClick: () => {} },
-  { label: 'Name', onClick: () => {} },
-  { label: 'Stars', onClick: () => {} },
-];
-
 export default function RepositoriesPage() {
   const { isAuthenticated } = useAuthStore();
   const { 
@@ -51,19 +37,48 @@ export default function RepositoriesPage() {
   } = useRepositoryStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter] = useState('all'); // TODO: Implement type filtering
-  const [sortBy] = useState('updated'); // TODO: Implement sorting
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('Recently updated');
+
+  // Filter and search logic
+  const filteredRepos = repositories.filter((repo) => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.owner.username.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = typeFilter === 'All' ||
+      (typeFilter === 'Public' && !repo.private) ||
+      (typeFilter === 'Private' && repo.private) ||
+      (typeFilter === 'Forks' && repo.fork);
+    
+    return matchesSearch && matchesType;
+  });
+
+  const filterMenuItems = [
+    { label: 'All', onClick: () => setTypeFilter('All') },
+    { label: 'Public', onClick: () => setTypeFilter('Public') },
+    { label: 'Private', onClick: () => setTypeFilter('Private') },
+    { label: 'Forks', onClick: () => setTypeFilter('Forks') },
+  ];
+
+  const sortMenuItems = [
+    { label: 'Recently updated', onClick: () => setSortBy('Recently updated') },
+    { label: 'Name', onClick: () => setSortBy('Name') },
+    { label: 'Stars', onClick: () => setSortBy('Stars') },
+  ];
 
   useEffect(() => {
     if (isAuthenticated) {
+      const sortParam = sortBy === 'Recently updated' ? 'updated' : 
+                        sortBy === 'Name' ? 'name' : 'stars';
       fetchRepositories({ 
         page: currentPage, 
         per_page: 10, 
-        sort: sortBy,
-        type: typeFilter === 'all' ? undefined : typeFilter 
+        sort: sortParam 
       });
     }
-  }, [isAuthenticated, currentPage, sortBy, typeFilter, fetchRepositories]);
+  }, [isAuthenticated, currentPage, sortBy, fetchRepositories]);
 
   useEffect(() => {
     if (error) {
@@ -75,24 +90,13 @@ export default function RepositoriesPage() {
     }
   }, [error, clearError]);
 
-  // Filter repositories based on search query
-  const filteredRepos = repositories.filter((repo) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      repo.name.toLowerCase().includes(query) ||
-      repo.description?.toLowerCase().includes(query) ||
-      repo.owner.username.toLowerCase().includes(query)
-    );
-  });
-
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       fetchRepositories({ 
         page, 
         per_page: 10, 
-        sort: sortBy,
-        type: typeFilter === 'all' ? undefined : typeFilter 
+        sort: sortBy === 'Recently updated' ? 'updated' : 
+                     sortBy === 'Name' ? 'name' : 'stars'
       });
     }
   };
@@ -136,11 +140,11 @@ export default function RepositoriesPage() {
           </div>
           <div className="flex space-x-2">
             <Dropdown
-              trigger={<Button variant="outline">Type</Button>}
+              trigger={<Button variant="outline">{typeFilter}</Button>}
               items={filterMenuItems}
             />
             <Dropdown
-              trigger={<Button variant="outline">Sort</Button>}
+              trigger={<Button variant="outline">{sortBy}</Button>}
               items={sortMenuItems}
             />
           </div>
@@ -172,6 +176,15 @@ export default function RepositoriesPage() {
                 </Card>
               ))}
             </div>
+          ) : error ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <div className="text-destructive mb-4">{error}</div>
+                <Button onClick={() => fetchRepositories()}>
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
           ) : filteredRepos.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
@@ -180,13 +193,13 @@ export default function RepositoriesPage() {
                   No repositories found
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  {searchQuery
-                    ? `No repositories match "${searchQuery}"`
+                  {searchQuery || typeFilter !== 'All'
+                    ? `No repositories match your current filters`
                     : repositories.length === 0
                     ? "You don't have any repositories yet"
                     : "No repositories match your current filters"}
                 </p>
-                {!searchQuery && repositories.length === 0 && (
+                {!searchQuery && typeFilter === 'All' && repositories.length === 0 && (
                   <Button asChild>
                     <Link href="/repositories/new">
                       <PlusIcon className="h-4 w-4 mr-2" />
@@ -213,6 +226,11 @@ export default function RepositoriesPage() {
                           <Badge variant="outline" size="sm" className="flex items-center">
                             <LockClosedIcon className="h-3 w-3 mr-1" />
                             Private
+                          </Badge>
+                        )}
+                        {repo.fork && (
+                          <Badge variant="secondary" size="sm">
+                            Fork
                           </Badge>
                         )}
                       </div>
@@ -298,6 +316,15 @@ export default function RepositoriesPage() {
                 Next
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* Pagination info */}
+        {!isLoading && totalCount > 0 && (
+          <div className="text-center mt-4 text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * 10) + 1} to{' '}
+            {Math.min(currentPage * 10, totalCount)} of{' '}
+            {totalCount} repositories
           </div>
         )}
       </div>

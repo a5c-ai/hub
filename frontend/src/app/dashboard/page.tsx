@@ -33,22 +33,27 @@ export default function DashboardPage() {
     fetchRepositories,
     clearError 
   } = useRepositoryStore();
-
-  // Mock activity data until activity API is implemented
   const mockActivity = [
     {
       id: '1',
       type: 'push',
       repository: repositories[0]?.full_name || 'user/repository',
-      message: 'Updated repository files',
-      timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      message: 'Added new authentication middleware',
+      timestamp: repositories[0]?.updated_at || new Date(Date.now() - 3600000).toISOString(),
     },
     {
       id: '2',
-      type: 'repository',
+      type: 'pull_request',
       repository: repositories[1]?.full_name || 'user/another-repo',
-      message: 'Created new repository',
-      timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      message: 'Opened pull request: Implement user management endpoints',
+      timestamp: repositories[1]?.updated_at || new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      id: '3',
+      type: 'issue',
+      repository: repositories[2]?.full_name || 'user/third-repo',
+      message: 'Created issue: Fix login screen layout on tablet',
+      timestamp: repositories[2]?.updated_at || new Date(Date.now() - 172800000).toISOString(),
     },
   ];
 
@@ -56,7 +61,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchRepositories({ per_page: 5, sort: 'updated' });
+      // Fetch recent repositories (limit to 6 for dashboard)
+      fetchRepositories({ per_page: 6, sort: 'updated' });
     }
   }, [isAuthenticated, fetchRepositories]);
 
@@ -75,9 +81,6 @@ export default function DashboardPage() {
   const totalRepos = repositories.length;
   const totalStars = repositories.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
   const totalForks = repositories.reduce((sum, repo) => sum + (repo.forks_count || 0), 0);
-  
-  // Display recent repositories (limit to 3 for dashboard)
-  const recentRepositories = repositories.slice(0, 3);
 
   return (
     <AppLayout>
@@ -111,7 +114,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalRepos}
               </div>
               <p className="text-xs text-muted-foreground">
-                {totalRepos === 0 ? 'No repositories yet' : 'Your repositories'}
+                {repoError ? 'Error loading data' : totalRepos === 0 ? 'No repositories yet' : 'Your repositories'}
               </p>
             </CardContent>
           </Card>
@@ -126,7 +129,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalStars}
               </div>
               <p className="text-xs text-muted-foreground">
-                {totalStars === 0 ? 'No stars yet' : 'Across all repositories'}
+                {repoError ? 'Error loading data' : totalStars === 0 ? 'No stars yet' : 'Across all repositories'}
               </p>
             </CardContent>
           </Card>
@@ -141,7 +144,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalForks}
               </div>
               <p className="text-xs text-muted-foreground">
-                {totalForks === 0 ? 'No forks yet' : 'Repository forks'}
+                {repoError ? 'Error loading data' : totalForks === 0 ? 'No forks yet' : 'Repository forks'}
               </p>
             </CardContent>
           </Card>
@@ -181,8 +184,28 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              ) : recentRepositories.length > 0 ? (
-                recentRepositories.map((repo) => (
+              ) : repoError ? (
+                <div className="text-center py-8">
+                  <div className="text-destructive">{repoError}</div>
+                </div>
+              ) : repositories.length === 0 ? (
+                <div className="text-center py-8">
+                  <FolderIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No repositories yet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first repository to get started
+                  </p>
+                  <Button asChild>
+                    <Link href="/repositories/new">
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Create repository
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                repositories.map((repo) => (
                   <div key={repo.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
@@ -217,17 +240,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))
-              ) : (
-                <div className="text-center py-8">
-                  <FolderIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No repositories found</p>
-                  <Button asChild>
-                    <Link href="/repositories/new">
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                      Create your first repository
-                    </Link>
-                  </Button>
-                </div>
               )}
               <div className="text-center">
                 <Button variant="ghost" asChild>
@@ -244,37 +256,55 @@ export default function DashboardPage() {
               <CardDescription>Your recent actions across all repositories</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {activity.map((item) => (
-                <div key={item.id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <Avatar size="sm" name={user?.name || user?.username} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm">
-                      <span className="font-medium text-foreground">You</span>
-                      <span className="text-muted-foreground"> {item.message}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground">
-                      <Link
-                        href={`/repositories/${item.repository}`}
-                        className="hover:text-primary"
-                      >
-                        {item.repository}
-                      </Link>
-                      <span>•</span>
-                      <span className="flex items-center">
-                        <ClockIcon className="h-3 w-3 mr-1" />
-                        {formatRelativeTime(item.timestamp)}
-                      </span>
-                    </div>
-                  </div>
+              {repoLoading ? (
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground">Loading activity...</div>
                 </div>
-              ))}
-              <div className="text-center">
-                <Button variant="ghost" asChild>
-                  <Link href="/activity">View all activity</Link>
-                </Button>
-              </div>
+              ) : repositories.length === 0 ? (
+                <div className="text-center py-8">
+                  <ClockIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No activity yet
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Activity will appear here as you work on repositories
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {mockActivity.slice(0, repositories.length).map((item) => (
+                    <div key={item.id} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        <Avatar size="sm" name={user?.name || user?.username} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm">
+                          <span className="font-medium text-foreground">You</span>
+                          <span className="text-muted-foreground"> {item.message}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground">
+                          <Link
+                            href={`/repositories/${item.repository}`}
+                            className="hover:text-primary"
+                          >
+                            {item.repository}
+                          </Link>
+                          <span>•</span>
+                          <span className="flex items-center">
+                            <ClockIcon className="h-3 w-3 mr-1" />
+                            {formatRelativeTime(item.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="text-center">
+                    <Button variant="ghost" asChild>
+                      <Link href="/activity">View all activity</Link>
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

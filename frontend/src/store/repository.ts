@@ -43,7 +43,7 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
   totalPages: 1,
 
   // Actions
-  fetchRepositories: async (params) => {
+  fetchRepositories: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.getRepositories(params);
@@ -68,6 +68,9 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
         isLoading: false,
         error: errorMessage,
         repositories: [],
+        totalCount: 0,
+        currentPage: 1,
+        totalPages: 1,
       });
     }
   },
@@ -135,9 +138,9 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
         const updatedRepo = response.data as Repository;
         set((state) => ({
           repositories: state.repositories.map(r => 
-            r.full_name === `${owner}/${repo}` ? updatedRepo : r
+            r.full_name === updatedRepo.full_name ? updatedRepo : r
           ),
-          currentRepository: state.currentRepository?.full_name === `${owner}/${repo}` 
+          currentRepository: state.currentRepository?.full_name === updatedRepo.full_name
             ? updatedRepo 
             : state.currentRepository,
           isLoading: false,
@@ -164,9 +167,10 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     try {
       const response = await repoApi.deleteRepository(owner, repo);
       if (response.success) {
+        const fullName = `${owner}/${repo}`;
         set((state) => ({
-          repositories: state.repositories.filter(r => r.full_name !== `${owner}/${repo}`),
-          currentRepository: state.currentRepository?.full_name === `${owner}/${repo}` 
+          repositories: state.repositories.filter(r => r.full_name !== fullName),
+          currentRepository: state.currentRepository?.full_name === fullName
             ? null 
             : state.currentRepository,
           isLoading: false,
