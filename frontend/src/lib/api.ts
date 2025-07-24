@@ -84,10 +84,10 @@ export const apiClient = {
 // Auth API methods
 export const authApi = {
   // Basic authentication
-  login: (username: string, password: string, mfaCode?: string) =>
-    apiClient.post('/auth/login', { username, password, mfa_code: mfaCode }),
+  login: (email: string, password: string, mfaCode?: string) =>
+    apiClient.post('/auth/login', { email, password, mfa_code: mfaCode }),
 
-  register: (userData: { username: string; email: string; password: string; full_name?: string }) =>
+  register: (userData: { username: string; email: string; password: string; full_name: string }) =>
     apiClient.post('/auth/register', userData),
 
   logout: () => apiClient.post('/auth/logout'),
@@ -112,15 +112,9 @@ export const authApi = {
   getOAuthURL: (provider: string, state?: string) =>
     `/auth/oauth/${provider}?state=${state || ''}`,
 
-  // MFA
-  setupMFA: () => apiClient.post('/auth/mfa/setup'),
-
-  verifyMFA: (secret: string, code: string) =>
-    apiClient.post('/auth/mfa/verify', { secret, code }),
-
-  regenerateBackupCodes: () => apiClient.post('/auth/mfa/backup-codes'),
-
-  disableMFA: () => apiClient.delete('/auth/mfa/disable'),
+  // OAuth callback handling
+  handleOAuthCallback: (provider: string, code: string, state?: string) =>
+    apiClient.get(`/auth/oauth/${provider}/callback?code=${code}&state=${state || ''}`),
 };
 
 // User API methods

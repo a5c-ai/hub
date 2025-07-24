@@ -104,8 +104,9 @@ export interface Milestone {
 
 export interface AuthUser {
   user: User;
-  token: string;
-  expires_at: string;
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
 }
 
 export interface ApiResponse<T> {

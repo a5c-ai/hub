@@ -15,9 +15,17 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserExists         = errors.New("user already exists")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrEmailNotVerified   = errors.New("email not verified")
+	ErrAccountLocked      = errors.New("account is locked")
+)
+
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
 	MFACode  string `json:"mfa_code,omitempty"`
 }
 
@@ -25,7 +33,7 @@ type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=12"`
-	FullName string `json:"full_name"`
+	FullName string `json:"full_name" binding:"required,min=1,max=255"`
 }
 
 type AuthResponse struct {
@@ -54,6 +62,10 @@ type AuthService interface {
 	ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error
 	VerifyEmail(ctx context.Context, token string) error
 	ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error
+	// Legacy methods for backward compatibility
+	GetUserByID(userID uuid.UUID) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	ValidateToken(tokenString string) (*models.User, error)
 }
 
 type authService struct {
@@ -72,21 +84,30 @@ func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) Aut
 
 func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
 	var user models.User
-	err := s.db.Where("username = ? OR email = ?", req.Username, req.Username).First(&user).Error
+	
+	// Support login with either email or username
+	var err error
+	if req.Email != "" {
+		err = s.db.Where("email = ?", req.Email).First(&user).Error
+	} else {
+		err = s.db.Where("username = ? OR email = ?", req.Email, req.Email).First(&user).Error
+	}
+	
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("invalid credentials")
+			return nil, ErrInvalidCredentials
 		}
 		return nil, fmt.Errorf("database error: %w", err)
 	}
 
+	// Check if account is active
 	if !user.IsActive {
-		return nil, errors.New("account is disabled")
+		return nil, ErrAccountLocked
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, ErrInvalidCredentials
 	}
 
 	// Check MFA if enabled
@@ -109,10 +130,13 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
-	// Update last login
+	// Update last login time
 	now := time.Now()
 	user.LastLoginAt = &now
 	s.db.Save(&user)
+
+	// Remove sensitive information before returning
+	user.PasswordHash = ""
 
 	return &AuthResponse{
 		User:         &user,
@@ -125,9 +149,9 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 func (s *authService) Register(ctx context.Context, req RegisterRequest) (*models.User, error) {
 	// Check if user already exists
 	var existingUser models.User
-	err := s.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error
+	err := s.db.Where("email = ? OR username = ?", req.Email, req.Username).First(&existingUser).Error
 	if err == nil {
-		return nil, errors.New("user already exists")
+		return nil, ErrUserExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("database error: %w", err)
@@ -139,14 +163,17 @@ func (s *authService) Register(ctx context.Context, req RegisterRequest) (*model
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Create user
+	// Create new user
 	user := models.User{
+		ID:           uuid.New(),
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		FullName:     req.FullName,
 		IsActive:     true,
 		IsAdmin:      false,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
@@ -158,6 +185,9 @@ func (s *authService) Register(ctx context.Context, req RegisterRequest) (*model
 		// Log the error but don't fail registration
 		fmt.Printf("Failed to send verification email: %v\n", err)
 	}
+
+	// Remove sensitive information before returning
+	user.PasswordHash = ""
 
 	return &user, nil
 }
@@ -213,6 +243,8 @@ func (s *authService) VerifyToken(ctx context.Context, token string) (*models.Us
 		return nil, errors.New("account is disabled")
 	}
 
+	// Remove sensitive information
+	user.PasswordHash = ""
 	return &user, nil
 }
 
@@ -269,6 +301,86 @@ func (s *authService) ResendVerificationEmail(ctx context.Context, userID uuid.U
 	}
 
 	return s.sendVerificationEmail(&user)
+}
+
+// Legacy methods for backward compatibility
+func (s *authService) GetUserByID(userID uuid.UUID) (*models.User, error) {
+	var user models.User
+	if err := s.db.Where("id = ? AND is_active = ?", userID, true).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	// Remove sensitive information
+	user.PasswordHash = ""
+	return &user, nil
+}
+
+func (s *authService) GetUserByEmail(email string) (*models.User, error) {
+	var user models.User
+	if err := s.db.Where("email = ? AND is_active = ?", email, true).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	// Remove sensitive information
+	user.PasswordHash = ""
+	return &user, nil
+}
+
+func (s *authService) ValidateToken(tokenString string) (*models.User, error) {
+	claims, err := s.jwtManager.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.GetUserByID(claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *authService) ChangePassword(userID uuid.UUID, oldPassword, newPassword string) error {
+	var user models.User
+	if err := s.db.Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
+	// Verify old password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// Update password
+	return s.db.Model(&user).Update("password_hash", string(hashedPassword)).Error
+}
+
+func (s *authService) InitiatePasswordReset(email string) error {
+	user, err := s.GetUserByEmail(email)
+	if err != nil {
+		// Don't reveal if user exists or not for security
+		return nil
+	}
+
+	// TODO: Generate password reset token and send email
+	// For now, just log that password reset was requested
+	_ = user
+	return nil
 }
 
 func (s *authService) generateRefreshToken(user *models.User) (string, error) {

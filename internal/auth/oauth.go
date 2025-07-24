@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,40 +15,23 @@ import (
 
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type OAuthConfig struct {
-	GitHub    GitHubConfig    `mapstructure:"github"`
-	Google    GoogleConfig    `mapstructure:"google"`
-	Microsoft MicrosoftConfig `mapstructure:"microsoft"`
-}
-
-type GitHubConfig struct {
-	ClientID     string `mapstructure:"client_id"`
-	ClientSecret string `mapstructure:"client_secret"`
-	RedirectURL  string `mapstructure:"redirect_url"`
-}
-
-type GoogleConfig struct {
-	ClientID     string `mapstructure:"client_id"`
-	ClientSecret string `mapstructure:"client_secret"`
-	RedirectURL  string `mapstructure:"redirect_url"`
-}
-
-type MicrosoftConfig struct {
-	ClientID     string `mapstructure:"client_id"`
-	ClientSecret string `mapstructure:"client_secret"`
-	RedirectURL  string `mapstructure:"redirect_url"`
-	TenantID     string `mapstructure:"tenant_id"`
-}
+var (
+	ErrOAuthProviderNotConfigured = errors.New("oauth provider not configured")
+	ErrInvalidOAuthState          = errors.New("invalid oauth state")
+	ErrOAuthCodeExchange          = errors.New("oauth code exchange failed")
+	ErrOAuthUserInfo              = errors.New("failed to get oauth user info")
+)
 
 type OAuthToken struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	ExpiresIn    int    `json:"expires_in,omitempty"`
+	Scope        string `json:"scope,omitempty"`
 }
 
 type OAuthUserInfo struct {
@@ -58,68 +43,103 @@ type OAuthUserInfo struct {
 }
 
 type OAuthProvider interface {
-	GetAuthURL(state string) string
-	ExchangeCode(code string) (*OAuthToken, error)
+	GetAuthURL(state string, redirectURI string) string
+	ExchangeCode(code, redirectURI string) (*OAuthToken, error)
 	GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error)
 	GetProviderName() string
 }
 
-type GitHubProvider struct {
-	config GitHubConfig
-}
-
-type GoogleProvider struct {
-	config GoogleConfig
-}
-
-type MicrosoftProvider struct {
-	config MicrosoftConfig
-}
-
 type OAuthService struct {
-	db        *gorm.DB
-	providers map[string]OAuthProvider
-	authSvc   AuthService
+	db         *gorm.DB
+	providers  map[string]OAuthProvider
+	authSvc    AuthService
+	jwtManager *JWTManager
+	config     *config.Config
 }
 
-func NewOAuthService(db *gorm.DB, oauthConfig OAuthConfig, authSvc AuthService) *OAuthService {
+func NewOAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, authSvc AuthService) *OAuthService {
 	providers := make(map[string]OAuthProvider)
 	
-	if oauthConfig.GitHub.ClientID != "" {
-		providers["github"] = &GitHubProvider{config: oauthConfig.GitHub}
+	// Initialize GitHub provider if configured
+	if cfg.OAuth.GitHub.ClientID != "" && cfg.OAuth.GitHub.ClientSecret != "" {
+		providers["github"] = &GitHubProvider{
+			ClientID:     cfg.OAuth.GitHub.ClientID,
+			ClientSecret: cfg.OAuth.GitHub.ClientSecret,
+		}
 	}
 	
-	if oauthConfig.Google.ClientID != "" {
-		providers["google"] = &GoogleProvider{config: oauthConfig.Google}
+	// Initialize Google provider if configured
+	if cfg.OAuth.Google.ClientID != "" && cfg.OAuth.Google.ClientSecret != "" {
+		providers["google"] = &GoogleProvider{
+			ClientID:     cfg.OAuth.Google.ClientID,
+			ClientSecret: cfg.OAuth.Google.ClientSecret,
+		}
 	}
-	
-	if oauthConfig.Microsoft.ClientID != "" {
-		providers["microsoft"] = &MicrosoftProvider{config: oauthConfig.Microsoft}
+
+	// Initialize Microsoft provider if configured
+	if cfg.OAuth.Microsoft.ClientID != "" && cfg.OAuth.Microsoft.ClientSecret != "" {
+		providers["microsoft"] = &MicrosoftProvider{
+			ClientID:     cfg.OAuth.Microsoft.ClientID,
+			ClientSecret: cfg.OAuth.Microsoft.ClientSecret,
+			TenantID:     cfg.OAuth.Microsoft.TenantID,
+		}
 	}
 
 	return &OAuthService{
-		db:        db,
-		providers: providers,
-		authSvc:   authSvc,
+		db:         db,
+		providers:  providers,
+		authSvc:    authSvc,
+		jwtManager: jwtManager,
+		config:     cfg,
 	}
 }
 
 func (s *OAuthService) GetProvider(name string) (OAuthProvider, error) {
 	provider, exists := s.providers[name]
 	if !exists {
-		return nil, fmt.Errorf("OAuth provider %s not configured", name)
+		return nil, ErrOAuthProviderNotConfigured
 	}
 	return provider, nil
 }
 
-func (s *OAuthService) HandleCallback(ctx context.Context, providerName, code, state string) (*AuthResponse, error) {
+func (s *OAuthService) GenerateState() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
+func (s *OAuthService) InitiateOAuth(provider, redirectURI string) (string, string, error) {
+	oauthProvider, err := s.GetProvider(provider)
+	if err != nil {
+		return "", "", err
+	}
+
+	state, err := s.GenerateState()
+	if err != nil {
+		return "", "", err
+	}
+
+	authURL := oauthProvider.GetAuthURL(state, redirectURI)
+	
+	// TODO: Store state in cache/session for validation
+	// For now, we'll return the state and expect it to be validated later
+	
+	return authURL, state, nil
+}
+
+func (s *OAuthService) HandleCallback(ctx context.Context, providerName, code, state, redirectURI string) (*AuthResponse, error) {
 	provider, err := s.GetProvider(providerName)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO: Validate state from cache/session
+	// For now, we'll skip state validation (not recommended for production)
+
 	// Exchange code for token
-	token, err := provider.ExchangeCode(code)
+	token, err := provider.ExchangeCode(code, redirectURI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
@@ -137,10 +157,14 @@ func (s *OAuthService) HandleCallback(ctx context.Context, providerName, code, s
 	}
 
 	// Generate our own tokens
-	jwtManager := NewJWTManager(config.JWT{Secret: "temp", ExpirationHour: 24}) // TODO: use proper config
-	accessToken, err := jwtManager.GenerateToken(user)
+	accessToken, err := s.jwtManager.GenerateToken(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtManager.GenerateToken(user) // TODO: implement proper refresh token logic
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
 	// Update last login
@@ -148,10 +172,14 @@ func (s *OAuthService) HandleCallback(ctx context.Context, providerName, code, s
 	user.LastLoginAt = &now
 	s.db.Save(user)
 
+	// Remove sensitive information before returning
+	user.PasswordHash = ""
+
 	return &AuthResponse{
-		User:        user,
-		AccessToken: accessToken,
-		ExpiresIn:   24 * 3600, // 24 hours
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
 	}, nil
 }
 
@@ -177,27 +205,10 @@ func (s *OAuthService) findOrCreateOAuthUser(userInfo *OAuthUserInfo, providerNa
 	}
 
 	// Create new user
-	username := userInfo.Username
-	if username == "" {
-		username = strings.Split(userInfo.Email, "@")[0]
-	}
-
-	// Ensure username is unique
-	for i := 0; i < 100; i++ {
-		var existing models.User
-		testUsername := username
-		if i > 0 {
-			testUsername = fmt.Sprintf("%s%d", username, i)
-		}
-		
-		err := s.db.Where("username = ?", testUsername).First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			username = testUsername
-			break
-		}
-	}
+	username := s.generateUsername(userInfo.Username, userInfo.Name)
 
 	user = models.User{
+		ID:            uuid.New(),
 		Username:      username,
 		Email:         userInfo.Email,
 		FullName:      userInfo.Name,
@@ -206,6 +217,8 @@ func (s *OAuthService) findOrCreateOAuthUser(userInfo *OAuthUserInfo, providerNa
 		IsActive:      true,
 		IsAdmin:       false,
 		PasswordHash:  "", // OAuth users don't have passwords
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
@@ -215,32 +228,73 @@ func (s *OAuthService) findOrCreateOAuthUser(userInfo *OAuthUserInfo, providerNa
 	return &user, nil
 }
 
-// GitHub Provider Implementation
+func (s *OAuthService) generateUsername(preferredUsername, fullName string) string {
+	// Start with preferred username from OAuth provider
+	if preferredUsername != "" {
+		// Check if it's available
+		var existingUser models.User
+		if err := s.db.Where("username = ?", preferredUsername).First(&existingUser).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			// Username is available
+			return preferredUsername
+		}
+	}
+
+	// Fall back to generating from full name
+	base := strings.ToLower(strings.ReplaceAll(fullName, " ", ""))
+	if base == "" {
+		base = "user"
+	}
+
+	// Try the base username first
+	var existingUser models.User
+	if err := s.db.Where("username = ?", base).First(&existingUser).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return base
+	}
+
+	// If base is taken, append numbers until we find an available one
+	for i := 1; i <= 1000; i++ {
+		candidate := fmt.Sprintf("%s%d", base, i)
+		if err := s.db.Where("username = ?", candidate).First(&existingUser).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			return candidate
+		}
+	}
+
+	// Last resort: use UUID
+	return fmt.Sprintf("user_%s", uuid.New().String()[:8])
+}
+
+// GitHub OAuth Provider
+type GitHubProvider struct {
+	ClientID     string
+	ClientSecret string
+}
+
 func (p *GitHubProvider) GetProviderName() string {
 	return "github"
 }
 
-func (p *GitHubProvider) GetAuthURL(state string) string {
+func (p *GitHubProvider) GetAuthURL(state, redirectURI string) string {
 	params := url.Values{}
-	params.Add("client_id", p.config.ClientID)
-	params.Add("redirect_uri", p.config.RedirectURL)
+	params.Add("client_id", p.ClientID)
+	params.Add("redirect_uri", redirectURI)
 	params.Add("scope", "user:email")
 	params.Add("state", state)
 	
 	return "https://github.com/login/oauth/authorize?" + params.Encode()
 }
 
-func (p *GitHubProvider) ExchangeCode(code string) (*OAuthToken, error) {
+func (p *GitHubProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, error) {
 	data := url.Values{}
-	data.Set("client_id", p.config.ClientID)
-	data.Set("client_secret", p.config.ClientSecret)
+	data.Set("client_id", p.ClientID)
+	data.Set("client_secret", p.ClientSecret)
 	data.Set("code", code)
+	data.Set("redirect_uri", redirectURI)
 
 	req, err := http.NewRequest("POST", "https://github.com/login/oauth/access_token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
-
+	
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -250,6 +304,10 @@ func (p *GitHubProvider) ExchangeCode(code string) (*OAuthToken, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthCodeExchange
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -269,7 +327,7 @@ func (p *GitHubProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-
+	
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
@@ -279,6 +337,10 @@ func (p *GitHubProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthUserInfo
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -297,10 +359,9 @@ func (p *GitHubProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 		return nil, err
 	}
 
-	// Get primary email if not provided
+	// GitHub doesn't always return public email, fetch it separately
 	if githubUser.Email == "" {
-		email, err := p.getPrimaryEmail(token.AccessToken)
-		if err == nil {
+		if email, err := p.getPrimaryEmail(token.AccessToken); err == nil {
 			githubUser.Email = email
 		}
 	}
@@ -319,7 +380,7 @@ func (p *GitHubProvider) getPrimaryEmail(accessToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
@@ -329,6 +390,10 @@ func (p *GitHubProvider) getPrimaryEmail(accessToken string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch user emails")
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -354,18 +419,23 @@ func (p *GitHubProvider) getPrimaryEmail(accessToken string) (string, error) {
 		return emails[0].Email, nil
 	}
 
-	return "", errors.New("no email found")
+	return "", fmt.Errorf("no email found")
 }
 
-// Google Provider Implementation (simplified)
+// Google OAuth Provider
+type GoogleProvider struct {
+	ClientID     string
+	ClientSecret string
+}
+
 func (p *GoogleProvider) GetProviderName() string {
 	return "google"
 }
 
-func (p *GoogleProvider) GetAuthURL(state string) string {
+func (p *GoogleProvider) GetAuthURL(state, redirectURI string) string {
 	params := url.Values{}
-	params.Add("client_id", p.config.ClientID)
-	params.Add("redirect_uri", p.config.RedirectURL)
+	params.Add("client_id", p.ClientID)
+	params.Add("redirect_uri", redirectURI)
 	params.Add("response_type", "code")
 	params.Add("scope", "openid email profile")
 	params.Add("state", state)
@@ -373,38 +443,107 @@ func (p *GoogleProvider) GetAuthURL(state string) string {
 	return "https://accounts.google.com/o/oauth2/v2/auth?" + params.Encode()
 }
 
-func (p *GoogleProvider) ExchangeCode(code string) (*OAuthToken, error) {
-	// TODO: Implement Google OAuth token exchange
-	return nil, errors.New("Google OAuth not fully implemented")
+func (p *GoogleProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, error) {
+	data := url.Values{}
+	data.Set("client_id", p.ClientID)
+	data.Set("client_secret", p.ClientSecret)
+	data.Set("code", code)
+	data.Set("grant_type", "authorization_code")
+	data.Set("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthCodeExchange
+	}
+
+	var token OAuthToken
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+
+	return &token, nil
 }
 
 func (p *GoogleProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) {
-	// TODO: Implement Google user info retrieval
-	return nil, errors.New("Google OAuth not fully implemented")
+	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthUserInfo
+	}
+
+	var googleUser struct {
+		ID      string `json:"id"`
+		Email   string `json:"email"`
+		Name    string `json:"name"`
+		Picture string `json:"picture"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&googleUser); err != nil {
+		return nil, err
+	}
+
+	return &OAuthUserInfo{
+		ID:       googleUser.ID,
+		Username: strings.Split(googleUser.Email, "@")[0], // Generate username from email
+		Email:    googleUser.Email,
+		Name:     googleUser.Name,
+		Avatar:   googleUser.Picture,
+	}, nil
 }
 
-// Microsoft Provider Implementation (simplified)
+// Microsoft OAuth Provider
+type MicrosoftProvider struct {
+	ClientID     string
+	ClientSecret string
+	TenantID     string
+}
+
 func (p *MicrosoftProvider) GetProviderName() string {
 	return "microsoft"
 }
 
-func (p *MicrosoftProvider) GetAuthURL(state string) string {
+func (p *MicrosoftProvider) GetAuthURL(state, redirectURI string) string {
 	params := url.Values{}
-	params.Add("client_id", p.config.ClientID)
-	params.Add("redirect_uri", p.config.RedirectURL)
+	params.Add("client_id", p.ClientID)
+	params.Add("redirect_uri", redirectURI)
 	params.Add("response_type", "code")
 	params.Add("scope", "openid email profile")
 	params.Add("state", state)
 	
 	baseURL := "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-	if p.config.TenantID != "" {
-		baseURL = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/authorize", p.config.TenantID)
+	if p.TenantID != "" {
+		baseURL = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/authorize", p.TenantID)
 	}
 	
 	return baseURL + "?" + params.Encode()
 }
 
-func (p *MicrosoftProvider) ExchangeCode(code string) (*OAuthToken, error) {
+func (p *MicrosoftProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, error) {
 	// TODO: Implement Microsoft OAuth token exchange
 	return nil, errors.New("Microsoft OAuth not fully implemented")
 }

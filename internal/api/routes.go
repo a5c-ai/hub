@@ -10,6 +10,7 @@ import (
 	"github.com/a5c-ai/hub/internal/middleware"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,16 +20,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 	// Initialize authentication services
 	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
-	oauthConfig := auth.OAuthConfig{
-		GitHub: auth.GitHubConfig{
-			ClientID:     "your-github-client-id",
-			ClientSecret: "your-github-client-secret",
-			RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/github/callback",
-		},
-	}
-	oauthService := auth.NewOAuthService(database.DB, oauthConfig, authService)
-	mfaService := auth.NewMFAService(database.DB)
-	authHandlers := NewAuthHandlers(authService, oauthService, mfaService)
+	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
+	authHandlers := NewAuthHandlers(authService, oauthService)
 
 	// Initialize Git services
 	gitService := git.NewGitService(logger)
@@ -97,15 +90,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.Use(middleware.AuthMiddleware(jwtManager))
 			{
 				protected.POST("/logout", authHandlers.Logout)
-				
-				// MFA endpoints
-				mfa := protected.Group("/mfa")
-				{
-					mfa.POST("/setup", authHandlers.SetupMFA)
-					mfa.POST("/verify", authHandlers.VerifyMFA)
-					mfa.POST("/backup-codes", authHandlers.RegenerateBackupCodes)
-					mfa.DELETE("/disable", authHandlers.DisableMFA)
-				}
 			}
 		}
 
@@ -119,14 +103,21 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
 			protected.GET("/profile", func(c *gin.Context) {
-				userID, _ := c.Get("user_id")
-				username, _ := c.Get("username")
-				email, _ := c.Get("email")
-				
+				userID, exists := c.Get("user_id")
+				if !exists {
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+					return
+				}
+
+				user, err := authService.GetUserByID(userID.(uuid.UUID))
+				if err != nil {
+					c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+					return
+				}
+
 				c.JSON(http.StatusOK, gin.H{
-					"user_id":  userID,
-					"username": username,
-					"email":    email,
+					"success": true,
+					"data":    user,
 				})
 			})
 

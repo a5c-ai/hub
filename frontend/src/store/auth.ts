@@ -12,8 +12,8 @@ interface AuthState {
 }
 
 interface AuthActions {
-  login: (username: string, password: string, mfaCode?: string) => Promise<void>;
-  register: (userData: { username: string; email: string; password: string; full_name?: string }) => Promise<void>;
+  login: (email: string, password: string, mfaCode?: string) => Promise<void>;
+  register: (userData: { username: string; email: string; password: string; full_name: string }) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
   clearError: () => void;
@@ -21,9 +21,6 @@ interface AuthActions {
   refreshToken: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string) => Promise<void>;
-  setupMFA: () => Promise<{ secret: string; qr_code_url: string; backup_codes: string[] }>;
-  verifyMFA: (secret: string, code: string) => Promise<void>;
-  disableMFA: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -37,10 +34,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       error: null,
 
       // Actions
-      login: async (username: string, password: string, mfaCode?: string) => {
+      login: async (email: string, password: string, mfaCode?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login(username, password, mfaCode);
+          const response = await authApi.login(email, password, mfaCode);
           if (response.success && response.data) {
             const authData = response.data as AuthUser;
             set({
@@ -72,28 +69,27 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (userData: { username: string; email: string; password: string; name: string }) => {
+      register: async (userData: { username: string; email: string; password: string; full_name: string }) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.register(userData);
           if (response.success && response.data) {
-            const authData = response.data as AuthUser;
+            // Registration returns a user object, not an auth response
+            const user = response.data as User;
             set({
-              user: authData.user,
-              token: authData.token,
-              isAuthenticated: true,
+              user: user,
+              token: null, // No auto-login after registration
+              isAuthenticated: false,
               isLoading: false,
               error: null,
             });
-            // Store token in localStorage for API requests
-            localStorage.setItem('auth_token', authData.token);
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error && 'response' in error && 
             typeof error.response === 'object' && error.response !== null &&
             'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'message' in error.response.data
-            ? String(error.response.data.message)
+            error.response.data !== null && 'error' in error.response.data
+            ? String(error.response.data.error)
             : 'Registration failed';
           
           set({
@@ -192,90 +188,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      setupMFA: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await authApi.setupMFA();
-          set({ isLoading: false });
-          if (response.success && response.data) {
-            return response.data as { secret: string; qr_code_url: string; backup_codes: string[] };
-          }
-          throw new Error('Failed to setup MFA');
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error && 'response' in error && 
-            typeof error.response === 'object' && error.response !== null &&
-            'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'error' in error.response.data
-            ? String(error.response.data.error)
-            : 'Failed to setup MFA';
-          
-          set({
-            isLoading: false,
-            error: errorMessage,
-          });
-          throw error;
-        }
-      },
-
-      verifyMFA: async (secret: string, code: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          await authApi.verifyMFA(secret, code);
-          set({ isLoading: false });
-          // Update user to reflect MFA enabled
-          if (get().user) {
-            set({
-              user: {
-                ...get().user!,
-                two_factor_enabled: true,
-              },
-            });
-          }
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error && 'response' in error && 
-            typeof error.response === 'object' && error.response !== null &&
-            'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'error' in error.response.data
-            ? String(error.response.data.error)
-            : 'Failed to verify MFA code';
-          
-          set({
-            isLoading: false,
-            error: errorMessage,
-          });
-          throw error;
-        }
-      },
-
-      disableMFA: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          await authApi.disableMFA();
-          set({ isLoading: false });
-          // Update user to reflect MFA disabled
-          if (get().user) {
-            set({
-              user: {
-                ...get().user!,
-                two_factor_enabled: false,
-              },
-            });
-          }
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error && 'response' in error && 
-            typeof error.response === 'object' && error.response !== null &&
-            'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'error' in error.response.data
-            ? String(error.response.data.error)
-            : 'Failed to disable MFA';
-          
-          set({
-            isLoading: false,
-            error: errorMessage,
-          });
-          throw error;
-        }
-      },
 
       setUser: (user: User) => {
         set({ user });

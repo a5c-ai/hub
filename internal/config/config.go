@@ -121,6 +121,10 @@ func Load() (*Config, error) {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.expiration_hour", "JWT_EXPIRATION_HOUR")
+	viper.BindEnv("oauth.github.client_id", "GITHUB_CLIENT_ID")
+	viper.BindEnv("oauth.github.client_secret", "GITHUB_CLIENT_SECRET")
+	viper.BindEnv("oauth.google.client_id", "GOOGLE_CLIENT_ID")
+	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
 
 	if err := viper.ReadInConfig(); err != nil {
