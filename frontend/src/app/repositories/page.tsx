@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   PlusIcon,
@@ -19,71 +19,9 @@ import {
   Dropdown,
 } from '@/components/ui';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuthStore } from '@/store/auth';
+import { useRepositoryStore } from '@/store/repository';
 import { formatRelativeTime } from '@/lib/utils';
-
-// Mock data - replace with real API calls
-const mockRepositories = [
-  {
-    id: '1',
-    name: 'awesome-project',
-    full_name: 'user/awesome-project',
-    description: 'An awesome project built with modern technologies',
-    private: false,
-    language: 'TypeScript',
-    stargazers_count: 42,
-    forks_count: 8,
-    updated_at: '2024-07-20T10:00:00Z',
-    owner: { username: 'user', name: 'User Name' },
-  },
-  {
-    id: '2',
-    name: 'api-service',
-    full_name: 'user/api-service',
-    description: 'RESTful API service for the application',
-    private: true,
-    language: 'Go',
-    stargazers_count: 15,
-    forks_count: 3,
-    updated_at: '2024-07-19T15:30:00Z',
-    owner: { username: 'user', name: 'User Name' },
-  },
-  {
-    id: '3',
-    name: 'mobile-app',
-    full_name: 'user/mobile-app',
-    description: 'Cross-platform mobile application',
-    private: false,
-    language: 'React Native',
-    stargazers_count: 128,
-    forks_count: 24,
-    updated_at: '2024-07-18T09:15:00Z',
-    owner: { username: 'user', name: 'User Name' },
-  },
-  {
-    id: '4',
-    name: 'data-analysis',
-    full_name: 'user/data-analysis',
-    description: 'Python scripts for data analysis and visualization',
-    private: false,
-    language: 'Python',
-    stargazers_count: 67,
-    forks_count: 12,
-    updated_at: '2024-07-17T14:20:00Z',
-    owner: { username: 'user', name: 'User Name' },
-  },
-  {
-    id: '5',
-    name: 'web-scraper',
-    full_name: 'user/web-scraper',
-    description: 'A robust web scraping tool with multiple backends',
-    private: true,
-    language: 'JavaScript',
-    stargazers_count: 23,
-    forks_count: 5,
-    updated_at: '2024-07-16T11:45:00Z',
-    owner: { username: 'user', name: 'User Name' },
-  },
-];
 
 const filterMenuItems = [
   { label: 'All', onClick: () => {} },
@@ -100,20 +38,62 @@ const sortMenuItems = [
 ];
 
 export default function RepositoriesPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredRepos, setFilteredRepos] = useState(mockRepositories);
+  const { isAuthenticated } = useAuthStore();
+  const { 
+    repositories, 
+    isLoading, 
+    error, 
+    totalCount,
+    currentPage,
+    totalPages,
+    fetchRepositories,
+    clearError 
+  } = useRepositoryStore();
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim() === '') {
-      setFilteredRepos(mockRepositories);
-    } else {
-      const filtered = mockRepositories.filter(
-        (repo) =>
-          repo.name.toLowerCase().includes(query.toLowerCase()) ||
-          repo.description?.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredRepos(filtered);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter] = useState('all'); // TODO: Implement type filtering
+  const [sortBy] = useState('updated'); // TODO: Implement sorting
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchRepositories({ 
+        page: currentPage, 
+        per_page: 10, 
+        sort: sortBy,
+        type: typeFilter === 'all' ? undefined : typeFilter 
+      });
+    }
+  }, [isAuthenticated, currentPage, sortBy, typeFilter, fetchRepositories]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('Repository error:', error);
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
+
+  // Filter repositories based on search query
+  const filteredRepos = repositories.filter((repo) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      repo.name.toLowerCase().includes(query) ||
+      repo.description?.toLowerCase().includes(query) ||
+      repo.owner.username.toLowerCase().includes(query)
+    );
+  });
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchRepositories({ 
+        page, 
+        per_page: 10, 
+        sort: sortBy,
+        type: typeFilter === 'all' ? undefined : typeFilter 
+      });
     }
   };
 
@@ -124,7 +104,7 @@ export default function RepositoriesPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Repositories</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and explore your repositories
+              {isLoading ? 'Loading repositories...' : `${totalCount} repositories`}
             </p>
           </div>
           <Button asChild>
@@ -135,6 +115,14 @@ export default function RepositoriesPage() {
           </Button>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-md bg-destructive/10 p-4">
+            <div className="text-sm text-destructive">
+              Failed to load repositories: {error}
+            </div>
+          </div>
+        )}
+
         {/* Search and filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
@@ -142,7 +130,7 @@ export default function RepositoriesPage() {
             <Input
               placeholder="Find a repository..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -160,7 +148,31 @@ export default function RepositoriesPage() {
 
         {/* Repository list */}
         <div className="space-y-4">
-          {filteredRepos.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="h-6 bg-muted rounded w-1/3 mb-2"></div>
+                        <div className="h-4 bg-muted rounded w-2/3 mb-4"></div>
+                        <div className="flex space-x-6">
+                          <div className="h-4 bg-muted rounded w-16"></div>
+                          <div className="h-4 bg-muted rounded w-12"></div>
+                          <div className="h-4 bg-muted rounded w-20"></div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <div className="h-8 w-8 bg-muted rounded"></div>
+                        <div className="h-8 w-16 bg-muted rounded"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredRepos.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <FolderIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -170,9 +182,11 @@ export default function RepositoriesPage() {
                 <p className="text-muted-foreground mb-4">
                   {searchQuery
                     ? `No repositories match "${searchQuery}"`
-                    : "You don't have any repositories yet"}
+                    : repositories.length === 0
+                    ? "You don't have any repositories yet"
+                    : "No repositories match your current filters"}
                 </p>
-                {!searchQuery && (
+                {!searchQuery && repositories.length === 0 && (
                   <Button asChild>
                     <Link href="/repositories/new">
                       <PlusIcon className="h-4 w-4 mr-2" />
@@ -247,23 +261,40 @@ export default function RepositoriesPage() {
           )}
         </div>
 
-        {/* Pagination would go here */}
-        {filteredRepos.length > 0 && (
+        {/* Pagination */}
+        {!isLoading && totalPages > 1 && (
           <div className="flex justify-center mt-8">
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage <= 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm" className="bg-primary text-primary-foreground">
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                3
-              </Button>
-              <Button variant="outline" size="sm">
+              
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage >= totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
                 Next
               </Button>
             </div>
