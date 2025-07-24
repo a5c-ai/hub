@@ -55,8 +55,9 @@ export function LoginForm() {
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
     
-    // Redirect to OAuth URL
-    window.location.href = `/api/v1/auth/oauth/${provider}?state=${state}`;
+    // Redirect to OAuth URL - use the API base URL
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+    window.location.href = `${baseURL}/auth/oauth/${provider}?state=${state}`;
   };
 
   return (

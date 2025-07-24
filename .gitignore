@@ -62,6 +62,7 @@ next-env.d.ts
 *.so
 *.dylib
 hub
+server
 
 # Test binary, built with `go test -c`
 *.test

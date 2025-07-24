@@ -544,11 +544,90 @@ func (p *MicrosoftProvider) GetAuthURL(state, redirectURI string) string {
 }
 
 func (p *MicrosoftProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, error) {
-	// TODO: Implement Microsoft OAuth token exchange
-	return nil, errors.New("Microsoft OAuth not fully implemented")
+	data := url.Values{}
+	data.Set("client_id", p.ClientID)
+	data.Set("client_secret", p.ClientSecret)
+	data.Set("code", code)
+	data.Set("grant_type", "authorization_code")
+	data.Set("redirect_uri", redirectURI)
+
+	tokenURL := "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+	if p.TenantID != "" {
+		tokenURL = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", p.TenantID)
+	}
+
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthCodeExchange
+	}
+
+	var token OAuthToken
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+
+	return &token, nil
 }
 
 func (p *MicrosoftProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) {
-	// TODO: Implement Microsoft user info retrieval
-	return nil, errors.New("Microsoft OAuth not fully implemented")
+	req, err := http.NewRequest("GET", "https://graph.microsoft.com/v1.0/me", nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthUserInfo
+	}
+
+	var msUser struct {
+		ID                string `json:"id"`
+		UserPrincipalName string `json:"userPrincipalName"`
+		Mail              string `json:"mail"`
+		DisplayName       string `json:"displayName"`
+		GivenName         string `json:"givenName"`
+		Surname           string `json:"surname"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&msUser); err != nil {
+		return nil, err
+	}
+
+	// Use mail if available, otherwise userPrincipalName
+	email := msUser.Mail
+	if email == "" {
+		email = msUser.UserPrincipalName
+	}
+
+	// Generate username from email
+	username := strings.Split(email, "@")[0]
+
+	return &OAuthUserInfo{
+		ID:       msUser.ID,
+		Username: username,
+		Email:    email,
+		Name:     msUser.DisplayName,
+		Avatar:   "", // Microsoft Graph doesn't provide avatar URL in basic profile
+	}, nil
 }

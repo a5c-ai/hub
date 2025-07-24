@@ -2,13 +2,12 @@ package auth
 
 import (
 	"crypto/rand"
-	"encoding/base32"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"gorm.io/gorm"
 )
 
@@ -55,11 +54,17 @@ func NewMFAService(db *gorm.DB) *MFAService {
 }
 
 func (s *MFAService) SetupTOTP(userID uuid.UUID, issuer, accountName string) (*MFASetupResponse, error) {
-	// Generate secret key
-	secret := generateTOTPSecret()
+	// Generate TOTP key using proper library
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      issuer,
+		AccountName: accountName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate TOTP key: %w", err)
+	}
 	
-	// Generate QR code URL
-	qrURL := generateQRCodeURL(secret, issuer, accountName)
+	// Generate QR code URL from the key
+	qrURL := key.URL()
 	
 	// Generate backup codes
 	backupCodes := s.generateBackupCodes()
@@ -80,7 +85,7 @@ func (s *MFAService) SetupTOTP(userID uuid.UUID, issuer, accountName string) (*M
 	// For now, we'll assume the client will store it and send it back for verification
 	
 	return &MFASetupResponse{
-		Secret:      secret,
+		Secret:      key.Secret(),
 		QRCodeURL:   qrURL,
 		BackupCodes: backupCodes,
 	}, nil
@@ -174,27 +179,6 @@ func (s *MFAService) generateBackupCodes() []string {
 	return codes
 }
 
-func generateTOTPSecret() string {
-	bytes := make([]byte, 20) // 160 bits
-	rand.Read(bytes)
-	return base32.StdEncoding.EncodeToString(bytes)
-}
-
-func generateQRCodeURL(secret, issuer, accountName string) string {
-	// Create TOTP URL for QR code
-	u := url.URL{
-		Scheme: "otpauth",
-		Host:   "totp",
-		Path:   "/" + url.PathEscape(issuer+":"+accountName),
-	}
-	
-	q := u.Query()
-	q.Set("secret", secret)
-	q.Set("issuer", issuer)
-	u.RawQuery = q.Encode()
-	
-	return u.String()
-}
 
 func generateBackupCode() string {
 	// Generate 8-digit backup code
@@ -207,37 +191,11 @@ func generateBackupCode() string {
 	return code
 }
 
-// Simple TOTP implementation
+// TOTP implementation using proper library
 func (s *MFAService) verifyTOTPCode(secret, code string) bool {
-	// Decode base32 secret
-	key, err := base32.StdEncoding.DecodeString(secret)
-	if err != nil {
-		return false
-	}
-
-	// Current time in 30-second intervals
-	now := time.Now().Unix() / 30
-	
-	// Check current time window and adjacent windows (for clock skew)
-	for i := -1; i <= 1; i++ {
-		timeWindow := now + int64(i)
-		expectedCode := generateTOTPCode(key, timeWindow)
-		if expectedCode == code {
-			return true
-		}
-	}
-	
-	return false
-}
-
-func generateTOTPCode(key []byte, timeWindow int64) string {
-	// Simplified TOTP implementation
-	// In production, use a proper TOTP library like github.com/pquerna/otp
-	
-	// This is a placeholder implementation
-	// Real TOTP uses HMAC-SHA1 with proper time-based counter
-	hash := int(timeWindow) % 1000000
-	return fmt.Sprintf("%06d", hash)
+	// Use the proper TOTP library for validation
+	valid := totp.Validate(code, secret)
+	return valid
 }
 
 // SMS MFA (placeholder implementation)
