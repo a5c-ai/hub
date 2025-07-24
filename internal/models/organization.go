@@ -50,6 +50,7 @@ type OrganizationMember struct {
 	OrganizationID uuid.UUID        `json:"organization_id" gorm:"type:uuid;not null;index"`
 	UserID         uuid.UUID        `json:"user_id" gorm:"type:uuid;not null;index"`
 	Role           OrganizationRole `json:"role" gorm:"not null;size:50;check:role IN ('owner','admin','member','billing')"`
+	PublicMember   bool             `json:"public_member" gorm:"default:false"`
 
 	// Relationships
 	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
@@ -77,10 +78,14 @@ type Team struct {
 	Name           string      `json:"name" gorm:"not null;size:255"`
 	Description    string      `json:"description" gorm:"type:text"`
 	Privacy        TeamPrivacy `json:"privacy" gorm:"not null;size:50;check:privacy IN ('closed','secret')"`
+	ParentTeamID   *uuid.UUID  `json:"parent_team_id,omitempty" gorm:"type:uuid;index"`
 
 	// Relationships
-	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
-	Members      []TeamMember `json:"members,omitempty" gorm:"foreignKey:TeamID"`
+	Organization Organization        `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
+	Members      []TeamMember        `json:"members,omitempty" gorm:"foreignKey:TeamID"`
+	ParentTeam   *Team               `json:"parent_team,omitempty" gorm:"foreignKey:ParentTeamID"`
+	ChildTeams   []Team              `json:"child_teams,omitempty" gorm:"foreignKey:ParentTeamID"`
+	Permissions  []RepositoryPermission `json:"permissions,omitempty" gorm:"foreignKey:SubjectID"`
 }
 
 func (t *Team) TableName() string {
@@ -111,4 +116,96 @@ type TeamMember struct {
 
 func (tm *TeamMember) TableName() string {
 	return "team_members"
+}
+
+// Repository Permission System
+type SubjectType string
+
+const (
+	SubjectTypeUser SubjectType = "user"
+	SubjectTypeTeam SubjectType = "team"
+)
+
+type RepositoryPermission struct {
+	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	RepositoryID uuid.UUID   `json:"repository_id" gorm:"type:uuid;not null;index"`
+	SubjectID    uuid.UUID   `json:"subject_id" gorm:"type:uuid;not null;index"`
+	SubjectType  SubjectType `json:"subject_type" gorm:"not null;size:50;check:subject_type IN ('user','team')"`
+	Permission   Permission  `json:"permission" gorm:"not null;size:50;check:permission IN ('read','triage','write','maintain','admin')"`
+
+	// Relationships
+	Repository Repository `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
+}
+
+func (rp *RepositoryPermission) TableName() string {
+	return "repository_permissions"
+}
+
+// Organization Invitation System
+type OrganizationInvitation struct {
+	ID             uuid.UUID        `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt      time.Time        `json:"created_at"`
+	UpdatedAt      time.Time        `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt   `json:"-" gorm:"index"`
+	
+	OrganizationID uuid.UUID        `json:"organization_id" gorm:"type:uuid;not null;index"`
+	InviterID      uuid.UUID        `json:"inviter_id" gorm:"type:uuid;not null;index"`
+	Email          string           `json:"email" gorm:"not null;size:255;index"`
+	Role           OrganizationRole `json:"role" gorm:"not null;size:50;check:role IN ('owner','admin','member','billing')"`
+	Token          string           `json:"-" gorm:"uniqueIndex;not null;size:255"`
+	ExpiresAt      time.Time        `json:"expires_at" gorm:"not null;index"`
+	AcceptedAt     *time.Time       `json:"accepted_at,omitempty"`
+
+	// Relationships
+	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
+	Inviter      User         `json:"inviter,omitempty" gorm:"foreignKey:InviterID"`
+}
+
+func (oi *OrganizationInvitation) TableName() string {
+	return "organization_invitations"
+}
+
+// Activity Logging System
+type ActivityAction string
+
+const (
+	ActivityMemberAdded        ActivityAction = "member.added"
+	ActivityMemberRemoved      ActivityAction = "member.removed"
+	ActivityMemberRoleChanged  ActivityAction = "member.role_changed"
+	ActivityMemberVisibilityChanged ActivityAction = "member.visibility_changed"
+	ActivityTeamCreated        ActivityAction = "team.created"
+	ActivityTeamDeleted        ActivityAction = "team.deleted"
+	ActivityTeamUpdated        ActivityAction = "team.updated"
+	ActivityRepositoryCreated  ActivityAction = "repository.created"
+	ActivityRepositoryDeleted  ActivityAction = "repository.deleted"
+	ActivityInvitationSent     ActivityAction = "invitation.sent"
+	ActivityInvitationAccepted ActivityAction = "invitation.accepted"
+	ActivityPermissionGranted  ActivityAction = "permission.granted"
+	ActivityPermissionRevoked  ActivityAction = "permission.revoked"
+)
+
+type OrganizationActivity struct {
+	ID             uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	OrganizationID uuid.UUID      `json:"organization_id" gorm:"type:uuid;not null;index"`
+	ActorID        uuid.UUID      `json:"actor_id" gorm:"type:uuid;not null;index"`
+	Action         ActivityAction `json:"action" gorm:"not null;size:100"`
+	TargetType     string         `json:"target_type" gorm:"size:50"`
+	TargetID       *uuid.UUID     `json:"target_id,omitempty" gorm:"type:uuid;index"`
+	Metadata       string         `json:"metadata,omitempty" gorm:"type:jsonb"`
+
+	// Relationships
+	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
+	Actor        User         `json:"actor,omitempty" gorm:"foreignKey:ActorID"`
+}
+
+func (oa *OrganizationActivity) TableName() string {
+	return "organization_activities"
 }
