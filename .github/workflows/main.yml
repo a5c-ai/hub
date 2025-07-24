@@ -91,64 +91,135 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Set explicit timeout for build job
     strategy:
       matrix:
         node-version: [22] 
     steps:
       - uses: actions/checkout@v4
+      
+      # Setup Go (missing from original workflow)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+          
       - name: Setup Node.js
-        continue-on-error: true
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
           check-latest: true
+          
       - name: Setup Python
-        continue-on-error: true
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
           cache: 'pip'
           check-latest: true
-      - run: ./scripts/build.sh
+          
+      # Build with explicit timeout
+      - name: Build application
+        timeout-minutes: 10
+        run: ./scripts/build.sh
+        
+      # Upload build artifacts for other jobs
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            frontend/node_modules/
+            go.sum
+          retention-days: 1
+          
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # More time for tests
     needs: build
     steps:
       - uses: actions/checkout@v4
+      
+      # Download build artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+          
       - name: Setup Node.js
-        continue-on-error: true
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
           check-latest: true
+          
       - name: Setup Python
-        continue-on-error: true
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
           cache: 'pip'
           check-latest: true
-      - run: ./scripts/test.sh
+          
+      # Run tests with timeout
+      - name: Run tests
+        timeout-minutes: 15
+        run: ./scripts/test.sh
+        
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Timeout for deploy job
     needs: test
+    # Only deploy on main branch
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
+      # Download build artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        continue-on-error: true
         with:
           node-version: 22
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
           check-latest: true
+          
       - name: Setup Python
         uses: actions/setup-python@v4
-        continue-on-error: true
         with:
           python-version: 3.12
           cache: 'pip'
           check-latest: true
-      - run: ./scripts/deploy.sh
+          
+      # Deploy with timeout
+      - name: Deploy application
+        timeout-minutes: 10
+        run: ./scripts/deploy.sh
