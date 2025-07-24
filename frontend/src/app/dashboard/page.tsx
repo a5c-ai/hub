@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   PlusIcon,
@@ -30,8 +30,34 @@ export default function DashboardPage() {
     repositories, 
     isLoading: repoLoading, 
     error: repoError, 
-    fetchRepositories 
+    fetchRepositories,
+    clearError 
   } = useRepositoryStore();
+  const mockActivity = [
+    {
+      id: '1',
+      type: 'push',
+      repository: repositories[0]?.full_name || 'user/repository',
+      message: 'Added new authentication middleware',
+      timestamp: repositories[0]?.updated_at || new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: '2',
+      type: 'pull_request',
+      repository: repositories[1]?.full_name || 'user/another-repo',
+      message: 'Opened pull request: Implement user management endpoints',
+      timestamp: repositories[1]?.updated_at || new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      id: '3',
+      type: 'issue',
+      repository: repositories[2]?.full_name || 'user/third-repo',
+      message: 'Created issue: Fix login screen layout on tablet',
+      timestamp: repositories[2]?.updated_at || new Date(Date.now() - 172800000).toISOString(),
+    },
+  ];
+
+  const [activity] = useState(mockActivity);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -40,35 +66,21 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, fetchRepositories]);
 
+  useEffect(() => {
+    if (repoError) {
+      console.error('Repository error:', repoError);
+      // Auto-clear error after 5 seconds
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [repoError, clearError]);
+
   // Calculate stats from real repository data
   const totalRepos = repositories.length;
-  const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0);
-  const totalForks = repositories.reduce((sum, repo) => sum + repo.forks_count, 0);
-
-  // Mock activity data - this would be replaced with real activity API when available
-  const mockActivity = [
-    {
-      id: '1',
-      type: 'push',
-      repository: repositories[0]?.full_name || 'loading...',
-      message: 'Added new authentication middleware',
-      timestamp: repositories[0]?.updated_at || new Date().toISOString(),
-    },
-    {
-      id: '2',
-      type: 'pull_request',
-      repository: repositories[1]?.full_name || 'loading...',
-      message: 'Opened pull request: Implement user management endpoints',
-      timestamp: repositories[1]?.updated_at || new Date().toISOString(),
-    },
-    {
-      id: '3',
-      type: 'issue',
-      repository: repositories[2]?.full_name || 'loading...',
-      message: 'Created issue: Fix login screen layout on tablet',
-      timestamp: repositories[2]?.updated_at || new Date().toISOString(),
-    },
-  ];
+  const totalStars = repositories.reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
+  const totalForks = repositories.reduce((sum, repo) => sum + (repo.forks_count || 0), 0);
 
   return (
     <AppLayout>
@@ -82,6 +94,14 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {repoError && (
+          <div className="mb-6 rounded-md bg-destructive/10 p-4">
+            <div className="text-sm text-destructive">
+              Failed to load repositories: {repoError}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Quick stats */}
           <Card>
@@ -94,7 +114,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalRepos}
               </div>
               <p className="text-xs text-muted-foreground">
-                {repoError ? 'Error loading data' : 'Your repositories'}
+                {repoError ? 'Error loading data' : totalRepos === 0 ? 'No repositories yet' : 'Your repositories'}
               </p>
             </CardContent>
           </Card>
@@ -109,7 +129,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalStars}
               </div>
               <p className="text-xs text-muted-foreground">
-                {repoError ? 'Error loading data' : 'Across all repositories'}
+                {repoError ? 'Error loading data' : totalStars === 0 ? 'No stars yet' : 'Across all repositories'}
               </p>
             </CardContent>
           </Card>
@@ -124,7 +144,7 @@ export default function DashboardPage() {
                 {repoLoading ? '...' : totalForks}
               </div>
               <p className="text-xs text-muted-foreground">
-                {repoError ? 'Error loading data' : 'Repository forks'}
+                {repoError ? 'Error loading data' : totalForks === 0 ? 'No forks yet' : 'Repository forks'}
               </p>
             </CardContent>
           </Card>
@@ -149,8 +169,20 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {repoLoading ? (
-                <div className="text-center py-8">
-                  <div className="text-muted-foreground">Loading repositories...</div>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg border animate-pulse">
+                      <div className="flex-1">
+                        <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-2/3 mb-2"></div>
+                        <div className="flex space-x-4">
+                          <div className="h-3 bg-muted rounded w-16"></div>
+                          <div className="h-3 bg-muted rounded w-12"></div>
+                          <div className="h-3 bg-muted rounded w-20"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : repoError ? (
                 <div className="text-center py-8">
@@ -173,49 +205,47 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               ) : (
-                <>
-                  {repositories.map((repo) => (
-                    <div key={repo.id} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <Link
-                            href={`/repositories/${repo.full_name}`}
-                            className="font-medium text-foreground hover:text-primary"
-                          >
-                            {repo.name}
-                          </Link>
-                          {repo.private && <Badge variant="secondary" size="sm">Private</Badge>}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {repo.description || 'No description available'}
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
-                          {repo.language && (
-                            <span className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-primary mr-1"></span>
-                              {repo.language}
-                            </span>
-                          )}
+                repositories.map((repo) => (
+                  <div key={repo.id} className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <Link
+                          href={`/repositories/${repo.full_name}`}
+                          className="font-medium text-foreground hover:text-primary"
+                        >
+                          {repo.name}
+                        </Link>
+                        {repo.private && <Badge variant="secondary" size="sm">Private</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {repo.description || 'No description provided'}
+                      </p>
+                      <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
+                        {repo.language && (
                           <span className="flex items-center">
-                            <StarIcon className="h-3 w-3 mr-1" />
-                            {repo.stargazers_count}
+                            <span className="w-2 h-2 rounded-full bg-primary mr-1"></span>
+                            {repo.language}
                           </span>
-                          <span className="flex items-center">
-                            <GitBranchIcon className="h-3 w-3 mr-1" />
-                            {repo.forks_count}
-                          </span>
-                          <span>Updated {formatRelativeTime(repo.updated_at)}</span>
-                        </div>
+                        )}
+                        <span className="flex items-center">
+                          <StarIcon className="h-3 w-3 mr-1" />
+                          {repo.stargazers_count || 0}
+                        </span>
+                        <span className="flex items-center">
+                          <GitBranchIcon className="h-3 w-3 mr-1" />
+                          {repo.forks_count || 0}
+                        </span>
+                        <span>Updated {formatRelativeTime(repo.updated_at)}</span>
                       </div>
                     </div>
-                  ))}
-                  <div className="text-center">
-                    <Button variant="ghost" asChild>
-                      <Link href="/repositories">View all repositories</Link>
-                    </Button>
                   </div>
-                </>
+                ))
               )}
+              <div className="text-center">
+                <Button variant="ghost" asChild>
+                  <Link href="/repositories">View all repositories</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

@@ -29,20 +29,23 @@ export default function RepositoriesPage() {
     repositories, 
     isLoading, 
     error, 
-    pagination,
-    fetchRepositories 
+    totalCount,
+    currentPage,
+    totalPages,
+    fetchRepositories,
+    clearError 
   } = useRepositoryStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [sortBy, setSortBy] = useState('Recently updated');
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter and search logic
   const filteredRepos = repositories.filter((repo) => {
     const matchesSearch = searchQuery.trim() === '' || 
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repo.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.owner.username.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesType = typeFilter === 'All' ||
       (typeFilter === 'Public' && !repo.private) ||
@@ -77,12 +80,25 @@ export default function RepositoriesPage() {
     }
   }, [isAuthenticated, currentPage, sortBy, fetchRepositories]);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
+  useEffect(() => {
+    if (error) {
+      console.error('Repository error:', error);
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      fetchRepositories({ 
+        page, 
+        per_page: 10, 
+        sort: sortBy === 'Recently updated' ? 'updated' : 
+                     sortBy === 'Name' ? 'name' : 'stars'
+      });
+    }
   };
 
   return (
@@ -92,7 +108,7 @@ export default function RepositoriesPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Repositories</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and explore your repositories
+              {isLoading ? 'Loading repositories...' : `${totalCount} repositories`}
             </p>
           </div>
           <Button asChild>
@@ -103,6 +119,14 @@ export default function RepositoriesPage() {
           </Button>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-md bg-destructive/10 p-4">
+            <div className="text-sm text-destructive">
+              Failed to load repositories: {error}
+            </div>
+          </div>
+        )}
+
         {/* Search and filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
@@ -110,7 +134,7 @@ export default function RepositoriesPage() {
             <Input
               placeholder="Find a repository..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -129,8 +153,28 @@ export default function RepositoriesPage() {
         {/* Repository list */}
         <div className="space-y-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground">Loading repositories...</div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="h-6 bg-muted rounded w-1/3 mb-2"></div>
+                        <div className="h-4 bg-muted rounded w-2/3 mb-4"></div>
+                        <div className="flex space-x-6">
+                          <div className="h-4 bg-muted rounded w-16"></div>
+                          <div className="h-4 bg-muted rounded w-12"></div>
+                          <div className="h-4 bg-muted rounded w-20"></div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <div className="h-8 w-8 bg-muted rounded"></div>
+                        <div className="h-8 w-16 bg-muted rounded"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : error ? (
             <Card>
@@ -151,9 +195,11 @@ export default function RepositoriesPage() {
                 <p className="text-muted-foreground mb-4">
                   {searchQuery || typeFilter !== 'All'
                     ? `No repositories match your current filters`
-                    : "You don't have any repositories yet"}
+                    : repositories.length === 0
+                    ? "You don't have any repositories yet"
+                    : "No repositories match your current filters"}
                 </p>
-                {!searchQuery && typeFilter === 'All' && (
+                {!searchQuery && typeFilter === 'All' && repositories.length === 0 && (
                   <Button asChild>
                     <Link href="/repositories/new">
                       <PlusIcon className="h-4 w-4 mr-2" />
@@ -234,29 +280,26 @@ export default function RepositoriesPage() {
         </div>
 
         {/* Pagination */}
-        {pagination && pagination.total_pages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="flex justify-center mt-8">
             <div className="flex space-x-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                disabled={currentPage === 1}
+                disabled={currentPage <= 1}
                 onClick={() => handlePageChange(currentPage - 1)}
               >
                 Previous
               </Button>
               
               {/* Page numbers */}
-              {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
-                const pageNum = i + Math.max(1, currentPage - 2);
-                if (pageNum > pagination.total_pages) return null;
-                
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
                 return (
                   <Button
                     key={pageNum}
-                    variant="outline"
+                    variant={pageNum === currentPage ? "default" : "outline"}
                     size="sm"
-                    className={currentPage === pageNum ? "bg-primary text-primary-foreground" : ""}
                     onClick={() => handlePageChange(pageNum)}
                   >
                     {pageNum}
@@ -267,7 +310,7 @@ export default function RepositoriesPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                disabled={currentPage === pagination.total_pages}
+                disabled={currentPage >= totalPages}
                 onClick={() => handlePageChange(currentPage + 1)}
               >
                 Next
@@ -277,11 +320,11 @@ export default function RepositoriesPage() {
         )}
 
         {/* Pagination info */}
-        {pagination && (
+        {!isLoading && totalCount > 0 && (
           <div className="text-center mt-4 text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * (pagination.per_page || 10)) + 1} to{' '}
-            {Math.min(currentPage * (pagination.per_page || 10), pagination.total)} of{' '}
-            {pagination.total} repositories
+            Showing {((currentPage - 1) * 10) + 1} to{' '}
+            {Math.min(currentPage * 10, totalCount)} of{' '}
+            {totalCount} repositories
           </div>
         )}
       </div>

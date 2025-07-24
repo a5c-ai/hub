@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Repository, PaginatedResponse } from '@/types';
+import { Repository } from '@/types';
 import { repoApi } from '@/lib/api';
 
 interface RepositoryState {
@@ -7,12 +7,9 @@ interface RepositoryState {
   currentRepository: Repository | null;
   isLoading: boolean;
   error: string | null;
-  pagination: {
-    page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-  } | null;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
 }
 
 interface RepositoryActions {
@@ -32,7 +29,7 @@ interface RepositoryActions {
   }>) => Promise<void>;
   deleteRepository: (owner: string, repo: string) => Promise<void>;
   clearError: () => void;
-  clearRepositories: () => void;
+  resetRepositories: () => void;
 }
 
 export const useRepositoryStore = create<RepositoryState & RepositoryActions>((set, get) => ({
@@ -41,31 +38,39 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
   currentRepository: null,
   isLoading: false,
   error: null,
-  pagination: null,
+  totalCount: 0,
+  currentPage: 1,
+  totalPages: 1,
 
   // Actions
   fetchRepositories: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const paginatedData = await repoApi.getRepositories(params) as PaginatedResponse<Repository>;
-      set({
-        repositories: paginatedData.data,
-        pagination: paginatedData.pagination,
-        isLoading: false,
-      });
+      const response = await repoApi.getRepositories(params);
+      if (response.data) {
+        set({
+          repositories: response.data as Repository[],
+          totalCount: response.pagination?.total || 0,
+          currentPage: response.pagination?.page || 1,
+          totalPages: response.pagination?.total_pages || 1,
+          isLoading: false,
+        });
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
-        error.response.data !== null && 'message' in error.response.data
-        ? String(error.response.data.message)
+        error.response.data !== null && 'error' in error.response.data
+        ? String(error.response.data.error)
         : 'Failed to fetch repositories';
       
       set({
         isLoading: false,
         error: errorMessage,
         repositories: [],
-        pagination: null,
+        totalCount: 0,
+        currentPage: 1,
+        totalPages: 1,
       });
     }
   },
@@ -84,8 +89,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
-        error.response.data !== null && 'message' in error.response.data
-        ? String(error.response.data.message)
+        error.response.data !== null && 'error' in error.response.data
+        ? String(error.response.data.error)
         : 'Failed to fetch repository';
       
       set({
@@ -113,8 +118,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
-        error.response.data !== null && 'message' in error.response.data
-        ? String(error.response.data.message)
+        error.response.data !== null && 'error' in error.response.data
+        ? String(error.response.data.error)
         : 'Failed to create repository';
       
       set({
@@ -135,7 +140,7 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
           repositories: state.repositories.map(r => 
             r.full_name === updatedRepo.full_name ? updatedRepo : r
           ),
-          currentRepository: state.currentRepository?.full_name === updatedRepo.full_name 
+          currentRepository: state.currentRepository?.full_name === updatedRepo.full_name
             ? updatedRepo 
             : state.currentRepository,
           isLoading: false,
@@ -145,8 +150,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
-        error.response.data !== null && 'message' in error.response.data
-        ? String(error.response.data.message)
+        error.response.data !== null && 'error' in error.response.data
+        ? String(error.response.data.error)
         : 'Failed to update repository';
       
       set({
@@ -165,7 +170,7 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
         const fullName = `${owner}/${repo}`;
         set((state) => ({
           repositories: state.repositories.filter(r => r.full_name !== fullName),
-          currentRepository: state.currentRepository?.full_name === fullName 
+          currentRepository: state.currentRepository?.full_name === fullName
             ? null 
             : state.currentRepository,
           isLoading: false,
@@ -175,8 +180,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
-        error.response.data !== null && 'message' in error.response.data
-        ? String(error.response.data.message)
+        error.response.data !== null && 'error' in error.response.data
+        ? String(error.response.data.error)
         : 'Failed to delete repository';
       
       set({
@@ -191,12 +196,14 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ error: null });
   },
 
-  clearRepositories: () => {
-    set({ 
-      repositories: [], 
-      currentRepository: null, 
-      pagination: null,
-      error: null 
+  resetRepositories: () => {
+    set({
+      repositories: [],
+      currentRepository: null,
+      error: null,
+      totalCount: 0,
+      currentPage: 1,
+      totalPages: 1,
     });
   },
 }));
