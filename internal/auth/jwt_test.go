@@ -36,7 +36,7 @@ func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
 	}
 
 	if claims.UserID != user.ID {
-		t.Errorf("Expected user ID %d, got %d", user.ID, claims.UserID)
+		t.Errorf("Expected user ID %s, got %s", user.ID, claims.UserID)
 	}
 
 	if claims.Username != user.Username {
