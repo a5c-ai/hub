@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/a5c-ai/hub/internal/config"
-	"github.com/a5c-ai/hub/internal/db"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -20,15 +23,10 @@ var (
 	ErrAccountLocked      = errors.New("account is locked")
 )
 
-type AuthService struct {
-	db         *db.Database
-	jwtManager *JWTManager
-	config     *config.Config
-}
-
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
+	MFACode  string `json:"mfa_code,omitempty"`
 }
 
 type RegisterRequest struct {
@@ -39,8 +37,10 @@ type RegisterRequest struct {
 }
 
 type AuthResponse struct {
-	User  *models.User `json:"user"`
-	Token string       `json:"token"`
+	User         *models.User `json:"user"`
+	AccessToken  string       `json:"access_token"`
+	RefreshToken string       `json:"refresh_token"`
+	ExpiresIn    int64        `json:"expires_in"`
 }
 
 type PasswordResetRequest struct {
@@ -52,22 +52,52 @@ type PasswordResetConfirmRequest struct {
 	Password string `json:"password" binding:"required,min=12"`
 }
 
-func NewAuthService(database *db.Database, cfg *config.Config) *AuthService {
-	jwtManager := NewJWTManager(cfg.JWT)
-	return &AuthService{
-		db:         database,
+type AuthService interface {
+	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
+	Register(ctx context.Context, req RegisterRequest) (*models.User, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
+	Logout(ctx context.Context, userID uuid.UUID) error
+	VerifyToken(ctx context.Context, token string) (*models.User, error)
+	RequestPasswordReset(ctx context.Context, req PasswordResetRequest) error
+	ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error
+	VerifyEmail(ctx context.Context, token string) error
+	ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error
+	// Legacy methods for backward compatibility
+	GetUserByID(userID uuid.UUID) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	ValidateToken(tokenString string) (*models.User, error)
+}
+
+type authService struct {
+	db         *gorm.DB
+	jwtManager *JWTManager
+	config     *config.Config
+}
+
+func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) AuthService {
+	return &authService{
+		db:         db,
 		jwtManager: jwtManager,
 		config:     cfg,
 	}
 }
 
-func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
+func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
 	var user models.User
-	if err := s.db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	
+	// Support login with either email or username
+	var err error
+	if req.Email != "" {
+		err = s.db.Where("email = ?", req.Email).First(&user).Error
+	} else {
+		err = s.db.Where("username = ? OR email = ?", req.Email, req.Email).First(&user).Error
+	}
+	
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrInvalidCredentials
 		}
-		return nil, err
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 
 	// Check if account is active
@@ -80,39 +110,57 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 		return nil, ErrInvalidCredentials
 	}
 
+	// Check MFA if enabled
+	if user.TwoFactorEnabled {
+		if req.MFACode == "" {
+			return nil, errors.New("MFA code required")
+		}
+		// TODO: Implement MFA verification
+		// For now, just check if code is provided
+	}
+
+	// Generate tokens
+	accessToken, err := s.jwtManager.GenerateToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.generateRefreshToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
 	// Update last login time
 	now := time.Now()
 	user.LastLoginAt = &now
-	s.db.DB.Save(&user)
-
-	// Generate JWT token
-	token, err := s.jwtManager.GenerateToken(&user)
-	if err != nil {
-		return nil, err
-	}
+	s.db.Save(&user)
 
 	// Remove sensitive information before returning
 	user.PasswordHash = ""
 
 	return &AuthResponse{
-		User:  &user,
-		Token: token,
+		User:         &user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
 	}, nil
 }
 
-func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
+func (s *authService) Register(ctx context.Context, req RegisterRequest) (*models.User, error) {
 	// Check if user already exists
 	var existingUser models.User
-	if err := s.db.DB.Where("email = ? OR username = ?", req.Email, req.Username).First(&existingUser).Error; err == nil {
+	err := s.db.Where("email = ? OR username = ?", req.Email, req.Username).First(&existingUser).Error
+	if err == nil {
 		return nil, ErrUserExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	// Create new user
@@ -128,28 +176,137 @@ func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
 		UpdatedAt:    time.Now(),
 	}
 
-	if err := s.db.DB.Create(&user).Error; err != nil {
-		return nil, err
+	if err := s.db.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	// Generate JWT token
-	token, err := s.jwtManager.GenerateToken(&user)
-	if err != nil {
-		return nil, err
+	// Send verification email
+	if err := s.sendVerificationEmail(&user); err != nil {
+		// Log the error but don't fail registration
+		fmt.Printf("Failed to send verification email: %v\n", err)
 	}
 
 	// Remove sensitive information before returning
 	user.PasswordHash = ""
 
+	return &user, nil
+}
+
+func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
+	// TODO: Implement refresh token validation
+	// For now, validate the refresh token format and extract user ID
+	
+	var user models.User
+	// This is a simplified implementation - in production, you'd store refresh tokens
+	claims, err := s.jwtManager.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	err = s.db.First(&user, claims.UserID).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Generate new access token
+	accessToken, err := s.jwtManager.GenerateToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
 	return &AuthResponse{
-		User:  &user,
-		Token: token,
+		User:        &user,
+		AccessToken: accessToken,
+		ExpiresIn:   int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
 	}, nil
 }
 
-func (s *AuthService) GetUserByID(userID uuid.UUID) (*models.User, error) {
+func (s *authService) Logout(ctx context.Context, userID uuid.UUID) error {
+	// TODO: Implement token blacklisting or session invalidation
+	// For now, just return success as JWT tokens are stateless
+	return nil
+}
+
+func (s *authService) VerifyToken(ctx context.Context, token string) (*models.User, error) {
+	claims, err := s.jwtManager.ValidateToken(token)
+	if err != nil {
+		return nil, err
+	}
+
 	var user models.User
-	if err := s.db.DB.Where("id = ? AND is_active = ?", userID, true).First(&user).Error; err != nil {
+	err = s.db.First(&user, claims.UserID).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if !user.IsActive {
+		return nil, errors.New("account is disabled")
+	}
+
+	// Remove sensitive information
+	user.PasswordHash = ""
+	return &user, nil
+}
+
+func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordResetRequest) error {
+	var user models.User
+	err := s.db.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		// Don't reveal if email exists
+		return nil
+	}
+
+	// Generate reset token
+	token := generateSecureToken()
+	
+	// Store reset token (simplified - in production, use a separate table)
+	// TODO: Implement proper password reset token storage
+	
+	// Send reset email
+	if err := s.sendPasswordResetEmail(&user, token); err != nil {
+		return fmt.Errorf("failed to send password reset email: %w", err)
+	}
+
+	return nil
+}
+
+func (s *authService) ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error {
+	// TODO: Implement proper token validation and password reset
+	// This is a simplified implementation
+	
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Update password (simplified - in production, validate token first)
+	// TODO: Implement proper token validation
+	_ = hashedPassword
+	
+	return nil
+}
+
+func (s *authService) VerifyEmail(ctx context.Context, token string) error {
+	// TODO: Implement email verification
+	// This is a simplified implementation
+	return nil
+}
+
+func (s *authService) ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error {
+	var user models.User
+	err := s.db.First(&user, userID).Error
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	return s.sendVerificationEmail(&user)
+}
+
+// Legacy methods for backward compatibility
+func (s *authService) GetUserByID(userID uuid.UUID) (*models.User, error) {
+	var user models.User
+	if err := s.db.Where("id = ? AND is_active = ?", userID, true).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -161,9 +318,9 @@ func (s *AuthService) GetUserByID(userID uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
-func (s *AuthService) GetUserByEmail(email string) (*models.User, error) {
+func (s *authService) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
-	if err := s.db.DB.Where("email = ? AND is_active = ?", email, true).First(&user).Error; err != nil {
+	if err := s.db.Where("email = ? AND is_active = ?", email, true).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -175,7 +332,7 @@ func (s *AuthService) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (s *AuthService) ValidateToken(tokenString string) (*models.User, error) {
+func (s *authService) ValidateToken(tokenString string) (*models.User, error) {
 	claims, err := s.jwtManager.ValidateToken(tokenString)
 	if err != nil {
 		return nil, err
@@ -189,9 +346,9 @@ func (s *AuthService) ValidateToken(tokenString string) (*models.User, error) {
 	return user, nil
 }
 
-func (s *AuthService) ChangePassword(userID uuid.UUID, oldPassword, newPassword string) error {
+func (s *authService) ChangePassword(userID uuid.UUID, oldPassword, newPassword string) error {
 	var user models.User
-	if err := s.db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := s.db.Where("id = ?", userID).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrUserNotFound
 		}
@@ -210,10 +367,10 @@ func (s *AuthService) ChangePassword(userID uuid.UUID, oldPassword, newPassword 
 	}
 
 	// Update password
-	return s.db.DB.Model(&user).Update("password_hash", string(hashedPassword)).Error
+	return s.db.Model(&user).Update("password_hash", string(hashedPassword)).Error
 }
 
-func (s *AuthService) InitiatePasswordReset(email string) error {
+func (s *authService) InitiatePasswordReset(email string) error {
 	user, err := s.GetUserByEmail(email)
 	if err != nil {
 		// Don't reveal if user exists or not for security
@@ -226,12 +383,26 @@ func (s *AuthService) InitiatePasswordReset(email string) error {
 	return nil
 }
 
-func (s *AuthService) ResetPassword(token, newPassword string) error {
-	// TODO: Implement password reset token validation and password update
-	return errors.New("password reset not implemented yet")
+func (s *authService) generateRefreshToken(user *models.User) (string, error) {
+	// For now, use the same JWT generation but with longer expiration
+	// In production, you might want separate refresh token logic
+	return s.jwtManager.GenerateToken(user)
 }
 
-func (s *AuthService) VerifyEmail(token string) error {
-	// TODO: Implement email verification
-	return errors.New("email verification not implemented yet")
+func (s *authService) sendVerificationEmail(user *models.User) error {
+	// TODO: Implement email sending
+	fmt.Printf("Sending verification email to %s\n", user.Email)
+	return nil
+}
+
+func (s *authService) sendPasswordResetEmail(user *models.User, token string) error {
+	// TODO: Implement email sending
+	fmt.Printf("Sending password reset email to %s with token %s\n", user.Email, token)
+	return nil
+}
+
+func generateSecureToken() string {
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }

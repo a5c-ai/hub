@@ -1,0 +1,66 @@
+name: Infrastructure Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'development' }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ~1.5
+        
+    - name: Azure CLI login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Terraform Init
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform init
+        
+    - name: Terraform Validate
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform validate
+        
+    - name: Terraform Plan
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform plan -out=tfplan
+        
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main'
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform apply -auto-approve tfplan
