@@ -7,9 +7,11 @@ import (
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/controllers"
 	"github.com/a5c-ai/hub/internal/db"
+	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/middleware"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,7 +19,22 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	cfg, _ := config.Load()
 	jwtManager := auth.NewJWTManager(cfg.JWT)
 
-	// Initialize services
+	// Initialize authentication services
+	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
+	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
+	authHandlers := NewAuthHandlers(authService, oauthService)
+
+	// Initialize Git services
+	gitService := git.NewGitService(logger)
+	repoBasePath := cfg.Storage.RepositoryPath
+	if repoBasePath == "" {
+		repoBasePath = "/var/lib/hub/repositories"
+	}
+	
+	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
+	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
+
+	// Initialize organization services
 	activityService := services.NewActivityService(database.DB)
 	orgService := services.NewOrganizationService(database.DB, activityService)
 	memberService := services.NewMembershipService(database.DB, activityService)
@@ -26,7 +43,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	teamMembershipService := services.NewTeamMembershipService(database.DB, activityService)
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
-	// Initialize controllers
+	// Initialize handlers
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, logger)
+	gitHandlers := NewGitHandlers(repositoryService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -46,24 +65,51 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		})
 	})
 
+	// Git HTTP protocol endpoints (no authentication required for public repos)
+	git := router.Group("/")
+	git.Use(gitHandlers.GitMiddleware())
+	{
+		git.GET("/:owner/:repo.git/info/refs", gitHandlers.InfoRefs)
+		git.POST("/:owner/:repo.git/git-upload-pack", gitHandlers.UploadPack)
+		git.POST("/:owner/:repo.git/git-receive-pack", gitHandlers.ReceivePack)
+	}
+
 	v1 := router.Group("/api/v1")
 	{
 		v1.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "pong"})
 		})
 
-		auth := v1.Group("/auth")
+		authGroup := v1.Group("/auth")
 		{
-			auth.POST("/login", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Login endpoint - to be implemented"})
-			})
-			auth.POST("/register", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Register endpoint - to be implemented"})
-			})
-			auth.POST("/logout", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Logout endpoint - to be implemented"})
-			})
+			// Basic authentication
+			authGroup.POST("/login", authHandlers.Login)
+			authGroup.POST("/register", authHandlers.Register)
+			authGroup.POST("/refresh", authHandlers.RefreshToken)
+			authGroup.POST("/forgot-password", authHandlers.ForgotPassword)
+			authGroup.POST("/reset-password", authHandlers.ResetPassword)
+			authGroup.GET("/verify-email", authHandlers.VerifyEmail)
+			
+			// OAuth endpoints
+			oauth := authGroup.Group("/oauth")
+			{
+				oauth.GET("/:provider", authHandlers.OAuthRedirect)
+				oauth.GET("/:provider/callback", authHandlers.OAuthCallback)
+			}
+			
+			// Protected auth endpoints
+			protected := authGroup.Group("/")
+			protected.Use(middleware.AuthMiddleware(jwtManager))
+			{
+				protected.POST("/logout", authHandlers.Logout)
+			}
 		}
+
+		// Public repository endpoints (for public repos)
+		v1.GET("/repositories", repoHandlers.ListRepositories)
+		v1.GET("/repositories/:owner/:repo", repoHandlers.GetRepository)
+		v1.GET("/repositories/:owner/:repo/branches", repoHandlers.GetBranches)
+		v1.GET("/repositories/:owner/:repo/branches/:branch", repoHandlers.GetBranch)
 
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
@@ -72,14 +118,21 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
 			protected.GET("/profile", func(c *gin.Context) {
-				userID, _ := c.Get("user_id")
-				username, _ := c.Get("username")
-				email, _ := c.Get("email")
-				
+				userID, exists := c.Get("user_id")
+				if !exists {
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+					return
+				}
+
+				user, err := authService.GetUserByID(userID.(uuid.UUID))
+				if err != nil {
+					c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+					return
+				}
+
 				c.JSON(http.StatusOK, gin.H{
-					"user_id":  userID,
-					"username": username,
-					"email":    email,
+					"success": true,
+					"data":    user,
 				})
 			})
 
@@ -94,17 +147,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				})
 			}
 
+			// Protected repository endpoints
 			repos := protected.Group("/repositories")
 			{
-				repos.GET("/", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "List repositories endpoint - to be implemented"})
-				})
-				repos.POST("/", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "Create repository endpoint - to be implemented"})
-				})
-				repos.GET("/:owner/:repo", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "Get repository endpoint - to be implemented"})
-				})
+				repos.POST("/", repoHandlers.CreateRepository)
+				repos.PATCH("/:owner/:repo", repoHandlers.UpdateRepository)
+				repos.DELETE("/:owner/:repo", repoHandlers.DeleteRepository)
+				
+				// Branch operations
+				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
+				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
 			}
 
 			// Organization management endpoints

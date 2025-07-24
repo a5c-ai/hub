@@ -12,17 +12,20 @@ interface AuthState {
 }
 
 interface AuthActions {
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: { username: string; email: string; password: string; name: string }) => Promise<void>;
+  login: (email: string, password: string, mfaCode?: string) => Promise<void>;
+  register: (userData: { username: string; email: string; password: string; full_name: string }) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
   clearError: () => void;
   checkAuth: () => Promise<void>;
+  refreshToken: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // State
       user: null,
       token: null,
@@ -31,28 +34,31 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       error: null,
 
       // Actions
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, mfaCode?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login(email, password);
+          const response = await authApi.login(email, password, mfaCode);
           if (response.success && response.data) {
             const authData = response.data as AuthUser;
             set({
               user: authData.user,
-              token: authData.token,
+              token: authData.access_token,
               isAuthenticated: true,
               isLoading: false,
               error: null,
             });
-            // Store token in localStorage for API requests
-            localStorage.setItem('auth_token', authData.token);
+            // Store tokens in localStorage
+            localStorage.setItem('auth_token', authData.access_token);
+            if (authData.refresh_token) {
+              localStorage.setItem('refresh_token', authData.refresh_token);
+            }
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error && 'response' in error && 
             typeof error.response === 'object' && error.response !== null &&
             'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'message' in error.response.data
-            ? String(error.response.data.message)
+            error.response.data !== null && 'error' in error.response.data
+            ? String(error.response.data.error)
             : 'Login failed';
           
           set({
@@ -63,28 +69,27 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (userData: { username: string; email: string; password: string; name: string }) => {
+      register: async (userData: { username: string; email: string; password: string; full_name: string }) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.register(userData);
           if (response.success && response.data) {
-            const authData = response.data as AuthUser;
+            // Registration returns a user object, not an auth response
+            const user = response.data as User;
             set({
-              user: authData.user,
-              token: authData.token,
-              isAuthenticated: true,
+              user: user,
+              token: null, // No auto-login after registration
+              isAuthenticated: false,
               isLoading: false,
               error: null,
             });
-            // Store token in localStorage for API requests
-            localStorage.setItem('auth_token', authData.token);
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error && 'response' in error && 
             typeof error.response === 'object' && error.response !== null &&
             'data' in error.response && typeof error.response.data === 'object' &&
-            error.response.data !== null && 'message' in error.response.data
-            ? String(error.response.data.message)
+            error.response.data !== null && 'error' in error.response.data
+            ? String(error.response.data.error)
             : 'Registration failed';
           
           set({
@@ -98,6 +103,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       logout: () => {
         // Clear localStorage
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
         // Reset state
         set({
           user: null,
@@ -110,6 +116,78 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // Ignore errors on logout API call
         });
       },
+
+      refreshToken: async () => {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        try {
+          const response = await authApi.refreshToken(refreshToken);
+          if (response.success && response.data) {
+            const authData = response.data as AuthUser;
+            set({
+              token: authData.access_token,
+            });
+            localStorage.setItem('auth_token', authData.access_token);
+          }
+        } catch (error) {
+          // Refresh token is invalid, logout user
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            error: null,
+          });
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+          throw error;
+        }
+      },
+
+      forgotPassword: async (email: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authApi.forgotPassword(email);
+          set({ isLoading: false });
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error && 'response' in error && 
+            typeof error.response === 'object' && error.response !== null &&
+            'data' in error.response && typeof error.response.data === 'object' &&
+            error.response.data !== null && 'error' in error.response.data
+            ? String(error.response.data.error)
+            : 'Failed to send password reset email';
+          
+          set({
+            isLoading: false,
+            error: errorMessage,
+          });
+          throw error;
+        }
+      },
+
+      resetPassword: async (token: string, password: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authApi.resetPassword(token, password);
+          set({ isLoading: false });
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error && 'response' in error && 
+            typeof error.response === 'object' && error.response !== null &&
+            'data' in error.response && typeof error.response.data === 'object' &&
+            error.response.data !== null && 'error' in error.response.data
+            ? String(error.response.data.error)
+            : 'Failed to reset password';
+          
+          set({
+            isLoading: false,
+            error: errorMessage,
+          });
+          throw error;
+        }
+      },
+
 
       setUser: (user: User) => {
         set({ user });

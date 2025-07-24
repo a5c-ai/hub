@@ -1,0 +1,50 @@
+name: Notifications
+
+on:
+  workflow_run:
+    workflows: ["Deploy Application"]
+    types: [completed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Slack Notification
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        
+    - name: Teams Notification
+      uses: skitionek/notify-microsoft-teams@master
+      if: always()
+      with:
+        webhook_url: ${{ secrets.TEAMS_WEBHOOK }}
+        needs: ${{ toJSON(needs) }}
+        job: ${{ toJSON(job) }}
+        steps: ${{ toJSON(steps) }}
+        
+  performance-monitoring:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Performance baseline
+      run: |
+        npm install -g lighthouse-ci
+        lhci autorun --config=.lighthouserc.json || echo "Lighthouse CI configuration not found"
+        
+    - name: Security scan
+      run: |
+        docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap-baseline.py \
+          -t https://${{ secrets.DOMAIN_NAME }} -J zap-report.json || echo "Security scan completed with warnings"

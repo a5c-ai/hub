@@ -72,7 +72,7 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" data-testid="main-header">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-4">
           <Button
@@ -80,6 +80,7 @@ export function Header() {
             size="icon"
             onClick={toggleSidebar}
             className="md:hidden"
+            data-testid="mobile-menu-button"
           >
             <Bars3Icon className="h-5 w-5" />
           </Button>
@@ -128,15 +129,16 @@ export function Header() {
 
           <Dropdown
             trigger={
-              <button className="flex items-center space-x-2">
+              <button className="flex items-center space-x-2" data-testid="user-menu">
                 <Avatar
                   src={user?.avatar_url}
                   name={user?.name || user?.username}
                   size="sm"
+                  data-testid="user-avatar"
                 />
               </button>
             }
-            items={userMenuItems}
+            items={userMenuItems.map(item => ({ ...item, ...(item.label === 'Sign out' ? { 'data-testid': 'logout-button' } : {}) }))}
           />
         </div>
       </div>
