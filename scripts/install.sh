@@ -75,9 +75,18 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     log "Found Node.js version: $NODE_VERSION"
     log "Found npm version: $NPM_VERSION"
     
-    # Clean install for reproducible builds
+    # Clean install for reproducible builds  
     if [[ -f "package-lock.json" ]]; then
-        npm ci
+        # Optimize for CI environments
+        if [[ "$CI" == "true" ]]; then
+            log "CI environment detected, using optimized npm ci..."
+            npm ci --prefer-offline --no-audit --no-fund --progress=false
+            # Force rebuild native dependencies for CI environment
+            log "Rebuilding native dependencies..."
+            npm rebuild --verbose
+        else
+            npm ci
+        fi
     else
         npm install
     fi

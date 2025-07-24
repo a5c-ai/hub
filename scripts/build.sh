@@ -84,8 +84,15 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export NODE_ENV=$BUILD_ENV
     export NEXT_TELEMETRY_DISABLED=1
     
-    # Build the frontend
-    npm run build
+    # Optimize for CI environments
+    if [[ "$CI" == "true" ]]; then
+        log "CI environment detected, optimizing build settings..."
+        export NODE_OPTIONS="--max-old-space-size=4096"
+        export NEXT_EXPERIMENTAL_BUILD_WORKER_THREADS=2
+    fi
+    
+    # Build the frontend with timeout handling
+    timeout 600 npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
