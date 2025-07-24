@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/a5c-ai/hub/internal/config"
-	"github.com/a5c-ai/hub/internal/models"
+	"github.com/a5c-ai/hub/internal/db/migrations"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -31,15 +31,25 @@ func Connect(cfg config.Database) (*Database, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
+	// Configure connection pool for optimal performance
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
-
-	if err := db.AutoMigrate(&models.User{}); err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err)
-	}
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	return &Database{db}, nil
+}
+
+// Migrate runs all pending database migrations
+func (d *Database) Migrate() error {
+	migrator := migrations.NewMigrator(d.DB)
+	return migrator.Migrate()
+}
+
+// Rollback rolls back the last migration
+func (d *Database) Rollback() error {
+	migrator := migrations.NewMigrator(d.DB)
+	return migrator.Rollback()
 }
 
 func (d *Database) Close() error {

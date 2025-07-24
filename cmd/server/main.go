@@ -33,6 +33,13 @@ func main() {
 		logger.Fatal("Failed to connect to database:", err)
 	}
 
+	// Run database migrations
+	logger.Info("Running database migrations...")
+	if err := database.Migrate(); err != nil {
+		logger.Fatal("Failed to run database migrations:", err)
+	}
+	logger.Info("Database migrations completed successfully")
+
 	if cfg.Environment == "development" {
 		gin.SetMode(gin.DebugMode)
 	} else {
