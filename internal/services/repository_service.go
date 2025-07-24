@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/a5c-ai/hub/internal/git"
@@ -191,8 +192,35 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 
 // Get retrieves a repository by owner and name
 func (s *repositoryService) Get(ctx context.Context, owner, name string) (*models.Repository, error) {
+	// First, resolve the owner name to owner ID and type
+	var ownerID uuid.UUID
+	var ownerType models.OwnerType
+
+	// Try to find a user with this username
+	var user models.User
+	err := s.db.Where("username = ?", owner).First(&user).Error
+	if err == nil {
+		ownerID = user.ID
+		ownerType = models.OwnerTypeUser
+	} else if err == gorm.ErrRecordNotFound {
+		// Try to find an organization with this name
+		var org models.Organization
+		err = s.db.Where("name = ?", owner).First(&org).Error
+		if err == nil {
+			ownerID = org.ID
+			ownerType = models.OwnerTypeOrganization
+		} else if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("repository not found")
+		} else {
+			return nil, fmt.Errorf("failed to find organization: %w", err)
+		}
+	} else {
+		return nil, fmt.Errorf("failed to find user: %w", err)
+	}
+
+	// Now find the repository with the resolved owner ID
 	var repo models.Repository
-	err := s.db.Where("owner_id = ? AND name = ?", owner, name).First(&repo).Error
+	err = s.db.Where("owner_id = ? AND owner_type = ? AND name = ?", ownerID, ownerType, name).First(&repo).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("repository not found")
@@ -389,8 +417,25 @@ func (s *repositoryService) InitializeGitRepository(ctx context.Context, repoID 
 		return fmt.Errorf("failed to create repository directory: %w", err)
 	}
 
+	// Check if repository already exists
+	if _, err := os.Stat(repoPath); err == nil {
+		s.logger.WithField("path", repoPath).Info("Repository already exists on filesystem")
+		return nil
+	}
+
 	// Initialize bare repository
-	return s.gitService.InitRepository(ctx, repoPath, true)
+	if err := s.gitService.InitRepository(ctx, repoPath, true); err != nil {
+		return fmt.Errorf("failed to initialize Git repository: %w", err)
+	}
+
+	// Set up Git hooks and configuration for the repository
+	if err := s.setupRepositoryHooks(ctx, repoPath); err != nil {
+		s.logger.WithError(err).Warn("Failed to setup repository hooks")
+		// Don't fail the entire operation for hook setup failure
+	}
+
+	s.logger.WithField("path", repoPath).Info("Git repository initialized successfully")
+	return nil
 }
 
 // GetRepositoryPath returns the filesystem path for a repository
@@ -471,4 +516,113 @@ func (s *repositoryService) Unarchive(ctx context.Context, id uuid.UUID) error {
 func (s *repositoryService) SyncCommits(ctx context.Context, repoID uuid.UUID) error {
 	// TODO: Implement commit synchronization from Git to database
 	return fmt.Errorf("SyncCommits not yet implemented")
+}
+
+// setupRepositoryHooks sets up Git hooks for the repository
+func (s *repositoryService) setupRepositoryHooks(ctx context.Context, repoPath string) error {
+	hooksDir := filepath.Join(repoPath, "hooks")
+	
+	// Create hooks directory if it doesn't exist
+	if err := os.MkdirAll(hooksDir, 0755); err != nil {
+		return fmt.Errorf("failed to create hooks directory: %w", err)
+	}
+
+	// TODO: Add pre-receive and post-receive hooks for:
+	// - Authentication/authorization checks
+	// - Commit validation
+	// - Webhook notifications
+	// - Database synchronization
+	
+	s.logger.WithField("hooks_dir", hooksDir).Debug("Repository hooks directory created")
+	return nil
+}
+
+// CleanupRepositoryStorage removes orphaned repository directories
+func (s *repositoryService) CleanupRepositoryStorage(ctx context.Context) error {
+	s.logger.Info("Starting repository storage cleanup")
+	
+	// Walk through the repository base path and check for orphaned directories
+	err := filepath.Walk(s.repoBasePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		
+		// Skip if not a .git directory
+		if !info.IsDir() || !strings.HasSuffix(path, ".git") {
+			return nil
+		}
+		
+		// Extract repository info from path
+		relPath, err := filepath.Rel(s.repoBasePath, path)
+		if err != nil {
+			return nil // Skip this path
+		}
+		
+		parts := strings.Split(relPath, string(filepath.Separator))
+		if len(parts) != 3 { // owner_type/owner_id/repo_name.git
+			return nil // Skip malformed paths
+		}
+		
+		ownerType := parts[0]
+		ownerIDStr := parts[1]
+		repoName := strings.TrimSuffix(parts[2], ".git")
+		
+		// Parse owner ID
+		ownerID, err := uuid.Parse(ownerIDStr)
+		if err != nil {
+			return nil // Skip invalid UUIDs
+		}
+		
+		// Check if repository exists in database
+		var count int64
+		err = s.db.Model(&models.Repository{}).
+			Where("owner_id = ? AND owner_type = ? AND name = ?", ownerID, ownerType, repoName).
+			Count(&count).Error
+		if err != nil {
+			s.logger.WithError(err).Warn("Failed to check repository existence")
+			return nil
+		}
+		
+		// Remove orphaned directory
+		if count == 0 {
+			s.logger.WithField("path", path).Info("Removing orphaned repository directory")
+			if err := os.RemoveAll(path); err != nil {
+				s.logger.WithError(err).Error("Failed to remove orphaned directory")
+			}
+		}
+		
+		return nil
+	})
+	
+	if err != nil {
+		return fmt.Errorf("failed to cleanup repository storage: %w", err)
+	}
+	
+	s.logger.Info("Repository storage cleanup completed")
+	return nil
+}
+
+// GetRepositorySize calculates the size of a repository on disk
+func (s *repositoryService) GetRepositorySize(ctx context.Context, repoID uuid.UUID) (int64, error) {
+	repoPath, err := s.GetRepositoryPath(ctx, repoID)
+	if err != nil {
+		return 0, err
+	}
+	
+	var size int64
+	err = filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate repository size: %w", err)
+	}
+	
+	return size, nil
 }

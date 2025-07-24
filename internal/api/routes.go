@@ -44,7 +44,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
 	// Initialize handlers
-	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, logger)
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
@@ -110,6 +110,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo", repoHandlers.GetRepository)
 		v1.GET("/repositories/:owner/:repo/branches", repoHandlers.GetBranches)
 		v1.GET("/repositories/:owner/:repo/branches/:branch", repoHandlers.GetBranch)
+		
+		// Git content endpoints (public access)
+		v1.GET("/repositories/:owner/:repo/commits", repoHandlers.GetCommits)
+		v1.GET("/repositories/:owner/:repo/commits/:sha", repoHandlers.GetCommit)
+		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
+		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
 
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
