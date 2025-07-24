@@ -36,6 +36,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
 	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
 
+	// Initialize issue-related services
+	issueService := services.NewIssueService(database.DB, logger)
+	commentService := services.NewCommentService(database.DB, logger)
+	labelService := services.NewLabelService(database.DB, logger)
+	milestoneService := services.NewMilestoneService(database.DB, logger)
+
 	// Initialize organization services
 	activityService := services.NewActivityService(database.DB)
 	orgService := services.NewOrganizationService(database.DB, activityService)
@@ -49,6 +55,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
+	issueHandlers := NewIssueHandlers(issueService, commentService, labelService, milestoneService, repositoryService, logger)
+	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
+	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
+	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -128,6 +138,17 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo/commits/:sha", repoHandlers.GetCommit)
 		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
 		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
+		
+		// Public issue endpoints (for public repos)
+		v1.GET("/repositories/:owner/:repo/issues", issueHandlers.ListIssues)
+		v1.GET("/repositories/:owner/:repo/issues/search", issueHandlers.SearchIssues)
+		v1.GET("/repositories/:owner/:repo/issues/:number", issueHandlers.GetIssue)
+		v1.GET("/repositories/:owner/:repo/issues/:number/comments", commentHandlers.ListComments)
+		v1.GET("/repositories/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.GetComment)
+		v1.GET("/repositories/:owner/:repo/labels", labelHandlers.ListLabels)
+		v1.GET("/repositories/:owner/:repo/labels/:name", labelHandlers.GetLabel)
+		v1.GET("/repositories/:owner/:repo/milestones", milestoneHandlers.ListMilestones)
+		v1.GET("/repositories/:owner/:repo/milestones/:number", milestoneHandlers.GetMilestone)
 
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
@@ -189,6 +210,38 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
 				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
 				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
+				
+				// Issue operations (require authentication)
+				repos.POST("/:owner/:repo/issues", issueHandlers.CreateIssue)
+				repos.PATCH("/:owner/:repo/issues/:number", issueHandlers.UpdateIssue)
+				repos.POST("/:owner/:repo/issues/:number/close", issueHandlers.CloseIssue)
+				repos.POST("/:owner/:repo/issues/:number/reopen", issueHandlers.ReopenIssue)
+				repos.POST("/:owner/:repo/issues/:number/lock", issueHandlers.LockIssue)
+				repos.POST("/:owner/:repo/issues/:number/unlock", issueHandlers.UnlockIssue)
+				
+				// Comment operations (require authentication)
+				repos.POST("/:owner/:repo/issues/:number/comments", commentHandlers.CreateComment)
+				repos.PATCH("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.UpdateComment)
+				repos.DELETE("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.DeleteComment)
+				
+				// Label operations (require authentication)
+				repos.POST("/:owner/:repo/labels", labelHandlers.CreateLabel)
+				repos.PATCH("/:owner/:repo/labels/:name", labelHandlers.UpdateLabel)
+				repos.DELETE("/:owner/:repo/labels/:name", labelHandlers.DeleteLabel)
+				
+				// Milestone operations (require authentication)
+				repos.POST("/:owner/:repo/milestones", milestoneHandlers.CreateMilestone)
+				repos.PATCH("/:owner/:repo/milestones/:number", milestoneHandlers.UpdateMilestone)
+				repos.DELETE("/:owner/:repo/milestones/:number", milestoneHandlers.DeleteMilestone)
+				repos.POST("/:owner/:repo/milestones/:number/close", milestoneHandlers.CloseMilestone)
+				repos.POST("/:owner/:repo/milestones/:number/reopen", milestoneHandlers.ReopenMilestone)
+			}
+			
+			// Admin-only operations
+			adminRepos := protected.Group("/repositories")
+			adminRepos.Use(middleware.AdminMiddleware())
+			{
+				adminRepos.DELETE("/:owner/:repo/issues/:number", issueHandlers.DeleteIssue)
 			}
 
 			// Organization management endpoints

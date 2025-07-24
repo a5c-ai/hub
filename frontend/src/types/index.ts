@@ -80,7 +80,7 @@ export interface Issue {
   assignee_id?: string;
   milestone_id?: string;
   state: 'open' | 'closed';
-  state_reason: string;
+  state_reason?: string;
   locked: boolean;
   comments_count: number;
   closed_at?: string;
@@ -88,8 +88,20 @@ export interface Issue {
   updated_at: string;
   user?: User;
   assignee?: User;
+  assignees?: User[];
   labels: Label[];
+  milestone?: Milestone;
+  repository?: Repository;
   pull_request?: PullRequest;
+}
+
+export interface Comment {
+  id: string;
+  issue_id: string;
+  user?: User;
+  body: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Label {
@@ -104,10 +116,12 @@ export interface Label {
 
 export interface Milestone {
   id: string;
+  number: number;
   title: string;
   description?: string;
   state: 'open' | 'closed';
   due_on?: string;
+  closed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -135,6 +149,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// Pull Request related types
 export interface Review {
   id: string;
   pull_request_id: string;
@@ -214,6 +229,71 @@ export interface CreateReviewCommentRequest {
   start_line?: number;
   start_side: 'LEFT' | 'RIGHT';
   body: string;
+}
+
+// Issue-specific request/response types
+export interface CreateIssueRequest {
+  title: string;
+  body?: string;
+  assignee_id?: string;
+  milestone_id?: string;
+  label_ids?: string[];
+}
+
+export interface UpdateIssueRequest {
+  title?: string;
+  body?: string;
+  state?: 'open' | 'closed';
+  state_reason?: string;
+  assignee_id?: string;
+  milestone_id?: string;
+  label_ids?: string[];
+}
+
+export interface IssueFilters {
+  state?: 'open' | 'closed';
+  sort?: 'created' | 'updated' | 'comments';
+  direction?: 'asc' | 'desc';
+  assignee?: string;
+  creator?: string;
+  milestone?: string;
+  labels?: string;
+  since?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface CreateCommentRequest {
+  body: string;
+}
+
+export interface UpdateCommentRequest {
+  body: string;
+}
+
+export interface CreateLabelRequest {
+  name: string;
+  color: string;
+  description?: string;
+}
+
+export interface UpdateLabelRequest {
+  name?: string;
+  color?: string;
+  description?: string;
+}
+
+export interface CreateMilestoneRequest {
+  title: string;
+  description?: string;
+  due_on?: string;
+}
+
+export interface UpdateMilestoneRequest {
+  title?: string;
+  description?: string;
+  state?: 'open' | 'closed';
+  due_on?: string;
 }
 
 export interface AuthState {
