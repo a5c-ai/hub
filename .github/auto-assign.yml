@@ -1,0 +1,40 @@
+# Auto-assign configuration for pull requests
+addReviewers: true
+addAssignees: false
+
+reviewers:
+  - tmuskal
+
+# Number of reviewers to add to the pull request
+numberOfReviewers: 1
+
+# Keywords that will skip the auto-assignment
+skipKeywords:
+  - wip
+  - draft
+  - "[WIP]"
+  - "[DRAFT]"
+
+# Auto-assign based on file patterns
+useReviewGroups: true
+reviewGroups:
+  backend:
+    - "**/*.go"
+    - "**/go.mod"
+    - "**/go.sum"
+    - "cmd/**"
+    - "internal/**"
+  frontend:
+    - "frontend/**"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+  infrastructure:
+    - "terraform/**"
+    - "k8s/**"
+    - "**/*.yml"
+    - "**/*.yaml"
+  documentation:
+    - "**/*.md"
+    - "docs/**"
