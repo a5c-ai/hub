@@ -83,17 +83,44 @@ export const apiClient = {
 
 // Auth API methods
 export const authApi = {
-  login: (email: string, password: string) =>
-    apiClient.post('/auth/login', { email, password }),
+  // Basic authentication
+  login: (username: string, password: string, mfaCode?: string) =>
+    apiClient.post('/auth/login', { username, password, mfa_code: mfaCode }),
 
-  register: (userData: { username: string; email: string; password: string; name: string }) =>
+  register: (userData: { username: string; email: string; password: string; full_name?: string }) =>
     apiClient.post('/auth/register', userData),
 
   logout: () => apiClient.post('/auth/logout'),
 
-  refreshToken: () => apiClient.post('/auth/refresh'),
+  refreshToken: (refreshToken: string) => 
+    apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
 
-  getProfile: () => apiClient.get('/auth/profile'),
+  getProfile: () => apiClient.get('/profile'),
+
+  // Password reset
+  forgotPassword: (email: string) =>
+    apiClient.post('/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, password: string) =>
+    apiClient.post('/auth/reset-password', { token, password }),
+
+  // Email verification
+  verifyEmail: (token: string) =>
+    apiClient.get(`/auth/verify-email?token=${token}`),
+
+  // OAuth
+  getOAuthURL: (provider: string, state?: string) =>
+    `/auth/oauth/${provider}?state=${state || ''}`,
+
+  // MFA
+  setupMFA: () => apiClient.post('/auth/mfa/setup'),
+
+  verifyMFA: (secret: string, code: string) =>
+    apiClient.post('/auth/mfa/verify', { secret, code }),
+
+  regenerateBackupCodes: () => apiClient.post('/auth/mfa/backup-codes'),
+
+  disableMFA: () => apiClient.delete('/auth/mfa/disable'),
 };
 
 // User API methods

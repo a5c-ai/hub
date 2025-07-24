@@ -22,7 +22,7 @@ Modern React frontend for the Hub git hosting service built with Next.js 15, Typ
 - **State Management**: Zustand
 - **Forms**: React Hook Form
 - **HTTP Client**: Axios with SWR for data fetching
-- **Testing**: Jest + React Testing Library
+- **Testing**: Jest + React Testing Library + Playwright E2E
 - **Code Quality**: ESLint, Prettier, Husky
 
 ## Getting Started
@@ -61,6 +61,11 @@ Modern React frontend for the Hub git hosting service built with Next.js 15, Typ
 - `npm run test` - Run unit tests
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:ci` - Run tests with coverage
+- `npm run test:e2e` - Run end-to-end tests
+- `npm run test:e2e:ui` - Run E2E tests with UI mode
+- `npm run test:e2e:headed` - Run E2E tests in headed mode
+- `npm run test:e2e:debug` - Debug E2E tests step by step
+- `npm run test:e2e:report` - View E2E test reports
 - `npm run type-check` - Check TypeScript types
 
 ## Project Structure
@@ -115,10 +120,13 @@ The frontend includes a complete authentication system:
 
 ## Testing
 
-The project includes unit tests for all UI components using Jest and React Testing Library:
+The project includes comprehensive testing with both unit and end-to-end tests:
+
+### Unit Tests (Jest + React Testing Library)
+Tests individual components and functions:
 
 ```bash
-# Run tests
+# Run unit tests
 npm run test
 
 # Run tests in watch mode
@@ -127,6 +135,35 @@ npm run test:watch
 # Run tests with coverage
 npm run test:ci
 ```
+
+### End-to-End Tests (Playwright)
+Tests complete user workflows across multiple browsers:
+
+```bash
+# Run all E2E tests
+npm run test:e2e
+
+# Run E2E tests with interactive UI
+npm run test:e2e:ui
+
+# Run E2E tests in visible browser mode
+npm run test:e2e:headed
+
+# Debug E2E tests step by step
+npm run test:e2e:debug
+
+# View E2E test reports
+npm run test:e2e:report
+```
+
+E2E test coverage includes:
+- **Authentication flows** - Login, register, logout
+- **Dashboard functionality** - Repository lists, activity feeds, statistics
+- **Navigation** - Header, sidebar, mobile menu interactions
+- **Responsive design** - Mobile and desktop layouts
+- **Cross-browser compatibility** - Chrome, Firefox, Safari
+
+See `e2e/README.md` for detailed E2E testing documentation.
 
 ## Responsive Design
 

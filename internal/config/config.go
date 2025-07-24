@@ -12,6 +12,9 @@ type Config struct {
 	JWT         JWT        `mapstructure:"jwt"`
 	CORS        CORS       `mapstructure:"cors"`
 	Storage     Storage    `mapstructure:"storage"`
+	OAuth       OAuth      `mapstructure:"oauth"`
+	SAML        SAML       `mapstructure:"saml"`
+	LDAP        LDAP       `mapstructure:"ldap"`
 }
 
 type Server struct {
@@ -38,6 +41,51 @@ type CORS struct {
 
 type Storage struct {
 	RepositoryPath string `mapstructure:"repository_path"`
+}
+
+type OAuth struct {
+	GitHub    GitHubOAuth    `mapstructure:"github"`
+	Google    GoogleOAuth    `mapstructure:"google"`
+	Microsoft MicrosoftOAuth `mapstructure:"microsoft"`
+}
+
+type GitHubOAuth struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	RedirectURL  string `mapstructure:"redirect_url"`
+}
+
+type GoogleOAuth struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	RedirectURL  string `mapstructure:"redirect_url"`
+}
+
+type MicrosoftOAuth struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	RedirectURL  string `mapstructure:"redirect_url"`
+	TenantID     string `mapstructure:"tenant_id"`
+}
+
+type SAML struct {
+	Enabled       bool   `mapstructure:"enabled"`
+	EntityID      string `mapstructure:"entity_id"`
+	SSOURL        string `mapstructure:"sso_url"`
+	Certificate   string `mapstructure:"certificate"`
+	PrivateKey    string `mapstructure:"private_key"`
+	AttributeMap  map[string]string `mapstructure:"attribute_map"`
+}
+
+type LDAP struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	Host       string `mapstructure:"host"`
+	Port       int    `mapstructure:"port"`
+	BaseDN     string `mapstructure:"base_dn"`
+	BindDN     string `mapstructure:"bind_dn"`
+	BindPassword string `mapstructure:"bind_password"`
+	UserFilter string `mapstructure:"user_filter"`
+	AttributeMap map[string]string `mapstructure:"attribute_map"`
 }
 
 func Load() (*Config, error) {

@@ -17,7 +17,20 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	cfg, _ := config.Load()
 	jwtManager := auth.NewJWTManager(cfg.JWT)
 
-	// Initialize services
+	// Initialize authentication services
+	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
+	oauthConfig := auth.OAuthConfig{
+		GitHub: auth.GitHubConfig{
+			ClientID:     "your-github-client-id",
+			ClientSecret: "your-github-client-secret",
+			RedirectURL:  "http://localhost:8080/api/v1/auth/oauth/github/callback",
+		},
+	}
+	oauthService := auth.NewOAuthService(database.DB, oauthConfig, authService)
+	mfaService := auth.NewMFAService(database.DB)
+	authHandlers := NewAuthHandlers(authService, oauthService, mfaService)
+
+	// Initialize Git services
 	gitService := git.NewGitService(logger)
 	repoBasePath := cfg.Storage.RepositoryPath
 	if repoBasePath == "" {
@@ -62,17 +75,38 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			c.JSON(http.StatusOK, gin.H{"message": "pong"})
 		})
 
-		auth := v1.Group("/auth")
+		authGroup := v1.Group("/auth")
 		{
-			auth.POST("/login", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Login endpoint - to be implemented"})
-			})
-			auth.POST("/register", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Register endpoint - to be implemented"})
-			})
-			auth.POST("/logout", func(c *gin.Context) {
-				c.JSON(http.StatusNotImplemented, gin.H{"message": "Logout endpoint - to be implemented"})
-			})
+			// Basic authentication
+			authGroup.POST("/login", authHandlers.Login)
+			authGroup.POST("/register", authHandlers.Register)
+			authGroup.POST("/refresh", authHandlers.RefreshToken)
+			authGroup.POST("/forgot-password", authHandlers.ForgotPassword)
+			authGroup.POST("/reset-password", authHandlers.ResetPassword)
+			authGroup.GET("/verify-email", authHandlers.VerifyEmail)
+			
+			// OAuth endpoints
+			oauth := authGroup.Group("/oauth")
+			{
+				oauth.GET("/:provider", authHandlers.OAuthRedirect)
+				oauth.GET("/:provider/callback", authHandlers.OAuthCallback)
+			}
+			
+			// Protected auth endpoints
+			protected := authGroup.Group("/")
+			protected.Use(middleware.AuthMiddleware(jwtManager))
+			{
+				protected.POST("/logout", authHandlers.Logout)
+				
+				// MFA endpoints
+				mfa := protected.Group("/mfa")
+				{
+					mfa.POST("/setup", authHandlers.SetupMFA)
+					mfa.POST("/verify", authHandlers.VerifyMFA)
+					mfa.POST("/backup-codes", authHandlers.RegenerateBackupCodes)
+					mfa.DELETE("/disable", authHandlers.DisableMFA)
+				}
+			}
 		}
 
 		// Public repository endpoints (for public repos)
