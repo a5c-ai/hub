@@ -33,6 +33,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
+	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
 
 	// Initialize organization services
 	activityService := services.NewActivityService(database.DB)
@@ -46,6 +47,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
+	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -157,6 +159,20 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Branch operations
 				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
 				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
+				
+				// Pull request operations
+				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
+				repos.POST("/:owner/:repo/pulls", prHandlers.CreatePullRequest)
+				repos.GET("/:owner/:repo/pulls/:number", prHandlers.GetPullRequest)
+				repos.PATCH("/:owner/:repo/pulls/:number", prHandlers.UpdatePullRequest)
+				repos.PUT("/:owner/:repo/pulls/:number/merge", prHandlers.MergePullRequest)
+				repos.GET("/:owner/:repo/pulls/:number/files", prHandlers.GetPullRequestFiles)
+				
+				// Review operations
+				repos.POST("/:owner/:repo/pulls/:number/reviews", prHandlers.CreateReview)
+				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
+				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
+				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
 			}
 
 			// Organization management endpoints

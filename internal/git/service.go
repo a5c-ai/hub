@@ -40,6 +40,12 @@ type GitService interface {
 	// Repository info
 	GetRepositoryInfo(ctx context.Context, repoPath string) (*RepositoryInfo, error)
 	GetRepositoryStats(ctx context.Context, repoPath string) (*RepositoryStats, error)
+	
+	// Pull request operations
+	CompareRefs(repoPath, base, head string) (*BranchComparison, error)
+	CanMerge(repoPath, base, head string) (bool, error)
+	MergeBranches(repoPath, base, head string, mergeMethod, title, message string) (string, error)
+	GetBranchCommit(repoPath, branch string) (string, error)
 }
 
 // CloneOptions represents options for cloning a repository
@@ -242,4 +248,18 @@ type RepositoryStats struct {
 type LanguageStats struct {
 	Bytes      int64   `json:"bytes"`
 	Percentage float64 `json:"percentage"`
+}
+
+// BranchComparison represents a comparison between two branches
+type BranchComparison struct {
+	BaseRef     string      `json:"base_ref"`
+	HeadRef     string      `json:"head_ref"`
+	Status      string      `json:"status"` // ahead, behind, identical, diverged
+	AheadBy     int         `json:"ahead_by"`
+	BehindBy    int         `json:"behind_by"`
+	Commits     []*Commit   `json:"commits"`
+	Files       []*DiffFile `json:"files"`
+	Additions   int         `json:"additions"`
+	Deletions   int         `json:"deletions"`
+	TotalFiles  int         `json:"total_files"`
 }
