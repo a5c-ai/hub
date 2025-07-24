@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hub-config
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: config
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  GIT_PROTOCOL: "https"
+  FRONTEND_URL: "https://hub.example.com"
+  BACKEND_URL: "https://hub.example.com/api"
+  GIN_MODE: "release"
+  PORT: "8080"
+  FRONTEND_PORT: "3000"
+  # Database configuration (non-sensitive)
+  DB_HOST: "postgresql"
+  DB_PORT: "5432"
+  DB_NAME: "hub"
+  # Redis configuration (non-sensitive)
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  # Git configuration
+  GIT_DATA_PATH: "/repositories"
+  GIT_TEMP_PATH: "/tmp/git"
+  # Application settings
+  MAX_UPLOAD_SIZE: "100MB"
+  SESSION_TIMEOUT: "24h"
+  CORS_ORIGINS: "https://hub.example.com"

@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-backend-service
+  namespace: hub
+  labels:
+    app: hub-backend
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    app: hub-backend
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-frontend-service
+  namespace: hub
+  labels:
+    app: hub-frontend
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: frontend
+spec:
+  selector:
+    app: hub-frontend
+  ports:
+  - name: http
+    protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: hub
+  labels:
+    app: postgresql
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: database
+spec:
+  selector:
+    app: postgresql
+  ports:
+  - name: postgresql
+    protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: hub
+  labels:
+    app: redis
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: cache
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    protocol: TCP
+    port: 6379
+    targetPort: 6379
+  type: ClusterIP

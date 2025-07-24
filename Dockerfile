@@ -1,10 +1,10 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Install git (required for some Go modules)
-RUN apk add --no-cache git
+# Install git and ca-certificates (required for some Go modules)
+RUN apk add --no-cache git ca-certificates
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -15,23 +15,27 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o main ./cmd/server
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and git (needed for git operations)
+RUN apk --no-cache add ca-certificates git
 
-WORKDIR /root/
+# Create non-root user first
+RUN addgroup -g 1001 -S hub && \
+    adduser -S hub -u 1001 -G hub
+
+# Create necessary directories
+RUN mkdir -p /repositories /app && \
+    chown -R hub:hub /repositories /app
+
+WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/main .
-
-# Create non-root user
-RUN addgroup -g 1001 -S hub && \
-    adduser -S hub -u 1001 -G hub
 
 # Switch to non-root user
 USER hub

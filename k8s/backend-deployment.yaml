@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-backend
+  namespace: hub
+  labels:
+    app: hub-backend
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: hub-git-hosting
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hub-backend
+  template:
+    metadata:
+      labels:
+        app: hub-backend
+        app.kubernetes.io/name: hub
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: backend
+        image: hub/backend:latest
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: PORT
+        - name: GIN_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: GIN_MODE
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: LOG_LEVEL
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: jwt-secret
+        - name: GITHUB_OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: github-oauth-client-id
+        - name: GITHUB_OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: github-oauth-client-secret
+        - name: GIT_DATA_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: GIT_DATA_PATH
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: repository-storage
+          mountPath: /repositories
+        - name: git-temp
+          mountPath: /tmp/git
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: repository-storage
+        persistentVolumeClaim:
+          claimName: hub-repositories-pvc
+      - name: git-temp
+        emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
