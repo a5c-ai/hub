@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
@@ -15,14 +16,16 @@ import (
 type RepositoryHandlers struct {
 	repositoryService services.RepositoryService
 	branchService     services.BranchService
+	gitService        git.GitService
 	logger           *logrus.Logger
 }
 
 // NewRepositoryHandlers creates a new repository handlers instance
-func NewRepositoryHandlers(repositoryService services.RepositoryService, branchService services.BranchService, logger *logrus.Logger) *RepositoryHandlers {
+func NewRepositoryHandlers(repositoryService services.RepositoryService, branchService services.BranchService, gitService git.GitService, logger *logrus.Logger) *RepositoryHandlers {
 	return &RepositoryHandlers{
 		repositoryService: repositoryService,
 		branchService:     branchService,
+		gitService:        gitService,
 		logger:           logger,
 	}
 }
@@ -386,4 +389,232 @@ func parseVisibility(s string) models.Visibility {
 	default:
 		return ""
 	}
+}
+
+// Git Content Endpoints
+
+// GetCommits handles GET /api/v1/repositories/{owner}/{repo}/commits
+func (h *RepositoryHandlers) GetCommits(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository first
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+
+	// Parse query parameters
+	var opts git.CommitOptions
+	opts.Branch = c.Query("sha") // Git reference (branch, tag, or commit SHA)
+	if opts.Branch == "" {
+		opts.Branch = repo.DefaultBranch
+	}
+
+	if page := c.Query("page"); page != "" {
+		if val, err := strconv.Atoi(page); err == nil && val > 0 {
+			opts.Page = val - 1 // Convert to 0-based
+		}
+	}
+
+	if perPage := c.Query("per_page"); perPage != "" {
+		if val, err := strconv.Atoi(perPage); err == nil && val > 0 && val <= 100 {
+			opts.PerPage = val
+		}
+	} else {
+		opts.PerPage = 30
+	}
+
+	commits, err := h.gitService.GetCommits(c.Request.Context(), repoPath, opts)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get commits")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get commits"})
+		return
+	}
+
+	c.JSON(http.StatusOK, commits)
+}
+
+// GetCommit handles GET /api/v1/repositories/{owner}/{repo}/commits/{sha}
+func (h *RepositoryHandlers) GetCommit(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	sha := c.Param("sha")
+
+	if owner == "" || repoName == "" || sha == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and commit SHA are required"})
+		return
+	}
+
+	// Get repository first
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+
+	commit, err := h.gitService.GetCommit(c.Request.Context(), repoPath, sha)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get commit")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Commit not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, commit)
+}
+
+// GetTree handles GET /api/v1/repositories/{owner}/{repo}/contents/{path}
+func (h *RepositoryHandlers) GetTree(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	path := c.Param("path")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository first
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+
+	// Get reference (branch, tag, or commit SHA)
+	ref := c.Query("ref")
+	if ref == "" {
+		ref = repo.DefaultBranch
+	}
+
+	tree, err := h.gitService.GetTree(c.Request.Context(), repoPath, ref, path)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get tree")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Path not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tree)
+}
+
+// GetFile handles GET /api/v1/repositories/{owner}/{repo}/contents/{path} (for files)
+func (h *RepositoryHandlers) GetFile(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	path := c.Param("path")
+
+	if owner == "" || repoName == "" || path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and file path are required"})
+		return
+	}
+
+	// Get repository first
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+
+	// Get reference (branch, tag, or commit SHA)
+	ref := c.Query("ref")
+	if ref == "" {
+		ref = repo.DefaultBranch
+	}
+
+	file, err := h.gitService.GetFile(c.Request.Context(), repoPath, ref, path)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get file")
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, file)
+}
+
+// GetRepositoryInfo handles GET /api/v1/repositories/{owner}/{repo}/info
+func (h *RepositoryHandlers) GetRepositoryInfo(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository first
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+
+	info, err := h.gitService.GetRepositoryInfo(c.Request.Context(), repoPath)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository info")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, info)
 }
