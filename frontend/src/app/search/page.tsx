@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, Input, Button } from '@/components/ui';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -75,7 +75,7 @@ interface Commit {
   repository_id: string;
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [type, setType] = useState<SearchType>('all');
@@ -361,5 +361,18 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-4 text-muted-foreground">Loading search...</p>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }

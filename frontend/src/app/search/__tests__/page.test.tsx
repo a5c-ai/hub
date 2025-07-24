@@ -23,7 +23,7 @@ describe('SearchPage', () => {
     jest.clearAllMocks();
     mockUseSearchParams.mockReturnValue({
       get: jest.fn(() => null),
-    } as any);
+    } as unknown as URLSearchParams);
   });
 
   it('renders search form correctly', () => {
@@ -211,7 +211,7 @@ describe('SearchPage', () => {
   it('initializes search from URL parameters', () => {
     mockUseSearchParams.mockReturnValue({
       get: jest.fn((param) => param === 'q' ? 'initial query' : null),
-    } as any);
+    } as unknown as URLSearchParams);
 
     const mockResults = {
       data: {

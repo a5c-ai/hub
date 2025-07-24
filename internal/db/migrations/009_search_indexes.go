@@ -5,10 +5,10 @@ import (
 )
 
 func init() {
-	registerMigration("005_search_indexes", migrate005Up, migrate005Down)
+	registerMigration("009_search_indexes", migrate009Up, migrate009Down)
 }
 
-func migrate005Up(db *gorm.DB) error {
+func migrate009Up(db *gorm.DB) error {
 	// Create full-text search indexes for better search performance
 	
 	// Users table - search index for username, full_name, email, bio, company
@@ -103,7 +103,7 @@ func migrate005Up(db *gorm.DB) error {
 	return nil
 }
 
-func migrate005Down(db *gorm.DB) error {
+func migrate009Down(db *gorm.DB) error {
 	// Drop the search indexes
 	indexes := []string{
 		"idx_users_search_vector",

@@ -67,7 +67,7 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 		Title:        "Test issue",
 		Body:         "Test issue body",
 		RepositoryID: repo.ID,
-		UserID:       user.ID,
+		UserID:       &user.ID,
 		State:        "open",
 	}
 	require.NoError(t, db.Create(&issue).Error)
