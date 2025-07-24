@@ -1,0 +1,296 @@
+package auth
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/a5c-ai/hub/internal/config"
+	"github.com/a5c-ai/hub/internal/models"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
+
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	MFACode  string `json:"mfa_code,omitempty"`
+}
+
+type RegisterRequest struct {
+	Username string `json:"username" binding:"required,min=3,max=50"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=12"`
+	FullName string `json:"full_name"`
+}
+
+type AuthResponse struct {
+	User         *models.User `json:"user"`
+	AccessToken  string       `json:"access_token"`
+	RefreshToken string       `json:"refresh_token"`
+	ExpiresIn    int64        `json:"expires_in"`
+}
+
+type PasswordResetRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type PasswordResetConfirmRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required,min=12"`
+}
+
+type AuthService interface {
+	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
+	Register(ctx context.Context, req RegisterRequest) (*models.User, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
+	Logout(ctx context.Context, userID uuid.UUID) error
+	VerifyToken(ctx context.Context, token string) (*models.User, error)
+	RequestPasswordReset(ctx context.Context, req PasswordResetRequest) error
+	ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error
+	VerifyEmail(ctx context.Context, token string) error
+	ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error
+}
+
+type authService struct {
+	db         *gorm.DB
+	jwtManager *JWTManager
+	config     *config.Config
+}
+
+func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) AuthService {
+	return &authService{
+		db:         db,
+		jwtManager: jwtManager,
+		config:     cfg,
+	}
+}
+
+func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
+	var user models.User
+	err := s.db.Where("username = ? OR email = ?", req.Username, req.Username).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("invalid credentials")
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	if !user.IsActive {
+		return nil, errors.New("account is disabled")
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Check MFA if enabled
+	if user.TwoFactorEnabled {
+		if req.MFACode == "" {
+			return nil, errors.New("MFA code required")
+		}
+		// TODO: Implement MFA verification
+		// For now, just check if code is provided
+	}
+
+	// Generate tokens
+	accessToken, err := s.jwtManager.GenerateToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.generateRefreshToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	// Update last login
+	now := time.Now()
+	user.LastLoginAt = &now
+	s.db.Save(&user)
+
+	return &AuthResponse{
+		User:         &user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
+	}, nil
+}
+
+func (s *authService) Register(ctx context.Context, req RegisterRequest) (*models.User, error) {
+	// Check if user already exists
+	var existingUser models.User
+	err := s.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error
+	if err == nil {
+		return nil, errors.New("user already exists")
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create user
+	user := models.User{
+		Username:     req.Username,
+		Email:        req.Email,
+		PasswordHash: string(hashedPassword),
+		FullName:     req.FullName,
+		IsActive:     true,
+		IsAdmin:      false,
+	}
+
+	if err := s.db.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Send verification email
+	if err := s.sendVerificationEmail(&user); err != nil {
+		// Log the error but don't fail registration
+		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
+
+	return &user, nil
+}
+
+func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
+	// TODO: Implement refresh token validation
+	// For now, validate the refresh token format and extract user ID
+	
+	var user models.User
+	// This is a simplified implementation - in production, you'd store refresh tokens
+	claims, err := s.jwtManager.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	err = s.db.First(&user, claims.UserID).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Generate new access token
+	accessToken, err := s.jwtManager.GenerateToken(&user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	return &AuthResponse{
+		User:        &user,
+		AccessToken: accessToken,
+		ExpiresIn:   int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
+	}, nil
+}
+
+func (s *authService) Logout(ctx context.Context, userID uuid.UUID) error {
+	// TODO: Implement token blacklisting or session invalidation
+	// For now, just return success as JWT tokens are stateless
+	return nil
+}
+
+func (s *authService) VerifyToken(ctx context.Context, token string) (*models.User, error) {
+	claims, err := s.jwtManager.ValidateToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	var user models.User
+	err = s.db.First(&user, claims.UserID).Error
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	if !user.IsActive {
+		return nil, errors.New("account is disabled")
+	}
+
+	return &user, nil
+}
+
+func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordResetRequest) error {
+	var user models.User
+	err := s.db.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		// Don't reveal if email exists
+		return nil
+	}
+
+	// Generate reset token
+	token := generateSecureToken()
+	
+	// Store reset token (simplified - in production, use a separate table)
+	// TODO: Implement proper password reset token storage
+	
+	// Send reset email
+	if err := s.sendPasswordResetEmail(&user, token); err != nil {
+		return fmt.Errorf("failed to send password reset email: %w", err)
+	}
+
+	return nil
+}
+
+func (s *authService) ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error {
+	// TODO: Implement proper token validation and password reset
+	// This is a simplified implementation
+	
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Update password (simplified - in production, validate token first)
+	// TODO: Implement proper token validation
+	_ = hashedPassword
+	
+	return nil
+}
+
+func (s *authService) VerifyEmail(ctx context.Context, token string) error {
+	// TODO: Implement email verification
+	// This is a simplified implementation
+	return nil
+}
+
+func (s *authService) ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error {
+	var user models.User
+	err := s.db.First(&user, userID).Error
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	return s.sendVerificationEmail(&user)
+}
+
+func (s *authService) generateRefreshToken(user *models.User) (string, error) {
+	// For now, use the same JWT generation but with longer expiration
+	// In production, you might want separate refresh token logic
+	return s.jwtManager.GenerateToken(user)
+}
+
+func (s *authService) sendVerificationEmail(user *models.User) error {
+	// TODO: Implement email sending
+	fmt.Printf("Sending verification email to %s\n", user.Email)
+	return nil
+}
+
+func (s *authService) sendPasswordResetEmail(user *models.User, token string) error {
+	// TODO: Implement email sending
+	fmt.Printf("Sending password reset email to %s with token %s\n", user.Email, token)
+	return nil
+}
+
+func generateSecureToken() string {
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
