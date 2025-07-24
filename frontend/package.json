@@ -19,7 +19,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "type-check": "tsc --noEmit",
-    "prepare": "husky install"
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
