@@ -6,7 +6,9 @@ import (
 	"github.com/a5c-ai/hub/internal/auth"
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/db"
+	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/middleware"
+	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -20,6 +22,20 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
 	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
 	authHandlers := NewAuthHandlers(authService, oauthService)
+
+	// Initialize Git services
+	gitService := git.NewGitService(logger)
+	repoBasePath := cfg.Storage.RepositoryPath
+	if repoBasePath == "" {
+		repoBasePath = "/var/lib/hub/repositories"
+	}
+	
+	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
+	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
+
+	// Initialize handlers
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, logger)
+	gitHandlers := NewGitHandlers(repositoryService, logger)
 
 	router.GET("/health", func(c *gin.Context) {
 		if err := database.Health(); err != nil {
@@ -36,6 +52,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			"version":   "1.0.0",
 		})
 	})
+
+	// Git HTTP protocol endpoints (no authentication required for public repos)
+	git := router.Group("/")
+	git.Use(gitHandlers.GitMiddleware())
+	{
+		git.GET("/:owner/:repo.git/info/refs", gitHandlers.InfoRefs)
+		git.POST("/:owner/:repo.git/git-upload-pack", gitHandlers.UploadPack)
+		git.POST("/:owner/:repo.git/git-receive-pack", gitHandlers.ReceivePack)
+	}
 
 	v1 := router.Group("/api/v1")
 	{
@@ -68,6 +93,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			}
 		}
 
+		// Public repository endpoints (for public repos)
+		v1.GET("/repositories", repoHandlers.ListRepositories)
+		v1.GET("/repositories/:owner/:repo", repoHandlers.GetRepository)
+		v1.GET("/repositories/:owner/:repo/branches", repoHandlers.GetBranches)
+		v1.GET("/repositories/:owner/:repo/branches/:branch", repoHandlers.GetBranch)
+
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
@@ -98,17 +129,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				})
 			}
 
+			// Protected repository endpoints
 			repos := protected.Group("/repositories")
 			{
-				repos.GET("/", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "List repositories endpoint - to be implemented"})
-				})
-				repos.POST("/", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "Create repository endpoint - to be implemented"})
-				})
-				repos.GET("/:owner/:repo", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "Get repository endpoint - to be implemented"})
-				})
+				repos.POST("/", repoHandlers.CreateRepository)
+				repos.PATCH("/:owner/:repo", repoHandlers.UpdateRepository)
+				repos.DELETE("/:owner/:repo", repoHandlers.DeleteRepository)
+				
+				// Branch operations
+				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
+				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
 			}
 		}
 	}
