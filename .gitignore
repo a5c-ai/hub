@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Frontend dependencies
 /node_modules
 /.pnp
 .pnp.js
@@ -53,3 +53,43 @@ next-env.d.ts
 **/pnpm-debug.log*
 **/pnpm-error.log*
 **/pnpm-lock.yaml
+
+# Go Backend
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+hub
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Backend configuration files (keep example)
+config.yaml
+config.yml
+config.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp

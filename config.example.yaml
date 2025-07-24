@@ -1,0 +1,22 @@
+environment: development
+log_level: 4
+
+server:
+  port: 8080
+
+database:
+  host: localhost
+  port: 5432
+  user: hub
+  password: password
+  dbname: hub
+  sslmode: disable
+
+jwt:
+  secret: your-secret-key-change-this-in-production
+  expiration_hour: 24
+
+cors:
+  allowed_origins:
+    - http://localhost:3000
+    - http://localhost:3001
