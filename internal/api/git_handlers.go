@@ -47,6 +47,7 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 		if err.Error() == "repository not found" {
 			c.Status(http.StatusNotFound)
 		} else {
+			h.logger.WithError(err).Error("Failed to get repository")
 			c.Status(http.StatusInternalServerError)
 		}
 		return
@@ -60,11 +61,14 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 		return
 	}
 
-	// Check if repository exists on filesystem
+	// Check if repository exists on filesystem, create if needed
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		h.logger.WithField("path", repoPath).Error("Repository path does not exist")
-		c.Status(http.StatusNotFound)
-		return
+		h.logger.WithField("path", repoPath).Info("Repository doesn't exist on filesystem, initializing")
+		if err := h.repositoryService.InitializeGitRepository(c.Request.Context(), repo.ID); err != nil {
+			h.logger.WithError(err).Error("Failed to initialize Git repository")
+			c.Status(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	switch service {
@@ -93,16 +97,27 @@ func (h *GitHandlers) UploadPack(c *gin.Context) {
 		if err.Error() == "repository not found" {
 			c.Status(http.StatusNotFound)
 		} else {
+			h.logger.WithError(err).Error("Failed to get repository")
 			c.Status(http.StatusInternalServerError)
 		}
 		return
 	}
+
+	// Check repository visibility for authentication
+	// TODO: Add authentication check for private repositories
 
 	// Get repository path
 	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to get repository path")
 		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure repository exists
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		h.logger.WithError(err).Error("Repository path does not exist")
+		c.Status(http.StatusNotFound)
 		return
 	}
 
@@ -125,16 +140,27 @@ func (h *GitHandlers) ReceivePack(c *gin.Context) {
 		if err.Error() == "repository not found" {
 			c.Status(http.StatusNotFound)
 		} else {
+			h.logger.WithError(err).Error("Failed to get repository")
 			c.Status(http.StatusInternalServerError)
 		}
 		return
 	}
+
+	// TODO: Add authentication check for push operations
+	// Push operations should require authentication
 
 	// Get repository path
 	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to get repository path")
 		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure repository exists
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		h.logger.WithError(err).Error("Repository path does not exist")
+		c.Status(http.StatusNotFound)
 		return
 	}
 

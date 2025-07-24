@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,8 +15,21 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/sirupsen/logrus"
+)
+
+// Common Git errors
+var (
+	ErrRepositoryNotFound   = errors.New("repository not found")
+	ErrRepositoryCorrupted  = errors.New("repository is corrupted")
+	ErrReferenceNotFound    = errors.New("reference not found")
+	ErrCommitNotFound       = errors.New("commit not found")
+	ErrBranchNotFound       = errors.New("branch not found")
+	ErrTagNotFound          = errors.New("tag not found")
+	ErrFileNotFound         = errors.New("file not found")
+	ErrPathNotFound         = errors.New("path not found")
 )
 
 // gitService implements the GitService interface using go-git
@@ -478,6 +492,10 @@ func (s *gitService) GetFile(ctx context.Context, repoPath, ref, path string) (*
 func (s *gitService) openRepository(repoPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
+		s.logger.WithError(err).WithField("path", repoPath).Error("Failed to open repository")
+		if os.IsNotExist(err) {
+			return nil, ErrRepositoryNotFound
+		}
 		return nil, fmt.Errorf("failed to open repository at %s: %w", repoPath, err)
 	}
 	return repo, nil
@@ -544,43 +562,508 @@ func (s *gitService) convertCommit(c *object.Commit) *Commit {
 // Placeholder implementations for methods that need more complex logic
 
 func (s *gitService) GetCommitDiff(ctx context.Context, repoPath, fromSHA, toSHA string) (*Diff, error) {
-	// TODO: Implement diff functionality
-	return nil, fmt.Errorf("GetCommitDiff not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	fromHash := plumbing.NewHash(fromSHA)
+	toHash := plumbing.NewHash(toSHA)
+
+	fromCommit, err := repo.CommitObject(fromHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get from commit %s: %w", fromSHA, err)
+	}
+
+	toCommit, err := repo.CommitObject(toHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to commit %s: %w", toSHA, err)
+	}
+
+	fromTree, err := fromCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get from tree: %w", err)
+	}
+
+	toTree, err := toCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get to tree: %w", err)
+	}
+
+	changes, err := fromTree.Diff(toTree)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute diff: %w", err)
+	}
+
+	var files []*DiffFile
+	stats := DiffStats{}
+
+	for _, change := range changes {
+		diffFile := &DiffFile{
+			Path:     change.To.Name,
+			PrevPath: change.From.Name,
+		}
+
+		switch {
+		case change.From.Name == "" && change.To.Name != "":
+			diffFile.Status = "added"
+		case change.From.Name != "" && change.To.Name == "":
+			diffFile.Status = "deleted"
+			diffFile.Path = change.From.Name
+		case change.From.Name != change.To.Name:
+			diffFile.Status = "renamed"
+		default:
+			diffFile.Status = "modified"
+		}
+
+		// Get patch for the file (simplified)
+		patch, err := change.Patch()
+		if err == nil {
+			diffFile.Patch = patch.String()
+			// Parse patch for stats (simplified)
+			lines := strings.Split(patch.String(), "\n")
+			for _, line := range lines {
+				if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+					diffFile.Additions++
+				} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+					diffFile.Deletions++
+				}
+			}
+			diffFile.Changes = diffFile.Additions + diffFile.Deletions
+		}
+
+		files = append(files, diffFile)
+		stats.Files++
+		stats.Additions += diffFile.Additions
+		stats.Deletions += diffFile.Deletions
+	}
+
+	stats.Total = stats.Additions + stats.Deletions
+
+	return &Diff{
+		FromSHA: fromSHA,
+		ToSHA:   toSHA,
+		Files:   files,
+		Stats:   stats,
+	}, nil
 }
 
 func (s *gitService) GetTree(ctx context.Context, repoPath, ref, path string) (*Tree, error) {
-	// TODO: Implement tree functionality
-	return nil, fmt.Errorf("GetTree not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	hash, err := s.resolveReference(repo, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := repo.CommitObject(hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit: %w", err)
+	}
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tree: %w", err)
+	}
+
+	// Navigate to the specified path if provided
+	if path != "" && path != "/" {
+		tree, err = tree.Tree(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tree at path %s: %w", path, err)
+		}
+	}
+
+	var entries []*TreeEntry
+	for _, entry := range tree.Entries {
+		treeEntry := &TreeEntry{
+			Name: entry.Name,
+			Path: filepath.Join(path, entry.Name),
+			SHA:  entry.Hash.String(),
+			Mode: entry.Mode.String(),
+		}
+
+		switch entry.Mode {
+		case filemode.Regular, filemode.Executable:
+			treeEntry.Type = "blob"
+			// Get file size
+			if file, err := tree.File(entry.Name); err == nil {
+				treeEntry.Size = file.Size
+			}
+		case filemode.Dir:
+			treeEntry.Type = "tree"
+		case filemode.Symlink:
+			treeEntry.Type = "blob"
+		case filemode.Submodule:
+			treeEntry.Type = "commit"
+		default:
+			treeEntry.Type = "blob"
+		}
+
+		entries = append(entries, treeEntry)
+	}
+
+	// Sort entries: directories first, then files, both alphabetically
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Type == "tree" && entries[j].Type != "tree" {
+			return true
+		}
+		if entries[i].Type != "tree" && entries[j].Type == "tree" {
+			return false
+		}
+		return entries[i].Name < entries[j].Name
+	})
+
+	return &Tree{
+		SHA:     tree.Hash.String(),
+		Path:    path,
+		Entries: entries,
+	}, nil
 }
 
 func (s *gitService) GetBlob(ctx context.Context, repoPath, sha string) (*Blob, error) {
-	// TODO: Implement blob functionality
-	return nil, fmt.Errorf("GetBlob not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := plumbing.NewHash(sha)
+	blob, err := repo.BlobObject(hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get blob %s: %w", sha, err)
+	}
+
+	reader, err := blob.Reader()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get blob reader: %w", err)
+	}
+	defer reader.Close()
+
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read blob content: %w", err)
+	}
+
+	// Determine encoding
+	encoding := ""
+	if !utf8.ValidString(string(content)) {
+		encoding = "base64"
+	}
+
+	return &Blob{
+		SHA:      sha,
+		Size:     blob.Size,
+		Content:  content,
+		Encoding: encoding,
+	}, nil
 }
 
 func (s *gitService) CreateFile(ctx context.Context, repoPath string, req CreateFileRequest) (*Commit, error) {
-	// TODO: Implement file creation
-	return nil, fmt.Errorf("CreateFile not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get or create worktree for bare repositories
+	workTree, err := repo.Worktree()
+	if err != nil {
+		// For bare repositories, we need to work directly with the object database
+		return s.createFileInBareRepo(ctx, repo, req)
+	}
+
+	// Write file to filesystem
+	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return nil, fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	// Decode content if base64
+	content := []byte(req.Content)
+	if req.Encoding == "base64" {
+		content, err = base64.StdEncoding.DecodeString(req.Content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 content: %w", err)
+		}
+	}
+
+	if err := os.WriteFile(filePath, content, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write file: %w", err)
+	}
+
+	// Add file to index
+	if _, err := workTree.Add(req.Path); err != nil {
+		return nil, fmt.Errorf("failed to add file to index: %w", err)
+	}
+
+	// Create commit
+	commitHash, err := workTree.Commit(req.Message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  req.Author.Name,
+			Email: req.Author.Email,
+			When:  req.Author.Date,
+		},
+		Committer: &object.Signature{
+			Name:  req.Committer.Name,
+			Email: req.Committer.Email,
+			When:  req.Committer.Date,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	// Get the created commit
+	commitObj, err := repo.CommitObject(commitHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit object: %w", err)
+	}
+
+	return s.convertCommit(commitObj), nil
 }
 
 func (s *gitService) UpdateFile(ctx context.Context, repoPath string, req UpdateFileRequest) (*Commit, error) {
-	// TODO: Implement file update
-	return nil, fmt.Errorf("UpdateFile not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get worktree
+	workTree, err := repo.Worktree()
+	if err != nil {
+		// For bare repositories, we need different handling
+		return s.updateFileInBareRepo(ctx, repo, req)
+	}
+
+	// Check if file exists and verify SHA
+	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file %s does not exist", req.Path)
+	}
+
+	// TODO: Verify SHA matches current file SHA for conflict detection
+	// This would require computing the current file's Git SHA
+
+	// Decode content if base64
+	content := []byte(req.Content)
+	if req.Encoding == "base64" {
+		content, err = base64.StdEncoding.DecodeString(req.Content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 content: %w", err)
+		}
+	}
+
+	// Write updated content
+	if err := os.WriteFile(filePath, content, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write file: %w", err)
+	}
+
+	// Add file to index
+	if _, err := workTree.Add(req.Path); err != nil {
+		return nil, fmt.Errorf("failed to add file to index: %w", err)
+	}
+
+	// Create commit
+	commitHash, err := workTree.Commit(req.Message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  req.Author.Name,
+			Email: req.Author.Email,
+			When:  req.Author.Date,
+		},
+		Committer: &object.Signature{
+			Name:  req.Committer.Name,
+			Email: req.Committer.Email,
+			When:  req.Committer.Date,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	// Get the created commit
+	commitObj, err := repo.CommitObject(commitHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit object: %w", err)
+	}
+
+	return s.convertCommit(commitObj), nil
 }
 
 func (s *gitService) DeleteFile(ctx context.Context, repoPath string, req DeleteFileRequest) (*Commit, error) {
-	// TODO: Implement file deletion
-	return nil, fmt.Errorf("DeleteFile not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get worktree
+	workTree, err := repo.Worktree()
+	if err != nil {
+		// For bare repositories, we need different handling
+		return s.deleteFileInBareRepo(ctx, repo, req)
+	}
+
+	// Check if file exists
+	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file %s does not exist", req.Path)
+	}
+
+	// TODO: Verify SHA matches current file SHA for conflict detection
+
+	// Remove file from filesystem
+	if err := os.Remove(filePath); err != nil {
+		return nil, fmt.Errorf("failed to remove file: %w", err)
+	}
+
+	// Remove file from index
+	if _, err := workTree.Remove(req.Path); err != nil {
+		return nil, fmt.Errorf("failed to remove file from index: %w", err)
+	}
+
+	// Create commit
+	commitHash, err := workTree.Commit(req.Message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  req.Author.Name,
+			Email: req.Author.Email,
+			When:  req.Author.Date,
+		},
+		Committer: &object.Signature{
+			Name:  req.Committer.Name,
+			Email: req.Committer.Email,
+			When:  req.Committer.Date,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	// Get the created commit
+	commitObj, err := repo.CommitObject(commitHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit object: %w", err)
+	}
+
+	return s.convertCommit(commitObj), nil
 }
 
 func (s *gitService) GetRepositoryInfo(ctx context.Context, repoPath string) (*RepositoryInfo, error) {
-	// TODO: Implement repository info
-	return nil, fmt.Errorf("GetRepositoryInfo not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if repository is bare
+	isBare := true
+	if _, err := repo.Worktree(); err == nil {
+		isBare = false
+	}
+
+	// Get default branch
+	defaultBranch := "main"
+	isEmpty := false
+	var lastCommit *Commit
+
+	if head, err := repo.Head(); err == nil {
+		if head.Name().IsBranch() {
+			defaultBranch = head.Name().Short()
+		}
+		
+		// Get last commit
+		if commitObj, err := repo.CommitObject(head.Hash()); err == nil {
+			lastCommit = s.convertCommit(commitObj)
+		}
+	} else {
+		// Repository is empty
+		isEmpty = true
+	}
+
+	// Get repository creation/modification times
+	createdAt := time.Now()
+	updatedAt := time.Now()
+
+	// Try to get filesystem stats
+	if stat, err := os.Stat(repoPath); err == nil {
+		createdAt = stat.ModTime()
+		updatedAt = stat.ModTime()
+	}
+
+	return &RepositoryInfo{
+		Path:          repoPath,
+		DefaultBranch: defaultBranch,
+		IsBare:        isBare,
+		IsEmpty:       isEmpty,
+		LastCommit:    lastCommit,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
+	}, nil
 }
 
 func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*RepositoryStats, error) {
-	// TODO: Implement repository statistics
-	return nil, fmt.Errorf("GetRepositoryStats not yet implemented")
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize stats
+	stats := &RepositoryStats{
+		Languages: make(map[string]LanguageStats),
+	}
+
+	// Count commits
+	if head, err := repo.Head(); err == nil {
+		commitIter, err := repo.Log(&git.LogOptions{From: head.Hash()})
+		if err == nil {
+			commitIter.ForEach(func(c *object.Commit) error {
+				stats.CommitCount++
+				if c.Author.When.After(stats.LastActivity) {
+					stats.LastActivity = c.Author.When
+				}
+				return nil
+			})
+			commitIter.Close()
+		}
+	}
+
+	// Count branches
+	if refs, err := repo.References(); err == nil {
+		refs.ForEach(func(ref *plumbing.Reference) error {
+			if ref.Name().IsBranch() {
+				stats.BranchCount++
+			}
+			return nil
+		})
+		refs.Close()
+	}
+
+	// Count tags
+	if tagRefs, err := repo.Tags(); err == nil {
+		tagRefs.ForEach(func(ref *plumbing.Reference) error {
+			stats.TagCount++
+			return nil
+		})
+		tagRefs.Close()
+	}
+
+	// Calculate repository size (simplified)
+	if stat, err := os.Stat(repoPath); err == nil {
+		if stat.IsDir() {
+			// Walk directory to calculate size
+			filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+				if err == nil && !info.IsDir() {
+					stats.Size += info.Size()
+				}
+				return nil
+			})
+		}
+	}
+
+	// TODO: Implement language detection and contributor counting
+	// This would require analyzing file extensions and commit authors
+	stats.Contributors = 1 // Placeholder
+
+	return stats, nil
 }
 
 // CompareRefs compares two git references and returns the differences

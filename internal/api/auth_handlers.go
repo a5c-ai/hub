@@ -13,12 +13,14 @@ import (
 type AuthHandlers struct {
 	authService  auth.AuthService
 	oauthService *auth.OAuthService
+	mfaService   *auth.MFAService
 }
 
-func NewAuthHandlers(authService auth.AuthService, oauthService *auth.OAuthService) *AuthHandlers {
+func NewAuthHandlers(authService auth.AuthService, oauthService *auth.OAuthService, mfaService *auth.MFAService) *AuthHandlers {
 	return &AuthHandlers{
 		authService:  authService,
 		oauthService: oauthService,
+		mfaService:   mfaService,
 	}
 }
 
@@ -212,6 +214,91 @@ func (h *AuthHandlers) OAuthCallback(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+
+// MFA Handlers
+
+// POST /api/v1/auth/mfa/setup
+func (h *AuthHandlers) SetupMFA(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	response, err := h.mfaService.SetupTOTP(userID.(uuid.UUID), "A5C Hub", "user@example.com")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// POST /api/v1/auth/mfa/verify
+func (h *AuthHandlers) VerifyMFA(c *gin.Context) {
+	var req struct {
+		Secret string `json:"secret" binding:"required"`
+		Code   string `json:"code" binding:"required"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	valid, err := h.mfaService.VerifyTOTP(userID.(uuid.UUID), req.Secret, req.Code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid verification code"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "MFA enabled successfully"})
+}
+
+// POST /api/v1/auth/mfa/disable
+func (h *AuthHandlers) DisableMFA(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	err := h.mfaService.DisableMFA(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "MFA disabled successfully"})
+}
+
+// POST /api/v1/auth/mfa/regenerate-codes
+func (h *AuthHandlers) RegenerateBackupCodes(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	codes, err := h.mfaService.RegenerateBackupCodes(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"backup_codes": codes})
+}
 
 // Helper functions
 func generateState() string {

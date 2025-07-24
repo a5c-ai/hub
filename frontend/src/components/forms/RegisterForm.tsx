@@ -40,7 +40,8 @@ export function RegisterForm() {
         full_name: data.name,
         password: data.password,
       });
-      router.push('/dashboard');
+      // Registration successful - redirect to login
+      router.push('/login?message=Registration successful. Please sign in.');
     } catch {
       // Error is handled by the store
     }
