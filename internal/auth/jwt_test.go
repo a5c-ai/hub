@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
 )
@@ -15,8 +16,9 @@ func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
 	}
 	jwtManager := NewJWTManager(cfg)
 
+	testUserID := uuid.New()
 	user := &models.User{
-		ID:       1,
+		ID:       testUserID,
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,
@@ -69,8 +71,9 @@ func TestJWTManager_ValidateExpiredToken(t *testing.T) {
 	}
 	jwtManager := NewJWTManager(cfg)
 
+	testUserID := uuid.New()
 	user := &models.User{
-		ID:       1,
+		ID:       testUserID,
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,
