@@ -1,0 +1,54 @@
+# Example terraform.tfvars file for staging environment
+# Copy this file to terraform.tfvars and customize the values
+
+# Basic Configuration
+location = "East US"
+owner    = "hub-staging-team"
+availability_zones = ["1", "2"]
+
+# Networking Configuration
+vnet_address_space              = ["10.2.0.0/16"]
+aks_subnet_cidr                = "10.2.1.0/24"
+database_subnet_cidr           = "10.2.2.0/24"
+private_endpoints_subnet_cidr  = "10.2.3.0/24"
+appgw_subnet_cidr             = "10.2.4.0/24"
+admin_source_address_prefix    = "YOUR_IP_ADDRESS/32"  # Replace with your IP
+enable_private_endpoints       = true
+
+# Storage Configuration
+storage_account_tier      = "Standard"
+storage_replication_type  = "LRS"
+
+# PostgreSQL Configuration
+postgresql_version                 = "15"
+postgresql_sku_name               = "GP_Standard_D2s_v3"
+postgresql_storage_mb             = 131072  # 128GB
+postgresql_backup_retention_days  = 14
+postgresql_high_availability_mode = "SameZone"
+
+# AKS Configuration
+kubernetes_version    = "1.28"
+aks_node_count       = 3
+aks_vm_size          = "Standard_D2s_v5"
+aks_min_node_count   = 2
+aks_max_node_count   = 6
+
+# Worker Node Pool Configuration (optional)
+create_worker_node_pool = false
+worker_vm_size         = "Standard_D4s_v5"
+worker_node_count      = 2
+worker_min_node_count  = 1
+worker_max_node_count  = 4
+
+# Application Gateway Configuration
+application_gateway_capacity = 2
+
+# Monitoring Configuration
+enable_grafana = false
+
+alert_email_receivers = [
+  {
+    name          = "staging-team"
+    email_address = "staging-team@yourcompany.com"
+  }
+]
