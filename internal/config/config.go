@@ -11,6 +11,7 @@ type Config struct {
 	Database    Database   `mapstructure:"database"`
 	JWT         JWT        `mapstructure:"jwt"`
 	CORS        CORS       `mapstructure:"cors"`
+	Storage     Storage    `mapstructure:"storage"`
 }
 
 type Server struct {
@@ -35,6 +36,10 @@ type CORS struct {
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
+type Storage struct {
+	RepositoryPath string `mapstructure:"repository_path"`
+}
+
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -53,6 +58,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("jwt.secret", "your-secret-key")
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
+	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
 
 	viper.AutomaticEnv()
 
@@ -67,6 +73,7 @@ func Load() (*Config, error) {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.expiration_hour", "JWT_EXPIRATION_HOUR")
+	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
