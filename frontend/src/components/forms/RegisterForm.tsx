@@ -71,7 +71,7 @@ export function RegisterForm() {
           <CardContent>
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3">
+                <div className="rounded-md bg-destructive/10 p-3" data-testid="error-message">
                   <div className="text-sm text-destructive">{error}</div>
                 </div>
               )}
@@ -80,6 +80,7 @@ export function RegisterForm() {
                 label="Username"
                 type="text"
                 autoComplete="username"
+                data-testid="username-input"
                 error={errors.username?.message}
                 {...register('username', {
                   required: 'Username is required',
@@ -98,6 +99,7 @@ export function RegisterForm() {
                 label="Full Name"
                 type="text"
                 autoComplete="name"
+                data-testid="name-input"
                 error={errors.name?.message}
                 {...register('name', {
                   required: 'Full name is required',
@@ -112,6 +114,7 @@ export function RegisterForm() {
                 label="Email address"
                 type="email"
                 autoComplete="email"
+                data-testid="email-input"
                 error={errors.email?.message}
                 {...register('email', {
                   required: 'Email is required',
@@ -127,6 +130,7 @@ export function RegisterForm() {
                   label="Password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
+                  data-testid="password-input"
                   error={errors.password?.message}
                   {...register('password', {
                     required: 'Password is required',
@@ -154,6 +158,7 @@ export function RegisterForm() {
                   label="Confirm Password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
+                  data-testid="confirm-password-input"
                   error={errors.confirmPassword?.message}
                   {...register('confirmPassword', {
                     required: 'Please confirm your password',
@@ -209,6 +214,7 @@ export function RegisterForm() {
                 className="w-full"
                 loading={isLoading}
                 disabled={isLoading}
+                data-testid="register-button"
               >
                 Create account
               </Button>

@@ -84,18 +84,24 @@ export function LoginForm() {
           <CardContent>
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3">
+                <div className="rounded-md bg-destructive/10 p-3" data-testid="error-message">
                   <div className="text-sm text-destructive">{error}</div>
                 </div>
               )}
 
               <Input
-                label="Username or Email"
-                type="text"
-                autoComplete="username"
-                error={errors.username?.message}
-                {...register('username', {
-                  required: 'Username or email is required',
+                label="Email address"
+                type="email"
+                autoComplete="email"
+                data-testid="email-input"
+                error={errors.email?.message}
+                {...register('email', {
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Invalid email address',
+                  },
+
                 })}
               />
 
@@ -104,6 +110,7 @@ export function LoginForm() {
                   label="Password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  data-testid="password-input"
                   error={errors.password?.message}
                   {...register('password', {
                     required: 'Password is required',
@@ -165,6 +172,7 @@ export function LoginForm() {
                 className="w-full"
                 loading={isLoading}
                 disabled={isLoading}
+                data-testid="login-button"
               >
                 Sign in
               </Button>
