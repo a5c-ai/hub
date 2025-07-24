@@ -86,14 +86,23 @@ export const authApi = {
   login: (email: string, password: string) =>
     apiClient.post('/auth/login', { email, password }),
 
-  register: (userData: { username: string; email: string; password: string; name: string }) =>
+  register: (userData: { username: string; email: string; password: string; full_name: string }) =>
     apiClient.post('/auth/register', userData),
 
   logout: () => apiClient.post('/auth/logout'),
 
   refreshToken: () => apiClient.post('/auth/refresh'),
 
-  getProfile: () => apiClient.get('/auth/profile'),
+  getProfile: () => apiClient.get('/profile'),
+
+  forgotPassword: (email: string) =>
+    apiClient.post('/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, password: string) =>
+    apiClient.post('/auth/reset-password', { token, password }),
+
+  verifyEmail: (token: string) =>
+    apiClient.post(`/auth/verify-email?token=${token}`),
 };
 
 // User API methods

@@ -11,6 +11,7 @@ type Config struct {
 	Database    Database   `mapstructure:"database"`
 	JWT         JWT        `mapstructure:"jwt"`
 	CORS        CORS       `mapstructure:"cors"`
+	OAuth       OAuth      `mapstructure:"oauth"`
 }
 
 type Server struct {
@@ -33,6 +34,16 @@ type JWT struct {
 
 type CORS struct {
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
+}
+
+type OAuth struct {
+	GitHub OAuthProvider `mapstructure:"github"`
+	Google OAuthProvider `mapstructure:"google"`
+}
+
+type OAuthProvider struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
 }
 
 func Load() (*Config, error) {
@@ -67,6 +78,10 @@ func Load() (*Config, error) {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.expiration_hour", "JWT_EXPIRATION_HOUR")
+	viper.BindEnv("oauth.github.client_id", "GITHUB_CLIENT_ID")
+	viper.BindEnv("oauth.github.client_secret", "GITHUB_CLIENT_SECRET")
+	viper.BindEnv("oauth.google.client_id", "GOOGLE_CLIENT_ID")
+	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
