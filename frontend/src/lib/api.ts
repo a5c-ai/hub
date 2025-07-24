@@ -175,4 +175,129 @@ export const orgApi = {
   }>) => apiClient.patch(`/organizations/${org}`, data),
 };
 
+// Search API methods
+export const searchApi = {
+  // Global search across all content types
+  globalSearch: (query: string, params?: {
+    type?: string;
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.type) searchParams.append('type', params.type);
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search?${searchParams.toString()}`);
+  },
+
+  // Search repositories
+  searchRepositories: (query: string, params?: {
+    user?: string;
+    language?: string;
+    visibility?: string;
+    stars?: string;
+    forks?: string;
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.user) searchParams.append('user', params.user);
+    if (params?.language) searchParams.append('language', params.language);
+    if (params?.visibility) searchParams.append('visibility', params.visibility);
+    if (params?.stars) searchParams.append('stars', params.stars);
+    if (params?.forks) searchParams.append('forks', params.forks);
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search/repositories?${searchParams.toString()}`);
+  },
+
+  // Search issues and pull requests
+  searchIssues: (query: string, params?: {
+    state?: string;
+    author?: string;
+    assignee?: string;
+    labels?: string;
+    milestone?: string;
+    is_pr?: boolean;
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.state) searchParams.append('state', params.state);
+    if (params?.author) searchParams.append('author', params.author);
+    if (params?.assignee) searchParams.append('assignee', params.assignee);
+    if (params?.labels) searchParams.append('labels', params.labels);
+    if (params?.milestone) searchParams.append('milestone', params.milestone);
+    if (params?.is_pr !== undefined) searchParams.append('is_pr', params.is_pr.toString());
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search/issues?${searchParams.toString()}`);
+  },
+
+  // Search users
+  searchUsers: (query: string, params?: {
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search/users?${searchParams.toString()}`);
+  },
+
+  // Search commits
+  searchCommits: (query: string, params?: {
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search/commits?${searchParams.toString()}`);
+  },
+
+  // Search within a specific repository
+  searchInRepository: (owner: string, repo: string, query: string, params?: {
+    type?: string;
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.type) searchParams.append('type', params.type);
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/repositories/${owner}/${repo}/search?${searchParams.toString()}`);
+  },
+};
+
 export default api;
