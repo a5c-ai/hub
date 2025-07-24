@@ -101,12 +101,13 @@ test.describe('Dashboard', () => {
     // Check for statistics cards
     await expect(page.locator('text=Total Repositories')).toBeVisible();
     await expect(page.locator('text=Total Stars')).toBeVisible();
-    await expect(page.locator('text=Active Pull Requests')).toBeVisible();
+    await expect(page.locator('text=Total Forks')).toBeVisible();
     
-    // Check for actual numbers (these are mock data in the component)
-    await expect(page.locator('text=12')).toBeVisible(); // Total repositories
-    await expect(page.locator('text=185')).toBeVisible(); // Total stars
-    await expect(page.locator('text=7')).toBeVisible(); // Active PRs
+    // Check that stats are displayed (could be 0 for new users)
+    // The specific numbers will depend on the mocked API responses
+    await expect(page.locator('text=Total Repositories').locator('..').locator('.text-2xl')).toBeVisible();
+    await expect(page.locator('text=Total Stars').locator('..').locator('.text-2xl')).toBeVisible();
+    await expect(page.locator('text=Total Forks').locator('..').locator('.text-2xl')).toBeVisible();
   });
 
   test('should display recent repositories section', async ({ page }) => {
