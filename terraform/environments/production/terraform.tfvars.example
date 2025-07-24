@@ -1,0 +1,90 @@
+# Example terraform.tfvars file for production environment
+# Copy this file to terraform.tfvars and customize the values
+
+# Basic Configuration
+location        = "East US"
+backup_location = "West US 2"
+owner          = "hub-production-team"
+cost_center    = "engineering"
+availability_zones = ["1", "2", "3"]
+
+# Networking Configuration
+vnet_address_space              = ["10.1.0.0/16"]
+aks_subnet_cidr                = "10.1.1.0/24"
+database_subnet_cidr           = "10.1.2.0/24"
+private_endpoints_subnet_cidr  = "10.1.3.0/24"
+appgw_subnet_cidr             = "10.1.4.0/24"
+admin_source_address_prefix    = "10.0.0.0/8"  # Corporate network CIDR
+
+# Storage Configuration
+storage_account_tier        = "Standard"
+storage_replication_type    = "ZRS"
+lifecycle_cool_after_days   = 30
+lifecycle_archive_after_days = 90
+lifecycle_delete_after_days = 2555  # 7 years
+
+# PostgreSQL Configuration
+postgresql_version                      = "15"
+postgresql_sku_name                    = "GP_Standard_D4s_v3"
+postgresql_storage_mb                  = 1048576  # 1TB
+postgresql_backup_retention_days       = 35
+postgresql_geo_redundant_backup_enabled = true
+postgresql_high_availability_mode      = "ZoneRedundant"
+postgresql_standby_availability_zone   = "2"
+
+# AKS Configuration
+kubernetes_version    = "1.28"
+aks_node_count       = 5
+aks_vm_size          = "Standard_D4s_v5"
+aks_min_node_count   = 3
+aks_max_node_count   = 20
+
+# Worker Node Pool Configuration
+create_worker_node_pool = true
+worker_vm_size         = "Standard_D8s_v5"
+worker_node_count      = 3
+worker_min_node_count  = 2
+worker_max_node_count  = 10
+
+# Application Gateway Configuration
+application_gateway_capacity     = 3
+waf_file_upload_limit_mb        = 500
+waf_max_request_body_size_kb    = 512
+waf_rate_limit_threshold        = 300
+
+# SSL Certificate (base64 encoded .pfx file)
+# ssl_certificate_data     = "MIIKXwIBAz..."
+# ssl_certificate_password = "your-certificate-password"
+
+# Monitoring Configuration
+log_retention_days                   = 90
+log_analytics_daily_quota_gb        = 50
+application_insights_retention_days = 730  # 2 years
+enable_grafana                      = true
+
+# Alert Configuration
+alert_email_receivers = [
+  {
+    name          = "production-team"
+    email_address = "production-team@yourcompany.com"
+  },
+  {
+    name          = "on-call"
+    email_address = "on-call@yourcompany.com"
+  }
+]
+
+alert_sms_receivers = [
+  {
+    name         = "on-call-primary"
+    country_code = "1"
+    phone_number = "5551234567"
+  }
+]
+
+alert_webhook_receivers = [
+  {
+    name        = "pagerduty"
+    service_uri = "https://events.pagerduty.com/integration/YOUR_INTEGRATION_KEY/enqueue"
+  }
+]

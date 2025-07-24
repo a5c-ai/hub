@@ -1,0 +1,38 @@
+# Example terraform.tfvars file for development environment
+# Copy this file to terraform.tfvars and customize the values
+
+# Basic Configuration
+location = "East US"
+owner    = "hub-development-team"
+
+# Networking Configuration
+vnet_address_space              = ["10.0.0.0/16"]
+aks_subnet_cidr                = "10.0.1.0/24"
+database_subnet_cidr           = "10.0.2.0/24"
+private_endpoints_subnet_cidr  = "10.0.3.0/24"
+appgw_subnet_cidr             = "10.0.4.0/24"
+admin_source_address_prefix    = "YOUR_IP_ADDRESS/32"  # Replace with your IP
+enable_private_endpoints       = true
+
+# Storage Configuration
+storage_account_tier      = "Standard"
+storage_replication_type  = "LRS"
+
+# PostgreSQL Configuration
+postgresql_version                = "15"
+postgresql_sku_name              = "B_Standard_B1ms"
+postgresql_storage_mb            = 32768
+postgresql_backup_retention_days = 7
+
+# AKS Configuration
+kubernetes_version = "1.28"
+aks_node_count    = 2
+aks_vm_size       = "Standard_D2s_v5"
+
+# Monitoring Configuration
+alert_email_receivers = [
+  {
+    name          = "dev-team"
+    email_address = "dev-team@yourcompany.com"
+  }
+]
