@@ -181,7 +181,9 @@ func (s *authService) Register(ctx context.Context, req RegisterRequest) (*model
 	}
 
 	// Send verification email
-	if err := s.sendVerificationEmail(&user); err != nil {
+	emailService := &MockEmailService{}
+	verificationService := NewEmailVerificationService(s.db, emailService)
+	if err := verificationService.SendVerificationEmail(user.ID); err != nil {
 		// Log the error but don't fail registration
 		fmt.Printf("Failed to send verification email: %v\n", err)
 	}
@@ -256,14 +258,18 @@ func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordRese
 		return nil
 	}
 
+	// Initialize password reset service
+	passwordResetService := NewPasswordResetService(s.db)
+	emailService := &MockEmailService{}
+
 	// Generate reset token
-	token := generateSecureToken()
-	
-	// Store reset token (simplified - in production, use a separate table)
-	// TODO: Implement proper password reset token storage
+	resetToken, err := passwordResetService.CreateResetToken(user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create reset token: %w", err)
+	}
 	
 	// Send reset email
-	if err := s.sendPasswordResetEmail(&user, token); err != nil {
+	if err := emailService.SendPasswordResetEmail(user.Email, resetToken.Token); err != nil {
 		return fmt.Errorf("failed to send password reset email: %w", err)
 	}
 
@@ -271,36 +277,28 @@ func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordRese
 }
 
 func (s *authService) ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error {
-	// TODO: Implement proper token validation and password reset
-	// This is a simplified implementation
+	// Initialize password reset service
+	passwordResetService := NewPasswordResetService(s.db)
 	
-	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// Use the reset token to change password
+	err := passwordResetService.UseResetToken(req.Token, req.Password)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
+		return fmt.Errorf("failed to reset password: %w", err)
 	}
 
-	// Update password (simplified - in production, validate token first)
-	// TODO: Implement proper token validation
-	_ = hashedPassword
-	
 	return nil
 }
 
 func (s *authService) VerifyEmail(ctx context.Context, token string) error {
-	// TODO: Implement email verification
-	// This is a simplified implementation
-	return nil
+	emailService := &MockEmailService{}
+	verificationService := NewEmailVerificationService(s.db, emailService)
+	return verificationService.VerifyEmail(token)
 }
 
 func (s *authService) ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error {
-	var user models.User
-	err := s.db.First(&user, userID).Error
-	if err != nil {
-		return errors.New("user not found")
-	}
-
-	return s.sendVerificationEmail(&user)
+	emailService := &MockEmailService{}
+	verificationService := NewEmailVerificationService(s.db, emailService)
+	return verificationService.SendVerificationEmail(userID)
 }
 
 // Legacy methods for backward compatibility

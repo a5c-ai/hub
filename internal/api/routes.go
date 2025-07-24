@@ -22,7 +22,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize authentication services
 	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
 	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
-	authHandlers := NewAuthHandlers(authService, oauthService)
+	mfaService := auth.NewMFAService(database.DB)
+	authHandlers := NewAuthHandlers(authService, oauthService, mfaService)
 
 	// Initialize Git services
 	gitService := git.NewGitService(logger)
@@ -50,7 +51,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
 	// Initialize handlers
-	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, logger)
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	issueHandlers := NewIssueHandlers(issueService, commentService, labelService, milestoneService, repositoryService, logger)
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
@@ -112,6 +113,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.Use(middleware.AuthMiddleware(jwtManager))
 			{
 				protected.POST("/logout", authHandlers.Logout)
+				
+				// MFA endpoints
+				mfa := protected.Group("/mfa")
+				{
+					mfa.POST("/setup", authHandlers.SetupMFA)
+					mfa.POST("/verify", authHandlers.VerifyMFA)
+					mfa.POST("/disable", authHandlers.DisableMFA)
+					mfa.POST("/regenerate-codes", authHandlers.RegenerateBackupCodes)
+				}
 			}
 		}
 
@@ -120,6 +130,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo", repoHandlers.GetRepository)
 		v1.GET("/repositories/:owner/:repo/branches", repoHandlers.GetBranches)
 		v1.GET("/repositories/:owner/:repo/branches/:branch", repoHandlers.GetBranch)
+		
+		// Git content endpoints (public access)
+		v1.GET("/repositories/:owner/:repo/commits", repoHandlers.GetCommits)
+		v1.GET("/repositories/:owner/:repo/commits/:sha", repoHandlers.GetCommit)
+		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
+		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
 		
 		// Public issue endpoints (for public repos)
 		v1.GET("/repositories/:owner/:repo/issues", issueHandlers.ListIssues)
