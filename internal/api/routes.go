@@ -22,7 +22,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize authentication services
 	authService := auth.NewAuthService(database.DB, jwtManager, cfg)
 	oauthService := auth.NewOAuthService(database.DB, jwtManager, cfg, authService)
-	authHandlers := NewAuthHandlers(authService, oauthService)
+	mfaService := auth.NewMFAService(database.DB)
+	authHandlers := NewAuthHandlers(authService, oauthService, mfaService)
 
 	// Initialize Git services
 	gitService := git.NewGitService(logger)
@@ -102,6 +103,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.Use(middleware.AuthMiddleware(jwtManager))
 			{
 				protected.POST("/logout", authHandlers.Logout)
+				
+				// MFA endpoints
+				mfa := protected.Group("/mfa")
+				{
+					mfa.POST("/setup", authHandlers.SetupMFA)
+					mfa.POST("/verify", authHandlers.VerifyMFA)
+					mfa.POST("/disable", authHandlers.DisableMFA)
+					mfa.POST("/regenerate-codes", authHandlers.RegenerateBackupCodes)
+				}
 			}
 		}
 

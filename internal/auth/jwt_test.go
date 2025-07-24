@@ -6,6 +6,7 @@ import (
 
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
+	"github.com/google/uuid"
 )
 
 func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
@@ -15,8 +16,9 @@ func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
 	}
 	jwtManager := NewJWTManager(cfg)
 
+	testUserID := uuid.New()
 	user := &models.User{
-		ID:       1,
+		ID:       testUserID,
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,
@@ -33,7 +35,7 @@ func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
 	}
 
 	if claims.UserID != user.ID {
-		t.Errorf("Expected user ID %d, got %d", user.ID, claims.UserID)
+		t.Errorf("Expected user ID %s, got %s", user.ID, claims.UserID)
 	}
 
 	if claims.Username != user.Username {
@@ -69,8 +71,9 @@ func TestJWTManager_ValidateExpiredToken(t *testing.T) {
 	}
 	jwtManager := NewJWTManager(cfg)
 
+	testUserID := uuid.New()
 	user := &models.User{
-		ID:       1,
+		ID:       testUserID,
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,
