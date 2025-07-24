@@ -214,7 +214,7 @@ export const useIssueStore = create<IssueStore>()(
           return response.data;
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to create issue',
+            operationError: getErrorMessage(error),
             isCreating: false,
           });
           throw error;
@@ -241,7 +241,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ issues: updatedIssues });
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to update issue',
+            operationError: getErrorMessage(error),
             isUpdating: false,
           });
           throw error;
@@ -270,7 +270,7 @@ export const useIssueStore = create<IssueStore>()(
           }
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to lock issue',
+            operationError: getErrorMessage(error),
             isUpdating: false,
           });
           throw error;
@@ -291,7 +291,7 @@ export const useIssueStore = create<IssueStore>()(
           }
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to unlock issue',
+            operationError: getErrorMessage(error),
             isUpdating: false,
           });
           throw error;
@@ -311,7 +311,7 @@ export const useIssueStore = create<IssueStore>()(
           });
         } catch (error: unknown) {
           set({
-            commentsError: error.response?.data?.error || 'Failed to fetch comments',
+            commentsError: getErrorMessage(error),
             isLoadingComments: false,
           });
         }
@@ -342,7 +342,7 @@ export const useIssueStore = create<IssueStore>()(
           }
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to create comment',
+            operationError: getErrorMessage(error),
             isCreating: false,
           });
           throw error;
@@ -364,7 +364,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ comments: updatedComments });
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to update comment',
+            operationError: getErrorMessage(error),
             isUpdating: false,
           });
           throw error;
@@ -397,7 +397,7 @@ export const useIssueStore = create<IssueStore>()(
           }
         } catch (error: unknown) {
           set({
-            operationError: error.response?.data?.error || 'Failed to delete comment',
+            operationError: getErrorMessage(error),
             isDeleting: false,
           });
           throw error;
@@ -416,7 +416,7 @@ export const useIssueStore = create<IssueStore>()(
           });
         } catch (error: unknown) {
           set({
-            labelsError: error.response?.data?.error || 'Failed to fetch labels',
+            labelsError: getErrorMessage(error),
             isLoadingLabels: false,
           });
         }
@@ -434,7 +434,7 @@ export const useIssueStore = create<IssueStore>()(
           });
         } catch (error: unknown) {
           set({
-            milestonesError: error.response?.data?.error || 'Failed to fetch milestones',
+            milestonesError: getErrorMessage(error),
             isLoadingMilestones: false,
           });
         }
