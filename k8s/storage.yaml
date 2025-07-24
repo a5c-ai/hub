@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hub-repositories-pvc
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: azure-files
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hub-database-pvc
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: managed-premium
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hub-redis-pvc
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: managed-premium

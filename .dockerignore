@@ -1,0 +1,53 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Frontend files (built separately)
+frontend/
+
+# Scripts (for development only)
+scripts/
+
+# Configuration examples
+config.example.yaml
+
+# Kubernetes manifests
+k8s/
+helm/
