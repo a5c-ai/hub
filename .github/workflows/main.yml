@@ -145,7 +145,7 @@ jobs:
           
       # Build with increased timeout and better error handling
       - name: Build application
-        timeout-minutes: 25  # Increased timeout for slow builds
+        timeout-minutes: 35  # Increased timeout for slow builds
         run: |
           # Set build optimization flags
           export CGO_ENABLED=0
@@ -156,6 +156,12 @@ jobs:
           # Optimize for faster builds
           export GOMAXPROCS=4
           export GOGC=100
+          
+          # Next.js build optimizations to prevent timeouts
+          export DISABLE_COLLECT_BUILD_TRACES=1
+          export NEXT_TELEMETRY_DISABLED=1
+          export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
+          export NODE_OPTIONS="--max-old-space-size=6144"
           
           # Run build with optimizations
           ./scripts/build.sh

@@ -86,8 +86,11 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export NEXT_TELEMETRY_DISABLED=1
     export NODE_OPTIONS="--max-old-space-size=4096"
     
-    # Build the frontend with optimizations
-    npm run build -- --experimental-build-mode=compile
+    # Build the frontend with optimizations and timeout prevention
+    export DISABLE_COLLECT_BUILD_TRACES=1
+    export NEXT_TELEMETRY_DISABLED=1
+    export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
+    npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
