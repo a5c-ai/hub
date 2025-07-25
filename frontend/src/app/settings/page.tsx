@@ -68,7 +68,7 @@ export default function SettingsPage() {
           <p className="text-muted-foreground mt-2">Manage your account settings and preferences</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8" data-testid="settings-container">
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <nav className="space-y-1">
@@ -76,6 +76,7 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
+                  data-testid={`settings-tab-${tab.id}`}
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab.id
                       ? 'bg-primary/10 text-primary border-r-2 border-primary'
@@ -340,7 +341,7 @@ export default function SettingsPage() {
                           <p className="text-sm text-muted-foreground">Notifications about issues and pull requests you&apos;re involved in</p>
 
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
+                        <input type="checkbox" defaultChecked data-testid="email-issues-prs" className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                       
                       <div className="flex items-center justify-between">
@@ -348,7 +349,7 @@ export default function SettingsPage() {
                           <h4 className="font-medium text-foreground">Repository Updates</h4>
                           <p className="text-sm text-muted-foreground">Notifications about repositories you&apos;re watching</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
+                        <input type="checkbox" defaultChecked data-testid="email-repository-updates" className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                       
                       <div className="flex items-center justify-between">
@@ -356,7 +357,7 @@ export default function SettingsPage() {
                           <h4 className="font-medium text-foreground">Security Alerts</h4>
                           <p className="text-sm text-muted-foreground">Notifications about security vulnerabilities</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
+                        <input type="checkbox" defaultChecked data-testid="email-security-alerts" className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                     </div>
                   </div>
@@ -371,7 +372,7 @@ export default function SettingsPage() {
                           <h4 className="font-medium text-foreground">Browser Notifications</h4>
                           <p className="text-sm text-muted-foreground">Show notifications in your browser</p>
                         </div>
-                        <Button size="sm" variant="outline">Enable</Button>
+                        <Button size="sm" variant="outline" data-testid="enable-browser-notifications">Enable</Button>
                       </div>
                     </div>
                   </div>

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import api from '@/lib/api';
 import { createErrorHandler } from '@/lib/utils';
+import WebhookTestingModal from '@/components/actions/WebhookTestingModal';
 
 interface Webhook {
   id: string;
@@ -37,6 +38,7 @@ export default function WebhooksPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState<Webhook | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -265,6 +267,13 @@ export default function WebhooksPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setTestingWebhook(webhook)}
+                      >
+                        Test
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleToggleWebhook(webhook.id, webhook.active)}
                       >
                         {webhook.active ? 'Disable' : 'Enable'}
@@ -404,6 +413,17 @@ export default function WebhooksPage() {
             </div>
           </div>
         </Modal>
+
+        {/* Webhook Testing Modal */}
+        {testingWebhook && (
+          <WebhookTestingModal
+            webhook={testingWebhook}
+            open={!!testingWebhook}
+            onClose={() => setTestingWebhook(null)}
+            owner={owner}
+            repo={repo}
+          />
+        )}
       </div>
     </AppLayout>
   );

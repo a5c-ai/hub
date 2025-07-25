@@ -71,8 +71,8 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">{error}</p>
-        <Button onClick={loadPullRequests} className="mt-2">
+        <p data-testid="error-message" className="text-red-800">{error}</p>
+        <Button data-testid="retry-button" onClick={loadPullRequests} className="mt-2">
           Try Again
         </Button>
       </div>
@@ -88,13 +88,14 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           <span className="text-muted-foreground">{totalCount} total</span>
         </div>
         <Link href={`/${repositoryOwner}/${repositoryName}/pulls/new`}>
-          <Button>New Pull Request</Button>
+          <Button data-testid="new-pr-button">New Pull Request</Button>
         </Link>
       </div>
 
       {/* Filter Tabs */}
               <div className="flex items-center space-x-4 border-b border-border">
         <button
+          data-testid="filter-open"
           onClick={() => handleFilterChange({ state: 'open' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'open'
@@ -105,6 +106,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           Open ({pullRequests.filter(pr => pr.issue.state === 'open').length})
         </button>
         <button
+          data-testid="filter-closed"
           onClick={() => handleFilterChange({ state: 'closed' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'closed'
@@ -115,6 +117,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           Closed
         </button>
         <button
+          data-testid="filter-all"
           onClick={() => handleFilterChange({ state: 'all' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'all'
@@ -128,7 +131,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
 
       {/* Pull Request List */}
       {pullRequests.length === 0 ? (
-        <div className="text-muted-foreground">
+        <div data-testid="empty-state" className="text-muted-foreground">
           <svg className="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
@@ -137,33 +140,34 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       ) : (
         <div className="space-y-3">
           {pullRequests.map((pr) => (
-            <div key={pr.id} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors bg-card">
+            <div key={pr.id} data-testid="pr-item" className="border border-border rounded-lg p-4 hover:bg-muted transition-colors bg-card">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Badge className={getStateColor(pr.issue.state, pr.merged)}>
+                    <Badge data-testid="pr-state-badge" className={getStateColor(pr.issue.state, pr.merged)}>
                       {getStateText(pr.issue.state, pr.merged)}
                     </Badge>
                     {pr.draft && (
-                      <Badge className="bg-muted text-foreground">Draft</Badge>
+                      <Badge data-testid="pr-draft-badge" className="bg-muted text-foreground">Draft</Badge>
                     )}
                   </div>
                   
                   <div className="flex items-center space-x-2">
                     <Link 
                       href={`/${repositoryOwner}/${repositoryName}/pull/${pr.issue.number}`}
+                      data-testid="pr-title"
                       className="text-lg font-medium text-blue-600 hover:underline truncate"
                     >
                       {pr.issue.title}
                     </Link>
-                    <span className="text-muted-foreground">#{pr.issue.number}</span>
+                    <span data-testid="pr-number" className="text-muted-foreground">#{pr.issue.number}</span>
                   </div>
                   
                   <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-                    <span>
+                    <span data-testid="pr-branch">
                       {pr.head_ref} → {pr.base_ref}
                     </span>
-                    <span>
+                    <span data-testid="pr-author">
                       by {pr.issue.user?.username || 'Unknown'}
                     </span>
                     <span>
@@ -172,22 +176,22 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                   </div>
                   
                   <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-                    <span className="flex items-center">
+                    <span data-testid="pr-additions" className="flex items-center">
                       <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                       </svg>
                       +{pr.additions}
                     </span>
-                    <span className="flex items-center">
+                    <span data-testid="pr-deletions" className="flex items-center">
                       <svg className="w-4 h-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
                       </svg>
                       -{pr.deletions}
                     </span>
-                    <span>
+                    <span data-testid="pr-files-changed">
                       {pr.changed_files} files
                     </span>
-                    <span>
+                    <span data-testid="pr-comments">
                       {pr.issue.comments_count} {pr.issue.comments_count === 1 ? 'comment' : 'comments'}
                     </span>
                   </div>
@@ -195,7 +199,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                 
                 <div className="flex items-center space-x-2 ml-4">
                   {pr.mergeable === false && (
-                    <Badge className="bg-yellow-100 text-yellow-800">
+                    <Badge data-testid="pr-conflicts-badge" className="bg-yellow-100 text-yellow-800">
                       Conflicts
                     </Badge>
                   )}
@@ -209,11 +213,12 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       {/* Pagination */}
       {totalCount > (filters.per_page || 25) && (
         <div className="flex justify-between items-center pt-4">
-          <div className="text-sm text-muted-foreground">
+          <div data-testid="pagination-info" className="text-sm text-muted-foreground">
             Showing {pullRequests.length} of {totalCount} pull requests
           </div>
           <div className="flex space-x-2">
             <Button
+              data-testid="previous-button"
               disabled={filters.page === 1}
               onClick={() => handleFilterChange({ page: (filters.page || 1) - 1 })}
               variant="secondary"
@@ -221,6 +226,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
               Previous
             </Button>
             <Button
+              data-testid="next-button"
               disabled={(filters.page || 1) * (filters.per_page || 25) >= totalCount}
               onClick={() => handleFilterChange({ page: (filters.page || 1) + 1 })}
               variant="secondary"

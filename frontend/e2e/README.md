@@ -16,12 +16,24 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`example.spec.ts`** - Basic application loading tests
 - **`registration.spec.ts`** - User registration and validation tests
 - **`repository.spec.ts`** - Repository management tests
+- **`repository-settings.spec.ts`** - Repository settings and administration tests
+- **`repository-security.spec.ts`** - Repository security, secrets, and access control tests
+- **`repository-integrations.spec.ts`** - Repository webhooks, deploy keys, and integrations tests
 - **`issues.spec.ts`** - Issue management and workflow tests
 - **`actions-workflows.spec.ts`** - GitHub Actions workflow management tests
 - **`actions-logs.spec.ts`** - Workflow run details and log viewing tests
 - **`actions-runners.spec.ts`** - Self-hosted runner management tests
 - **`actions-integration.spec.ts`** - Actions integration features (status checks, deployments)
 - **`actions-performance.spec.ts`** - Performance and stress testing for Actions features
+- **`activity-feed.spec.ts`** - Activity feed and timeline tests (24 tests)
+- **`notifications.spec.ts`** - Notification center and management tests (40 tests)
+- **`notification-preferences.spec.ts`** - Notification settings and preferences tests (34 tests)
+- **`pull-requests.spec.ts`** - Pull request management and creation tests
+- **`pull-request-review.spec.ts`** - Pull request review and collaboration workflow tests
+- **`pull-request-files.spec.ts`** - Pull request file diff and code review tests
+- **`user-profile.spec.ts`** - User profile management and public profile tests
+- **`user-security.spec.ts`** - Security settings, password, SSH keys, and 2FA tests
+- **`user-preferences.spec.ts`** - Notifications, appearance, accessibility, and privacy tests
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage
@@ -43,6 +55,21 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Responsive design on mobile
 - Empty state handling
 
+#### Pull Request Tests
+- List pull requests with different states (open/closed/merged)
+- Filter pull requests by state, author, and labels
+- Create new pull request with form validation
+- Navigate to pull request details
+- Display pull request metadata and statistics
+- Review workflow (approve, request changes, comment)
+- Merge pull request with different merge strategies
+- Close and reopen pull requests
+- Convert draft to ready for review
+- View and navigate changed files with diff display
+- Add inline comments on code lines
+- Resolve and unresolve comment conversations
+- Mobile responsiveness for all PR workflows
+
 #### Navigation Tests
 - Header and sidebar navigation elements
 - Mobile menu functionality
@@ -58,6 +85,112 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **Runner Management**: Self-hosted runners, health monitoring, runner groups, permissions
 - **Integration Features**: Status checks on PRs, deployment workflows, matrix builds, conditional execution
 - **Performance Testing**: Large log handling, concurrent runs, memory management, API throttling
+#### Activity Feed Tests (24 tests)
+- Display global activity feed with different event types (push, PR, issue, fork, star, follow)
+- Filter activity by type (all, own, following)
+- Activity timeline and event display
+- Personal activity timeline and history
+- Following users and organizations activity
+- Activity feed pagination and infinite scroll
+- Detailed push events with commit information
+- Repository creation activities
+- Follow activities
+- Empty state handling
+- Error handling and recovery
+- Mobile responsiveness
+
+#### Notifications Center Tests (40 tests)
+- Notification inbox with unread indicators
+- Notification categorization (mentions, issues, PRs, security)
+- Mark notifications as read/unread (individual and bulk)
+- Delete notifications
+- Mark all notifications as read
+- Bulk notification actions
+- Issue and pull request notifications
+- Comment and mention notifications
+- Security and vulnerability alerts
+- Repository invitation notifications
+- Notification filtering and search
+- Empty states for different filters
+- Real-time notification updates via WebSocket
+- Notification badge updates
+- Mobile-friendly notification management
+- Responsive notification layout
+- Error handling and offline scenarios
+
+#### Notification Preferences Tests (34 tests)
+- Email notification settings management
+- Notification delivery timing configuration
+- Thread subscription management
+- Browser notification permissions
+- Desktop notification settings
+- Automatic notification cleanup
+- Manual notification cleanup
+- Repository watching and notification settings
+- Organization notification preferences
+- Import/export notification settings
+- Mobile-friendly settings interface
+- Mobile swipe gestures for navigation
+- API error handling
+- Notification preference validation
+- Accessibility features
+- Performance optimization
+#### Repository Settings & Administration Tests
+- General repository settings (name, description, visibility)
+- Default branch configuration
+- Repository archiving and deletion
+- Branch protection rules and policies
+- Access control and collaborator management
+- Actions settings and workflow permissions
+- Security settings and vulnerability alerts
+- Transfer and danger zone operations
+- Mobile repository management
+- Error handling and validation
+
+#### Repository Security & Secrets Management Tests
+- Repository secrets creation and management
+- Environment-specific secrets configuration
+- Secret validation and security checks
+- Deploy keys management (read-only and read-write)
+- SSH key validation and security standards
+- Access control and permission management
+- Security advisory and vulnerability management
+- Error handling and network failure scenarios
+- Mobile security management interface
+
+#### Repository Webhooks & Integrations Tests
+- Webhook creation, configuration, and management
+- Event selection and payload customization
+- Webhook testing (ping functionality)
+- Content type configuration (JSON/form)
+- Secret configuration for webhook security
+- Webhook status management (enable/disable)
+- Integration with repository settings
+- Error handling and webhook validation
+- Mobile webhook management interface
+
+#### User Settings & Profile Tests
+- Profile information editing and saving
+- Avatar management and file uploads
+- Profile visibility and public profile display
+- Account settings and preferences
+- Theme switching and appearance customization
+
+#### Security Tests
+- Password change functionality with validation
+- SSH key management (add, remove, validate)
+- Two-factor authentication setup and management
+- Security audit logs and session management
+- Account security best practices
+
+#### User Preferences Tests
+- Email notification preferences and frequency
+- Web notification enablement and permissions
+- Quiet hours and notification filtering
+- Accessibility features (high contrast, large fonts, reduced motion)
+- Language, timezone, and localization settings
+- Privacy controls and data visibility settings
+- Data export and portability features
 
 ## Configuration
 
@@ -197,6 +330,32 @@ Components include `data-testid` attributes for reliable element selection:
 - `mobile-menu-button` - Mobile hamburger menu
 - `user-avatar` - User avatar image
 - `logout-button` - Logout button
+
+### Activity Feed Elements
+- `filter-all` - All activity filter button
+- `filter-own` - Your activity filter button
+- `filter-following` - Following activity filter button
+- `activity-item` - Individual activity items
+
+### Notification Elements
+- `filter-unread` - Unread notifications filter
+- `filter-all` - All notifications filter
+- `filter-participating` - Participating notifications filter
+- `notification-item` - Individual notification items
+- `mark-as-read-{id}` - Mark specific notification as read
+- `delete-notification-{id}` - Delete specific notification
+- `mark-all-as-read` - Mark all notifications as read
+- `mark-selected-as-read` - Mark selected notifications as read
+- `select-all-notifications` - Select all notifications checkbox
+- `notification-icon-{type}` - Notification type icons
+
+### Settings Elements
+- `settings-tab-{id}` - Settings tab navigation buttons
+- `settings-container` - Main settings container
+- `email-issues-prs` - Email notifications for issues/PRs
+- `email-repository-updates` - Email notifications for repository updates
+- `email-security-alerts` - Email notifications for security alerts
+- `enable-browser-notifications` - Enable browser notifications button
 
 ## CI/CD Integration
 
