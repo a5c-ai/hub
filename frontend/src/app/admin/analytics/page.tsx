@@ -117,7 +117,7 @@ export default function AdminAnalyticsPage() {
       // For demo purposes, just show a success message
       await new Promise(resolve => setTimeout(resolve, 2000));
       alert(`Analytics data exported as ${format.toUpperCase()}`);
-    } catch (err) {
+    } catch {
       alert('Failed to export data');
     } finally {
       setIsExporting(false);

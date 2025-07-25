@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -63,17 +63,7 @@ export default function WorkflowRunDetailPage() {
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [logs, setLogs] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchWorkflowRun();
-  }, [owner, repo, runId]);
-
-  useEffect(() => {
-    if (run && run.jobs.length > 0 && !selectedJob) {
-      setSelectedJob(run.jobs[0].id);
-    }
-  }, [run, selectedJob]);
-
-  const fetchWorkflowRun = async () => {
+  const fetchWorkflowRun = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runs/${runId}`);
       if (response.ok) {
@@ -87,7 +77,17 @@ export default function WorkflowRunDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo, runId]);
+
+  useEffect(() => {
+    fetchWorkflowRun();
+  }, [fetchWorkflowRun]);
+
+  useEffect(() => {
+    if (run && run.jobs.length > 0 && !selectedJob) {
+      setSelectedJob(run.jobs[0].id);
+    }
+  }, [run, selectedJob]);
 
   const fetchJobLogs = async (jobId: string) => {
     if (logs[jobId]) return; // Already fetched
@@ -311,17 +311,20 @@ export default function WorkflowRunDetailPage() {
                   <h4 className="font-medium">Logs</h4>
                 </div>
                 <div className="p-4">
-                  {logs[selectedJob] ? (
-                    <pre className="bg-card text-foreground p-4 rounded text-sm overflow-x-auto">
-                      {selectedJob?.logs || 'No logs available'}
+                  {selectedJob && logs[selectedJob] ? (
+                    <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
+                      {logs[selectedJob]}
                     </pre>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <h3 className="text-lg font-medium text-foreground mb-2">Select a job</h3>
-                      <p className="text-muted-foreground">Select a job to view details</p>
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Click &quot;View logs&quot; to see the build output</p>
+                      <Button
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => fetchJobLogs(selectedJob!)}
+                      >
+                        View logs
+                      </Button>
                     </div>
                   )}
                 </div>

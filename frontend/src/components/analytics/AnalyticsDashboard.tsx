@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ChartBarIcon, ClockIcon, EyeIcon, UserGroupIcon } from '@heroicons/react/24/outline';

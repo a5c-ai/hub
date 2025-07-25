@@ -130,8 +130,8 @@ export default function BlobPage() {
     if (!file) return;
     
     const content = file.encoding === 'base64' 
-      ? atob(file.content) 
-      : file.content;
+      ? atob(file.content || '') 
+      : file.content || '';
     
     const blob = new Blob([content], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
@@ -148,8 +148,8 @@ export default function BlobPage() {
     if (!file) return;
     
     const content = file.encoding === 'base64' 
-      ? atob(file.content) 
-      : file.content;
+      ? atob(file.content || '') 
+      : file.content || '';
     
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -307,7 +307,7 @@ export default function BlobPage() {
                   wrapLines={true}
                   wrapLongLines={true}
                 >
-                  {file.content}
+                  {file.content || ''}
                 </SyntaxHighlighter>
               </div>
             )}

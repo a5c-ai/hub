@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
+// import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { 
   CodeBracketIcon, 
   UserGroupIcon, 
   ExclamationTriangleIcon,
   DocumentTextIcon,
-  ClockIcon,
+  // ClockIcon,
   StarIcon,
   EyeIcon,
   DocumentDuplicateIcon
@@ -135,7 +135,7 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
         <div className="text-center">
           <DocumentTextIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No insights available</h3>
-          <p className="text-muted-foreground">Insights will appear here once there's activity in this repository.</p>
+          <p className="text-muted-foreground">Insights will appear here once there&apos;s activity in this repository.</p>
         </div>
       </Card>
     );

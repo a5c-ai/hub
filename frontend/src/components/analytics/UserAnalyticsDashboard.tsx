@@ -137,7 +137,7 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
         <div className="text-center">
           <ChartBarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No analytics available</h3>
-          <p className="text-muted-foreground">User analytics will appear here once there's activity.</p>
+          <p className="text-muted-foreground">User analytics will appear here once there&apos;s activity.</p>
         </div>
       </Card>
     );

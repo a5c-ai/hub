@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -41,44 +41,55 @@ export default function ActionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchWorkflows();
-    fetchRecentRuns();
-  }, [owner, repo]);
-
-  const fetchWorkflows = async () => {
+  const fetchWorkflows = useCallback(async () => {
     try {
-      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/workflows`);
-      setWorkflows(data.workflows || []);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Please log in to access GitHub Actions');
-      } else if (err.response?.status === 404) {
-        setError('Repository not found or you do not have access to it');
-      } else if (err.response?.status === 400) {
-        setError(`Bad request: ${err.response?.data?.error || err.message}`);
+      const response = await apiClient.get<{ workflows: Workflow[] }>(`/repositories/${owner}/${repo}/actions/workflows`);
+      setWorkflows(response.data.workflows || []);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'response' in err) {
+        const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
+        if (axiosErr.response?.status === 401) {
+          setError('Please log in to access GitHub Actions');
+        } else if (axiosErr.response?.status === 404) {
+          setError('Repository not found or you do not have access to it');
+        } else if (axiosErr.response?.status === 400) {
+          setError(`Bad request: ${axiosErr.response?.data?.error || axiosErr.message}`);
+        } else {
+          setError(axiosErr instanceof Error ? axiosErr.message : 'Failed to fetch workflows');
+        }
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch workflows');
+        setError('Failed to fetch workflows');
       }
     }
-  };
+  }, [owner, repo]);
 
-  const fetchRecentRuns = async () => {
+  const fetchRecentRuns = useCallback(async () => {
     try {
-      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/runs?limit=10`);
-      setRecentRuns(data.workflow_runs || []);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        setError('Please log in to access GitHub Actions');
-      } else if (err.response?.status === 404) {
-        setError('Repository not found or you do not have access to it');
+      const response = await apiClient.get<{ workflow_runs: WorkflowRun[] }>(`/repositories/${owner}/${repo}/actions/runs?limit=10`);
+      setRecentRuns(response.data.workflow_runs || []);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'response' in err) {
+        const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
+        if (axiosErr.response?.status === 401) {
+          setError('Please log in to access GitHub Actions');
+        } else if (axiosErr.response?.status === 404) {
+          setError('Repository not found or you do not have access to it');
+        } else {
+          setError(axiosErr instanceof Error ? axiosErr.message : 'Failed to fetch workflow runs');
+        }
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch workflow runs');
+        setError('Failed to fetch workflow runs');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo]);
+
+  useEffect(() => {
+    fetchWorkflows();
+    fetchRecentRuns();
+  }, [fetchWorkflows, fetchRecentRuns]);
+
 
   const getStatusColor = (status: string, conclusion?: string) => {
     if (status === 'in_progress') return 'yellow';
@@ -238,7 +249,7 @@ export default function ActionsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                    <Badge variant={getStatusColor(run.status, run.conclusion) as 'default' | 'secondary' | 'outline' | 'destructive'}>
                       {run.conclusion || run.status}
                     </Badge>
                     <p className="text-sm text-muted-foreground mt-1">
