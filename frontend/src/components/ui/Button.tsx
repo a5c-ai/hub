@@ -5,12 +5,13 @@ import { cn } from '@/lib/utils';
 const Slot = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }>(
   ({ children, ...props }, ref) => {
     if (React.isValidElement(children)) {
+      const childProps = children.props as React.HTMLAttributes<HTMLElement>;
       return React.cloneElement(children, {
         ...props,
-        ...children.props,
-        className: cn(props.className, children.props.className),
+        ...childProps,
+        className: cn(props.className, childProps.className),
         ref,
-      } as any);
+      } as React.HTMLAttributes<HTMLElement>);
     }
     return null;
   }
@@ -55,7 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return (
         <Slot
           className={buttonClasses}
-          ref={ref as any}
+          ref={ref as React.Ref<HTMLElement>}
           {...props}
         >
           {children}

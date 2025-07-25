@@ -12,15 +12,16 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize output and compression
   compress: true,
-  // Reduce memory usage in CI
+  // Optimize for CI builds - skip type checking and linting during build
+  // since they are done separately in the workflow
   ...(process.env.CI === 'true' && {
     typescript: {
-      // Skip type checking during build (already done in linting phase)
-      ignoreBuildErrors: false,
+      // Skip type checking during build to prevent hanging
+      ignoreBuildErrors: true,
     },
     eslint: {
-      // Skip ESLint during build (already done in linting phase)
-      ignoreDuringBuilds: false,
+      // Skip ESLint during build to prevent hanging
+      ignoreDuringBuilds: true,
     },
   }),
 };

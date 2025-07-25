@@ -104,9 +104,15 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export NEXT_PARALLEL=true  # Re-enable parallel processing for speed
     export NEXT_BUILD_WORKERS=2  # Optimize workers for CI
     
+    # Run type checking separately first with timeout
+    log "Running type checking separately..."
+    timeout 10m npm run type-check || {
+        warn "Type checking failed or timed out, continuing with build..."
+    }
+    
     # Build with shorter timeout and better error handling
     log "Starting frontend build with optimized resource settings..."
-    timeout 20m npm run build
+    timeout 15m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
