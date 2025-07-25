@@ -63,6 +63,7 @@ export default function IssuePage() {
   };
 
   const handleEditIssue = () => {
+    if (!currentIssue) return;
     router.push(`/repositories/${owner}/${repo}/issues/${currentIssue.number}/edit`);
   };
 

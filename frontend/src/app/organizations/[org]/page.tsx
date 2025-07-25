@@ -121,16 +121,20 @@ export default function OrganizationOverviewPage() {
               )}
               
               <div className="flex items-center text-sm text-muted-foreground space-x-4 mb-4">
-                <div className="flex items-center">
-                  <MapPinIcon className="w-4 h-4 mr-1" />
-                  {organization.location}
-                </div>
-                <div className="flex items-center">
-                  <LinkIcon className="w-4 h-4 mr-1" />
-                  <a href={organization.blog} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                    {organization.blog}
-                  </a>
-                </div>
+                {organization.location && (
+                  <div className="flex items-center">
+                    <MapPinIcon className="w-4 h-4 mr-1" />
+                    {organization.location}
+                  </div>
+                )}
+                {organization.website && (
+                  <div className="flex items-center">
+                    <LinkIcon className="w-4 h-4 mr-1" />
+                    <a href={organization.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                      {organization.website}
+                    </a>
+                  </div>
+                )}
                 <div className="flex items-center">
                   <CalendarIcon className="w-4 h-4 mr-1" />
                   Joined {new Date(organization.created_at).toLocaleDateString()}
@@ -266,7 +270,7 @@ export default function OrganizationOverviewPage() {
                               )}
                               <div className="flex items-center">
                                 <StarIcon className="w-4 h-4 mr-1" />
-                                {repository.stars_count}
+                                {repository.stargazers_count}
                               </div>
                               <div className="flex items-center">
                                 <ShareIcon className="w-4 h-4 mr-1" />
@@ -368,7 +372,7 @@ export default function OrganizationOverviewPage() {
                     <span className="text-muted-foreground">Public repositories</span>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{organization.public_members || 0}</div>
+                    <div className="text-2xl font-bold text-primary">0</div>
                     <span className="text-muted-foreground">Members</span>
                   </div>
                   <div className="text-center">
