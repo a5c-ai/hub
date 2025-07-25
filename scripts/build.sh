@@ -77,15 +77,17 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     # Install frontend dependencies if not already installed
     if [[ ! -d "node_modules" ]]; then
         log "Installing frontend dependencies..."
-        npm ci --production=false
+        # Use npm ci with optimizations for CI
+        npm ci --production=false --prefer-offline --no-audit --no-fund
     fi
     
     # Set environment variables for build
     export NODE_ENV=$BUILD_ENV
     export NEXT_TELEMETRY_DISABLED=1
+    export NODE_OPTIONS="--max-old-space-size=4096"
     
-    # Build the frontend
-    npm run build
+    # Build the frontend with optimizations
+    npm run build -- --experimental-build-mode=compile
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"

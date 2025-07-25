@@ -75,11 +75,11 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     log "Found Node.js version: $NODE_VERSION"
     log "Found npm version: $NPM_VERSION"
     
-    # Clean install for reproducible builds
+    # Clean install for reproducible builds with optimizations
     if [[ -f "package-lock.json" ]]; then
-        npm ci
+        npm ci --prefer-offline --no-audit --no-fund
     else
-        npm install
+        npm install --prefer-offline --no-audit --no-fund
     fi
     
     log "✅ Frontend dependencies installed successfully"

@@ -91,52 +91,73 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # Increased timeout from 15 to 30 minutes
+    timeout-minutes: 45  # Increased timeout to handle slow dependency downloads
     strategy:
       matrix:
-        node-version: [20] 
+        node-version: [22] 
     steps:
       - uses: actions/checkout@v4
       
-      # Setup Go with explicit version to avoid toolchain conflicts
+      # Setup Go with better caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'  # Use explicit version compatible with toolchain
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true
+          check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with better caching
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'  # Use LTS version for better stability
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: |
-            package-lock.json
             frontend/package-lock.json
-          check-latest: true
+          check-latest: false  # Disable version checking to speed up builds
           
-      # Optimize Go module download with parallel processing
+      # Optimize Go module download with parallel processing and retries
       - name: Download Go modules
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
-          go mod download
-          go mod verify
-          go mod tidy
+          # Enable module proxy and set timeout
+          export GOPROXY=https://proxy.golang.org,direct
+          export GOSUMDB=sum.golang.org
+          export GOTIMEOUT=10m
+          
+          # Download with retry logic
+          for i in {1..3}; do
+            echo "Attempt $i: Downloading Go modules..."
+            if go mod download && go mod verify; then
+              echo "✅ Go modules downloaded successfully"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              if [ $i -eq 3 ]; then
+                echo "🚨 All attempts failed"
+                exit 1
+              fi
+              sleep 10
+            fi
+          done
           
       # Build with increased timeout and better error handling
       - name: Build application
-        timeout-minutes: 20  # Increased from 10 to 20 minutes
+        timeout-minutes: 25  # Increased timeout for slow builds
         run: |
           # Set build optimization flags
           export CGO_ENABLED=0
           export GOOS=linux
           export GOARCH=amd64
+          export GOCACHE=/tmp/go-build-cache
           
-          # Run build with verbose output for debugging
+          # Optimize for faster builds
+          export GOMAXPROCS=4
+          export GOGC=100
+          
+          # Run build with optimizations
           ./scripts/build.sh
         
       # Upload build artifacts for other jobs with compression
@@ -146,14 +167,16 @@ jobs:
           name: build-artifacts
           path: |
             dist/
+            frontend/.next/
             go.sum
             go.mod
           retention-days: 1
-          compression-level: 6  # Balance between speed and size
+          compression-level: 9  # Maximum compression to reduce upload time
+          if-no-files-found: error
           
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 25  # Increased from 20 to 25 minutes
+    timeout-minutes: 30  # Increased timeout for test phase
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -164,33 +187,25 @@ jobs:
         with:
           name: build-artifacts
           
-      # Setup Go with explicit version to avoid toolchain conflicts
+      # Setup Go with caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'  # Use explicit version compatible with toolchain
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true
+          check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'  # Use LTS version for better stability
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: |
-            package-lock.json
             frontend/package-lock.json
-          check-latest: true
-      # Install frontend dependencies for tests
-      - name: Install frontend dependencies
-        run: |
-          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
-            cd frontend && npm ci
-          fi
-          
+          check-latest: false  # Disable version checking to speed up builds
       # Run tests with increased timeout and better error handling
       - name: Run tests
         timeout-minutes: 20  # Increased from 15 to 20 minutes
@@ -204,7 +219,7 @@ jobs:
         
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # Increased from 15 to 20 minutes
+    timeout-minutes: 25  # Increased timeout for deploy phase
     needs: test
     # Only deploy on main branch
     if: github.ref == 'refs/heads/main'
@@ -217,33 +232,25 @@ jobs:
         with:
           name: build-artifacts
 
-      # Setup Go with explicit version to avoid toolchain conflicts
+      # Setup Go with caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'  # Use explicit version compatible with toolchain
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true
+          check-latest: false  # Disable version checking to speed up builds
 
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'  # Use LTS version for better stability
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: |
-            package-lock.json
             frontend/package-lock.json
-          check-latest: true
-          
-      # Install dependencies for deployment
-      - name: Install dependencies for deployment
-        run: |
-          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
-            cd frontend && npm ci
-          fi
+          check-latest: false  # Disable version checking to speed up builds
           
       # Deploy with increased timeout and better error handling
       - name: Deploy application
