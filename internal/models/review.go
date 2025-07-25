@@ -26,7 +26,7 @@ type Review struct {
 	PullRequestID uuid.UUID   `json:"pull_request_id" gorm:"type:uuid;not null;index"`
 	UserID        *uuid.UUID  `json:"user_id" gorm:"type:uuid;index"`
 	CommitSHA     string      `json:"commit_sha" gorm:"not null;size:40"`
-	State         ReviewState `json:"state" gorm:"not null;size:50;check:state IN ('pending','approved','request_changes','commented','dismissed')"`
+	State         ReviewState `json:"state" gorm:"type:varchar(50);not null;check:state IN ('pending','approved','request_changes','commented','dismissed')"`
 	Body          string      `json:"body" gorm:"type:text"`
 	SubmittedAt   *time.Time  `json:"submitted_at"`
 
@@ -111,7 +111,7 @@ type PullRequestMerge struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 	
 	PullRequestID uuid.UUID   `json:"pull_request_id" gorm:"type:uuid;not null;uniqueIndex"`
-	MergeMethod   MergeMethod `json:"merge_method" gorm:"not null;size:20;check:merge_method IN ('merge','squash','rebase')"`
+	MergeMethod   MergeMethod `json:"merge_method" gorm:"type:varchar(20);not null;check:merge_method IN ('merge','squash','rebase')"`
 	CommitTitle   string      `json:"commit_title" gorm:"size:255"`
 	CommitMessage string      `json:"commit_message" gorm:"type:text"`
 	MergedAt      time.Time   `json:"merged_at"`

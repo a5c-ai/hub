@@ -23,43 +23,43 @@ const (
 )
 
 type Repository struct {
-	ID          uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	OwnerID               uuid.UUID  `json:"owner_id" gorm:"type:uuid;not null;index"`
-	OwnerType             OwnerType  `json:"owner_type" gorm:"not null;size:50;check:owner_type IN ('user','organization')"`
-	Name                  string     `json:"name" gorm:"not null;size:255"`
-	Description           string     `json:"description" gorm:"type:text"`
-	DefaultBranch         string     `json:"default_branch" gorm:"default:'main';size:255"`
-	Visibility            Visibility `json:"visibility" gorm:"not null;size:50;check:visibility IN ('public','private','internal')"`
-	IsFork                bool       `json:"is_fork" gorm:"default:false"`
-	ParentID              *uuid.UUID `json:"parent_id" gorm:"type:uuid;index"`
-	IsTemplate            bool       `json:"is_template" gorm:"default:false"`
-	IsArchived            bool       `json:"is_archived" gorm:"default:false"`
-	HasIssues             bool       `json:"has_issues" gorm:"default:true"`
-	HasProjects           bool       `json:"has_projects" gorm:"default:true"`
-	HasWiki               bool       `json:"has_wiki" gorm:"default:true"`
-	HasDownloads          bool       `json:"has_downloads" gorm:"default:true"`
-	AllowMergeCommit      bool       `json:"allow_merge_commit" gorm:"default:true"`
-	AllowSquashMerge      bool       `json:"allow_squash_merge" gorm:"default:true"`
-	AllowRebaseMerge      bool       `json:"allow_rebase_merge" gorm:"default:true"`
-	DeleteBranchOnMerge   bool       `json:"delete_branch_on_merge" gorm:"default:false"`
-	SizeKB                int64      `json:"size_kb" gorm:"default:0"`
-	StarsCount            int        `json:"stars_count" gorm:"default:0"`
-	ForksCount            int        `json:"forks_count" gorm:"default:0"`
-	WatchersCount         int        `json:"watchers_count" gorm:"default:0"`
-	PushedAt              *time.Time `json:"pushed_at"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	OwnerID             uuid.UUID  `json:"owner_id" gorm:"type:uuid;not null;index"`
+	OwnerType           OwnerType  `json:"owner_type" gorm:"type:varchar(50);not null;check:owner_type IN ('user','organization')"`
+	Name                string     `json:"name" gorm:"not null;size:255"`
+	Description         string     `json:"description" gorm:"type:text"`
+	DefaultBranch       string     `json:"default_branch" gorm:"default:'main';size:255"`
+	Visibility          Visibility `json:"visibility" gorm:"type:varchar(50);not null;check:visibility IN ('public','private','internal')"`
+	IsFork              bool       `json:"is_fork" gorm:"default:false"`
+	ParentID            *uuid.UUID `json:"parent_id" gorm:"type:uuid;index"`
+	IsTemplate          bool       `json:"is_template" gorm:"default:false"`
+	IsArchived          bool       `json:"is_archived" gorm:"default:false"`
+	HasIssues           bool       `json:"has_issues" gorm:"default:true"`
+	HasProjects         bool       `json:"has_projects" gorm:"default:true"`
+	HasWiki             bool       `json:"has_wiki" gorm:"default:true"`
+	HasDownloads        bool       `json:"has_downloads" gorm:"default:true"`
+	AllowMergeCommit    bool       `json:"allow_merge_commit" gorm:"default:true"`
+	AllowSquashMerge    bool       `json:"allow_squash_merge" gorm:"default:true"`
+	AllowRebaseMerge    bool       `json:"allow_rebase_merge" gorm:"default:true"`
+	DeleteBranchOnMerge bool       `json:"delete_branch_on_merge" gorm:"default:false"`
+	SizeKB              int64      `json:"size_kb" gorm:"default:0"`
+	StarsCount          int        `json:"stars_count" gorm:"default:0"`
+	ForksCount          int        `json:"forks_count" gorm:"default:0"`
+	WatchersCount       int        `json:"watchers_count" gorm:"default:0"`
+	PushedAt            *time.Time `json:"pushed_at"`
 
 	// Relationships
-	Parent                 *Repository               `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
-	Forks                  []Repository              `json:"forks,omitempty" gorm:"foreignKey:ParentID"`
-	Collaborators          []RepositoryCollaborator  `json:"collaborators,omitempty" gorm:"foreignKey:RepositoryID"`
-	Branches               []Branch                  `json:"branches,omitempty" gorm:"foreignKey:RepositoryID"`
-	BranchProtectionRules  []BranchProtectionRule    `json:"branch_protection_rules,omitempty" gorm:"foreignKey:RepositoryID"`
-	Releases               []Release                 `json:"releases,omitempty" gorm:"foreignKey:RepositoryID"`
-	Issues                 []Issue                   `json:"issues,omitempty" gorm:"foreignKey:RepositoryID"`
+	Parent                *Repository              `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
+	Forks                 []Repository             `json:"forks,omitempty" gorm:"foreignKey:ParentID"`
+	Collaborators         []RepositoryCollaborator `json:"collaborators,omitempty" gorm:"foreignKey:RepositoryID"`
+	Branches              []Branch                 `json:"branches,omitempty" gorm:"foreignKey:RepositoryID"`
+	BranchProtectionRules []BranchProtectionRule   `json:"branch_protection_rules,omitempty" gorm:"foreignKey:RepositoryID"`
+	Releases              []Release                `json:"releases,omitempty" gorm:"foreignKey:RepositoryID"`
+	Issues                []Issue                  `json:"issues,omitempty" gorm:"foreignKey:RepositoryID"`
 }
 
 func (r *Repository) TableName() string {
@@ -77,14 +77,14 @@ const (
 )
 
 type RepositoryCollaborator struct {
-	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
 	RepositoryID uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
 	UserID       uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
-	Permission   Permission `json:"permission" gorm:"not null;size:50;check:permission IN ('read','triage','write','maintain','admin')"`
+	Permission   Permission `json:"permission" gorm:"type:varchar(50);not null;check:permission IN ('read','triage','write','maintain','admin')"`
 
 	// Relationships
 	Repository Repository `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
@@ -96,11 +96,11 @@ func (rc *RepositoryCollaborator) TableName() string {
 }
 
 type Branch struct {
-	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
 	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
 	Name         string    `json:"name" gorm:"not null;size:255"`
 	SHA          string    `json:"sha" gorm:"not null;size:40"`
@@ -116,11 +116,11 @@ func (b *Branch) TableName() string {
 }
 
 type BranchProtectionRule struct {
-	ID                         uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt                  time.Time      `json:"created_at"`
-	UpdatedAt                  time.Time      `json:"updated_at"`
-	DeletedAt                  gorm.DeletedAt `json:"-" gorm:"index"`
-	
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
 	RepositoryID               uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
 	Pattern                    string    `json:"pattern" gorm:"not null;size:255"`
 	RequiredStatusChecks       string    `json:"required_status_checks" gorm:"type:json"`
@@ -137,11 +137,11 @@ func (bpr *BranchProtectionRule) TableName() string {
 }
 
 type Release struct {
-	ID              uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
-	
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
 	RepositoryID    uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
 	UserID          *uuid.UUID `json:"user_id" gorm:"type:uuid;index"`
 	TagName         string     `json:"tag_name" gorm:"not null;size:255"`

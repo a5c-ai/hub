@@ -27,7 +27,7 @@ type Issue struct {
 	UserID        *uuid.UUID  `json:"user_id" gorm:"type:uuid;index"`
 	AssigneeID    *uuid.UUID  `json:"assignee_id" gorm:"type:uuid;index"`
 	MilestoneID   *uuid.UUID  `json:"milestone_id" gorm:"type:uuid;index"`
-	State         IssueState  `json:"state" gorm:"not null;size:50;check:state IN ('open','closed')"`
+	State         IssueState  `json:"state" gorm:"type:varchar(50);not null;check:state IN ('open','closed')"`
 	StateReason   string      `json:"state_reason" gorm:"size:50"`
 	Locked        bool        `json:"locked" gorm:"default:false"`
 	CommentsCount int         `json:"comments_count" gorm:"default:0"`
