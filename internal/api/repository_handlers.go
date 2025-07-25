@@ -1322,41 +1322,383 @@ func (h *RepositoryHandlers) ForkRepository(c *gin.Context) {
 		forkReq.Name = repo.Name
 	}
 
-	// For now, implement a basic fork that creates a new repository record
-	// pointing to the original as parent (actual git forking would need git service integration)
-	fork := models.Repository{
-		OwnerID:       userID.(uuid.UUID),
-		OwnerType:     models.OwnerTypeUser,
-		Name:          forkReq.Name,
-		Description:   repo.Description,
-		DefaultBranch: repo.DefaultBranch,
-		Visibility:    repo.Visibility,
-		IsFork:        true,
-		ParentID:      &repo.ID,
-		HasIssues:     repo.HasIssues,
-		HasProjects:   repo.HasProjects,
-		HasWiki:       repo.HasWiki,
-		HasDownloads:  repo.HasDownloads,
+	// Create fork request
+	forkRequest := services.ForkRequest{
+		Name:      forkReq.Name,
+		OwnerID:   userID.(uuid.UUID),
+		OwnerType: models.OwnerTypeUser,
 	}
 
-	if err := h.db.Create(&fork).Error; err != nil {
-		h.logger.WithError(err).Error("Failed to create fork")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create fork"})
+	// Use the repository service to fork the repository
+	fork, err := h.repositoryService.Fork(c.Request.Context(), repo.ID, forkRequest)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to fork repository")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fork repository: " + err.Error()})
 		return
 	}
 
-	// Update forks count on parent repository
-	if err := h.db.Model(&models.Repository{}).Where("id = ?", repo.ID).Update("forks_count", gorm.Expr("forks_count + 1")).Error; err != nil {
-		h.logger.WithError(err).Error("Failed to update forks count")
-		// Don't fail the request for this
-	}
-
 	// Return the created fork
-	response, err := h.convertToRepositoryResponse(&fork)
+	response, err := h.convertToRepositoryResponse(fork)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to convert fork to response")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to format fork response"})
 		return
 	}
+	c.JSON(http.StatusCreated, response)
+}
+
+// TransferRepository handles POST /api/v1/repositories/{owner}/{repo}/transfer
+func (h *RepositoryHandlers) TransferRepository(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	var transferReq struct {
+		NewOwnerID   uuid.UUID        `json:"new_owner_id" binding:"required"`
+		NewOwnerType models.OwnerType `json:"new_owner_type" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&transferReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	// Create transfer request
+	transferRequest := services.TransferRequest{
+		NewOwnerID:   transferReq.NewOwnerID,
+		NewOwnerType: transferReq.NewOwnerType,
+	}
+
+	// Transfer the repository
+	if err := h.repositoryService.Transfer(c.Request.Context(), repo.ID, transferRequest); err != nil {
+		h.logger.WithError(err).Error("Failed to transfer repository")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to transfer repository: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Repository transferred successfully"})
+}
+
+// UpdateRepositoryStats handles POST /api/v1/repositories/{owner}/{repo}/stats/update
+func (h *RepositoryHandlers) UpdateRepositoryStats(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Update repository statistics
+	if err := h.repositoryService.UpdateRepositoryStats(c.Request.Context(), repo.ID); err != nil {
+		h.logger.WithError(err).Error("Failed to update repository statistics")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update repository statistics: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Repository statistics updated successfully"})
+}
+
+// GetRepositoryStatistics handles GET /api/v1/repositories/{owner}/{repo}/stats
+func (h *RepositoryHandlers) GetRepositoryStatistics(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get repository statistics
+	stats, err := h.repositoryService.GetRepositoryStatistics(c.Request.Context(), repo.ID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository statistics")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository statistics: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// CreateGitHook handles POST /api/v1/repositories/{owner}/{repo}/hooks
+func (h *RepositoryHandlers) CreateGitHook(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	var hookReq services.CreateGitHookRequest
+	if err := c.ShouldBindJSON(&hookReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	// Create Git hook
+	hook, err := h.repositoryService.CreateGitHook(c.Request.Context(), repo.ID, hookReq)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create Git hook")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Git hook: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, hook)
+}
+
+// GetGitHooks handles GET /api/v1/repositories/{owner}/{repo}/hooks
+func (h *RepositoryHandlers) GetGitHooks(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Get Git hooks
+	hooks, err := h.repositoryService.GetGitHooks(c.Request.Context(), repo.ID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get Git hooks")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get Git hooks: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, hooks)
+}
+
+// UpdateGitHook handles PUT /api/v1/repositories/{owner}/{repo}/hooks/{hookId}
+func (h *RepositoryHandlers) UpdateGitHook(c *gin.Context) {
+	hookIDStr := c.Param("hookId")
+	hookID, err := uuid.Parse(hookIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
+		return
+	}
+
+	var updateReq services.UpdateGitHookRequest
+	if err := c.ShouldBindJSON(&updateReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	// Update Git hook
+	hook, err := h.repositoryService.UpdateGitHook(c.Request.Context(), hookID, updateReq)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to update Git hook")
+		if err.Error() == "Git hook not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Git hook not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Git hook: " + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, hook)
+}
+
+// DeleteGitHook handles DELETE /api/v1/repositories/{owner}/{repo}/hooks/{hookId}
+func (h *RepositoryHandlers) DeleteGitHook(c *gin.Context) {
+	hookIDStr := c.Param("hookId")
+	hookID, err := uuid.Parse(hookIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
+		return
+	}
+
+	// Delete Git hook
+	if err := h.repositoryService.DeleteGitHook(c.Request.Context(), hookID); err != nil {
+		h.logger.WithError(err).Error("Failed to delete Git hook")
+		if err.Error() == "Git hook not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Git hook not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete Git hook: " + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Git hook deleted successfully"})
+}
+
+// CreateTemplate handles POST /api/v1/repositories/{owner}/{repo}/template
+func (h *RepositoryHandlers) CreateTemplate(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	var templateReq services.CreateTemplateRequest
+	if err := c.ShouldBindJSON(&templateReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	// Create template
+	template, err := h.repositoryService.CreateTemplate(c.Request.Context(), repo.ID, templateReq)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create template")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create template: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, template)
+}
+
+// GetTemplates handles GET /api/v1/templates
+func (h *RepositoryHandlers) GetTemplates(c *gin.Context) {
+	// Parse query parameters
+	filters := services.TemplateFilters{}
+	if category := c.Query("category"); category != "" {
+		filters.Category = category
+	}
+	if featured := c.Query("featured"); featured != "" {
+		if featured == "true" {
+			filters.IsFeatured = &[]bool{true}[0]
+		} else if featured == "false" {
+			filters.IsFeatured = &[]bool{false}[0]
+		}
+	}
+	if public := c.Query("public"); public != "" {
+		if public == "true" {
+			filters.IsPublic = &[]bool{true}[0]
+		} else if public == "false" {
+			filters.IsPublic = &[]bool{false}[0]
+		}
+	}
+	if search := c.Query("search"); search != "" {
+		filters.Search = search
+	}
+	if sort := c.Query("sort"); sort != "" {
+		filters.Sort = sort
+	}
+	if direction := c.Query("direction"); direction != "" {
+		filters.Direction = direction
+	}
+	if page := c.Query("page"); page != "" {
+		if p, err := strconv.Atoi(page); err == nil && p >= 0 {
+			filters.Page = p
+		}
+	}
+	if perPage := c.Query("per_page"); perPage != "" {
+		if pp, err := strconv.Atoi(perPage); err == nil && pp > 0 && pp <= 100 {
+			filters.PerPage = pp
+		}
+	}
+
+	// Get templates
+	templates, err := h.repositoryService.GetTemplates(c.Request.Context(), filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get templates")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get templates: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, templates)
+}
+
+// UseTemplate handles POST /api/v1/templates/{templateId}/use
+func (h *RepositoryHandlers) UseTemplate(c *gin.Context) {
+	templateIDStr := c.Param("templateId")
+	templateID, err := uuid.Parse(templateIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid template ID"})
+		return
+	}
+
+	var createReq services.CreateRepositoryRequest
+	if err := c.ShouldBindJSON(&createReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	// Use template to create repository
+	repo, err := h.repositoryService.UseTemplate(c.Request.Context(), templateID, createReq)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to use template")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to use template: " + err.Error()})
+		return
+	}
+
+	// Return the created repository
+	response, err := h.convertToRepositoryResponse(repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to convert repository to response")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to format repository response"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, response)
 }
