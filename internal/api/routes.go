@@ -63,6 +63,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
+	userHandlers := NewUserHandlers(authService, logger)
+	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
+	hooksHandlers := NewHooksHandlers(repositoryService, logger)
+	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -161,12 +165,27 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/search/users", searchHandlers.SearchUsers)
 		v1.GET("/search/commits", searchHandlers.SearchCommits)
 
+		// Public user profile endpoints
+		v1.GET("/users/:username", userHandlers.GetUserProfile)
+		v1.GET("/users/:username/repositories", userHandlers.GetUserRepositories)
+		v1.GET("/users/:username/organizations", userHandlers.GetUserOrganizations)
+
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
+			// Current user profile endpoints
+			protected.GET("/user", userHandlers.GetCurrentUserProfile)
+			protected.PATCH("/user", userHandlers.UpdateUserProfile)
+
+			// User activity and notifications
+			protected.GET("/user/activity", userHandlers.GetUserActivity)
+			protected.GET("/notifications", userHandlers.GetNotifications)
+			protected.PATCH("/notifications", userHandlers.MarkNotificationsAsRead)
+
+			// Legacy profile endpoint for backward compatibility
 			protected.GET("/profile", func(c *gin.Context) {
 				userID, exists := c.Get("user_id")
 				if !exists {
@@ -207,6 +226,52 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Branch operations
 				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
 				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
+
+				// File operations
+				repos.POST("/:owner/:repo/contents/*path", repoHandlers.CreateFile)
+				repos.PUT("/:owner/:repo/contents/*path", repoHandlers.UpdateFile)
+				repos.DELETE("/:owner/:repo/contents/*path", repoHandlers.DeleteFile)
+
+				// Repository information and statistics
+				repos.GET("/:owner/:repo/stats", repoHandlers.GetRepositoryStats)
+				repos.GET("/:owner/:repo/languages", repoHandlers.GetRepositoryLanguages)
+				repos.GET("/:owner/:repo/tags", repoHandlers.GetRepositoryTags)
+				repos.GET("/:owner/:repo/contributors", activityHandlers.GetRepositoryContributors)
+				repos.GET("/:owner/:repo/activity", activityHandlers.GetRepositoryActivity)
+
+				// Branch comparison
+				repos.GET("/:owner/:repo/compare/:base...:head", repoHandlers.CompareBranches)
+				repos.GET("/:owner/:repo/compare/:base...HEAD", repoHandlers.GetMergeBase)
+
+				// Branch protection
+				repos.GET("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.GetBranchProtection)
+				repos.PUT("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.UpdateBranchProtection)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.DeleteBranchProtection)
+				repos.GET("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.GetRequiredStatusChecks)
+				repos.PATCH("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.UpdateRequiredStatusChecks)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.DeleteRequiredStatusChecks)
+				repos.GET("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.GetRequiredPullRequestReviews)
+				repos.PATCH("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.UpdateRequiredPullRequestReviews)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.DeleteRequiredPullRequestReviews)
+
+				// Webhooks
+				repos.GET("/:owner/:repo/hooks", hooksHandlers.ListWebhooks)
+				repos.POST("/:owner/:repo/hooks", hooksHandlers.CreateWebhook)
+				repos.GET("/:owner/:repo/hooks/:hook_id", hooksHandlers.GetWebhook)
+				repos.PATCH("/:owner/:repo/hooks/:hook_id", hooksHandlers.UpdateWebhook)
+				repos.DELETE("/:owner/:repo/hooks/:hook_id", hooksHandlers.DeleteWebhook)
+				repos.POST("/:owner/:repo/hooks/:hook_id/pings", hooksHandlers.PingWebhook)
+
+				// Deploy keys
+				repos.GET("/:owner/:repo/keys", hooksHandlers.ListDeployKeys)
+				repos.POST("/:owner/:repo/keys", hooksHandlers.CreateDeployKey)
+				repos.GET("/:owner/:repo/keys/:key_id", hooksHandlers.GetDeployKey)
+				repos.DELETE("/:owner/:repo/keys/:key_id", hooksHandlers.DeleteDeployKey)
+
+				// Repository subscription (watching)
+				repos.GET("/:owner/:repo/subscription", activityHandlers.GetRepositorySubscription)
+				repos.PUT("/:owner/:repo/subscription", activityHandlers.WatchRepository)
+				repos.DELETE("/:owner/:repo/subscription", activityHandlers.UnwatchRepository)
 
 				// Repository-specific search
 				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)

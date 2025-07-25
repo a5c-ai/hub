@@ -65,6 +65,8 @@ type AuthService interface {
 	// Legacy methods for backward compatibility
 	GetUserByID(userID uuid.UUID) (*models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
+	GetUserByUsername(username string) (*models.User, error)
+	UpdateUser(user *models.User) error
 	ValidateToken(tokenString string) (*models.User, error)
 }
 
@@ -328,6 +330,39 @@ func (s *authService) GetUserByEmail(email string) (*models.User, error) {
 	// Remove sensitive information
 	user.PasswordHash = ""
 	return &user, nil
+}
+
+func (s *authService) GetUserByUsername(username string) (*models.User, error) {
+	var user models.User
+	if err := s.db.Where("username = ? AND is_active = ?", username, true).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	// Remove sensitive information
+	user.PasswordHash = ""
+	return &user, nil
+}
+
+func (s *authService) UpdateUser(user *models.User) error {
+	// Don't allow updating sensitive fields through this method
+	updates := map[string]interface{}{
+		"full_name":  user.FullName,
+		"bio":        user.Bio,
+		"company":    user.Company,
+		"location":   user.Location,
+		"website":    user.Website,
+		"avatar_url": user.AvatarURL,
+		"updated_at": time.Now(),
+	}
+
+	if err := s.db.Model(user).Where("id = ?", user.ID).Updates(updates).Error; err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
 }
 
 func (s *authService) ValidateToken(tokenString string) (*models.User, error) {
