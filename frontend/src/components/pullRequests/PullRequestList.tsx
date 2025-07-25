@@ -8,16 +8,17 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 
 interface PullRequestListProps {
-  owner: string
-  repo: string
+  repositoryOwner: string
+  repositoryName: string
+  state?: 'open' | 'closed'
 }
 
-export function PullRequestList({ owner, repo }: PullRequestListProps) {
+export function PullRequestList({ repositoryOwner, repositoryName, state = 'open' }: PullRequestListProps) {
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<PullRequestListOptions>({
-    state: 'open',
+    state: state,
     sort: 'created',
     direction: 'desc',
     page: 1,
@@ -27,12 +28,12 @@ export function PullRequestList({ owner, repo }: PullRequestListProps) {
 
   useEffect(() => {
     loadPullRequests()
-  }, [owner, repo, filters])
+  }, [repositoryOwner, repositoryName, filters])
 
   const loadPullRequests = async () => {
     try {
       setLoading(true)
-      const response = await pullRequestApi.listPullRequests(owner, repo, filters)
+      const response = await pullRequestApi.listPullRequests(repositoryOwner, repositoryName, filters)
       setPullRequests(response.pull_requests)
       setTotalCount(response.total_count)
       setError(null)
@@ -85,7 +86,7 @@ export function PullRequestList({ owner, repo }: PullRequestListProps) {
           <h2 className="text-xl font-semibold">Pull Requests</h2>
           <span className="text-gray-500">{totalCount} total</span>
         </div>
-        <Link href={`/${owner}/${repo}/pulls/new`}>
+        <Link href={`/${repositoryOwner}/${repositoryName}/pulls/new`}>
           <Button>New Pull Request</Button>
         </Link>
       </div>
@@ -151,7 +152,7 @@ export function PullRequestList({ owner, repo }: PullRequestListProps) {
                   
                   <div className="flex items-center space-x-2">
                     <Link 
-                      href={`/${owner}/${repo}/pull/${pr.issue.number}`}
+                      href={`/${repositoryOwner}/${repositoryName}/pull/${pr.issue.number}`}
                       className="text-lg font-medium text-blue-600 hover:underline truncate"
                     >
                       {pr.issue.title}
