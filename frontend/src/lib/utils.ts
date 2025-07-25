@@ -58,3 +58,66 @@ export function getInitials(name: string): string {
     .join("")
     .slice(0, 2);
 }
+
+/**
+ * Retry a function with exponential backoff
+ */
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
+/**
+ * Handle errors with proper error states instead of page reloads
+ */
+export function createErrorHandler(setError: (error: string | null) => void, setLoading?: (loading: boolean) => void) {
+  return async <T>(operation: () => Promise<T>, fallback?: () => void): Promise<T | null> => {
+    try {
+      setError(null);
+      if (setLoading) setLoading(true);
+      
+      return await retryWithBackoff(operation, 2, 500);
+    } catch (error) {
+      const errorMessage = error instanceof Error && 'response' in error && 
+        typeof error.response === 'object' && error.response && 
+        'data' in error.response && 
+        typeof error.response.data === 'object' && error.response.data &&
+        'message' in error.response.data && 
+        typeof error.response.data.message === 'string'
+        ? error.response.data.message 
+        : error instanceof Error 
+        ? error.message
+        : 'An unexpected error occurred';
+      
+      setError(errorMessage);
+      
+      if (fallback) {
+        fallback();
+      }
+      
+      return null;
+    } finally {
+      if (setLoading) setLoading(false);
+    }
+  };
+}

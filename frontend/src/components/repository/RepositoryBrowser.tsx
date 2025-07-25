@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { repoApi } from '@/lib/api';
 import { TreeEntry, Tree, Repository } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { createErrorHandler } from '@/lib/utils';
 
 interface RepositoryBrowserProps {
   owner: string;
@@ -47,11 +48,10 @@ export default function RepositoryBrowser({
 
   // Fetch tree content
   useEffect(() => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
     const fetchTree = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
+      const operation = async () => {
         let response;
         let usedRef = ref;
         try {
@@ -72,19 +72,12 @@ export default function RepositoryBrowser({
           }
         }
         
-        setTree(response.data);
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error && 'response' in err && 
-          typeof err.response === 'object' && err.response && 
-          'data' in err.response && 
-          typeof err.response.data === 'object' && err.response.data &&
-          'message' in err.response.data && 
-          typeof err.response.data.message === 'string'
-          ? err.response.data.message 
-          : 'Failed to load repository content';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
+        return response.data;
+      };
+
+      const result = await handleError(operation);
+      if (result) {
+        setTree(result);
       }
     };
 
@@ -150,6 +143,39 @@ export default function RepositoryBrowser({
     );
   }
 
+  const retryFetch = async () => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
+      let response;
+      let usedRef = ref;
+      try {
+        // Try with the specified ref first
+        response = await repoApi.getTree(owner, repo, currentPath, ref);
+      } catch (firstError) {
+        // If that fails and we're using the default branch, try available branches
+        if (ref === repository.default_branch && availableBranches.length > 0) {
+          try {
+            usedRef = availableBranches[0];
+            response = await repoApi.getTree(owner, repo, currentPath, usedRef);
+            setActualRef(usedRef);
+          } catch {
+            throw firstError;
+          }
+        } else {
+          throw firstError;
+        }
+      }
+      
+      return response.data;
+    };
+
+    const result = await handleError(operation);
+    if (result) {
+      setTree(result);
+    }
+  };
+
   if (error) {
     return (
       <div className="text-center py-8">
@@ -157,9 +183,10 @@ export default function RepositoryBrowser({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => window.location.reload()}
+          onClick={retryFetch}
+          disabled={loading}
         >
-          Try Again
+          {loading ? 'Retrying...' : 'Try Again'}
         </Button>
       </div>
     );

@@ -256,13 +256,17 @@ export default function RepositorySettingsPage() {
                           <h4 className="font-medium text-foreground">Default Branch: {formData.default_branch}</h4>
                           <p className="text-sm text-muted-foreground">Configure protection rules for your default branch</p>
                         </div>
-                        <Button size="sm" variant="outline">Configure</Button>
+                        <Link href={`/repositories/${owner}/${repo}/settings/branches`}>
+                          <Button size="sm" variant="outline">Configure</Button>
+                        </Link>
                       </div>
                       
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-foreground mb-3">Branch Protection Rules</h4>
                         <p className="text-sm text-muted-foreground mb-4">Protect branches by requiring status checks, reviews, or restrictions</p>
-                        <Button size="sm">Add Rule</Button>
+                        <Link href={`/repositories/${owner}/${repo}/settings/branches`}>
+                          <Button size="sm">Manage Branch Protection</Button>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -276,7 +280,9 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-foreground">Webhooks</h3>
-                      <Button size="sm">Add Webhook</Button>
+                      <Link href={`/repositories/${owner}/${repo}/settings/webhooks`}>
+                        <Button size="sm">Manage Webhooks</Button>
+                      </Link>
                     </div>
                     <p className="text-muted-foreground mb-4">
                       Webhooks allow external services to be notified when certain events happen
@@ -285,7 +291,12 @@ export default function RepositorySettingsPage() {
                       <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                       </svg>
-                      <p>No webhooks configured</p>
+                      <p>Manage webhooks for this repository</p>
+                      <Link href={`/repositories/${owner}/${repo}/settings/webhooks`}>
+                        <Button variant="outline" size="sm" className="mt-3">
+                          Go to Webhooks
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </Card>
@@ -372,6 +383,16 @@ export default function RepositorySettingsPage() {
                           <p className="text-sm text-muted-foreground">Understand your dependencies</p>
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                        <div>
+                          <h4 className="font-medium text-foreground">Deploy Keys</h4>
+                          <p className="text-sm text-muted-foreground">Manage SSH keys for repository access</p>
+                        </div>
+                        <Link href={`/repositories/${owner}/${repo}/settings/keys`}>
+                          <Button size="sm" variant="outline">Manage Keys</Button>
+                        </Link>
                       </div>
                     </div>
                   </div>

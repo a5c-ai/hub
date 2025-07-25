@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { createErrorHandler } from '@/lib/utils';
 
 interface ActivityItem {
   id: string;
@@ -43,23 +44,22 @@ export default function ActivityPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'own' | 'following'>('all');
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/activity?filter=${filter}`);
-        setActivities(response.data);
-      } catch (err: unknown) {
-        setError(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Failed to fetch activity'
-        );
-      } finally {
-        setLoading(false);
-      }
+  const fetchActivity = async (currentFilter = filter) => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
+      const response = await api.get(`/activity?filter=${currentFilter}`);
+      return response.data;
     };
 
-    fetchActivity();
+    const result = await handleError(operation);
+    if (result) {
+      setActivities(result);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivity(filter);
   }, [filter]);
 
   const getActivityIcon = (type: string) => {
@@ -238,8 +238,8 @@ export default function ActivityPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-4">Error: {error}</div>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
+            <Button onClick={fetchActivity} disabled={loading}>
+              {loading ? 'Retrying...' : 'Try Again'}
             </Button>
           </div>
         </div>

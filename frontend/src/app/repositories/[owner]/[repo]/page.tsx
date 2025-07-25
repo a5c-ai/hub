@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import RepositoryBrowser from '@/components/repository/RepositoryBrowser';
 import api, { repoApi } from '@/lib/api';
 import { Repository } from '@/types';
+import { createErrorHandler } from '@/lib/utils';
 
 export default function RepositoryDetailsPage() {
   const params = useParams();
@@ -25,38 +26,35 @@ export default function RepositoryDetailsPage() {
   const [starLoading, setStarLoading] = useState(false);
   const [forkLoading, setForkLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchRepository = async () => {
+  const fetchRepository = async () => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
+      const response = await api.get(`/repositories/${owner}/${repo}`);
+      
+      // Check if user has starred this repository
+      let starred = false;
       try {
-        setLoading(true);
-        const response = await api.get(`/repositories/${owner}/${repo}`);
-        setRepository(response.data);
-        setStarCount(response.data.stargazers_count || 0);
-        setForkCount(response.data.forks_count || 0);
-        
-        // Check if user has starred this repository
-        try {
-          const starResponse = await repoApi.checkStarred(owner, repo);
-          setIsStarred((starResponse.data as { starred: boolean }).starred);
-        } catch (starErr) {
-          // If user is not authenticated, star check will fail - that's okay
-          console.debug('Could not check star status:', starErr);
-        }
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error && 'response' in err && 
-          typeof err.response === 'object' && err.response && 
-          'data' in err.response && 
-          typeof err.response.data === 'object' && err.response.data &&
-          'message' in err.response.data && 
-          typeof err.response.data.message === 'string'
-          ? err.response.data.message 
-          : 'Failed to fetch repository';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
+        const starResponse = await repoApi.checkStarred(owner, repo);
+        starred = (starResponse.data as { starred: boolean }).starred;
+      } catch (starErr) {
+        // If user is not authenticated, star check will fail - that's okay
+        console.debug('Could not check star status:', starErr);
       }
+      
+      return { repository: response.data, starred };
     };
 
+    const result = await handleError(operation);
+    if (result) {
+      setRepository(result.repository);
+      setStarCount(result.repository.stargazers_count || 0);
+      setForkCount(result.repository.forks_count || 0);
+      setIsStarred(result.starred);
+    }
+  };
+
+  useEffect(() => {
     fetchRepository();
   }, [owner, repo]);
 
@@ -125,8 +123,8 @@ export default function RepositoryDetailsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-4">Error: {error}</div>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
+            <Button onClick={fetchRepository} disabled={loading}>
+              {loading ? 'Retrying...' : 'Try Again'}
             </Button>
           </div>
         </div>

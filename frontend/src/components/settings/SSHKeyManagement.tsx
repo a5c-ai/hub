@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { sshKeyApi } from '@/lib/api';
 import { SSHKey, CreateSSHKeyRequest } from '@/types';
+import { createErrorHandler } from '@/lib/utils';
 
 export function SSHKeyManagement() {
   const [sshKeys, setSSHKeys] = useState<SSHKey[]>([]);
@@ -26,17 +27,17 @@ export function SSHKeyManagement() {
   }, []);
 
   const loadSSHKeys = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
       const response = await sshKeyApi.getSSHKeys();
       const keysData = Array.isArray(response) ? response : (response.data || []);
-      setSSHKeys(keysData as SSHKey[]);
-    } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to load SSH keys');
-    } finally {
-      setLoading(false);
+      return keysData as SSHKey[];
+    };
+
+    const result = await handleError(operation);
+    if (result) {
+      setSSHKeys(result);
     }
   };
 
@@ -46,34 +47,35 @@ export function SSHKeyManagement() {
       return;
     }
 
-    try {
-      setAddingKey(true);
-      setError(null);
+    const handleError = createErrorHandler(setError, setAddingKey);
+    
+    const operation = async () => {
       const response = await sshKeyApi.createSSHKey(newKey);
       const newSSHKey = (response.data || response) as SSHKey;
-      setSSHKeys([...sshKeys, newSSHKey]);
+      return newSSHKey;
+    };
+
+    const result = await handleError(operation);
+    if (result) {
+      setSSHKeys([...sshKeys, result]);
       setShowAddModal(false);
       setNewKey({ title: '', key_data: '' });
-    } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to add SSH key');
-    } finally {
-      setAddingKey(false);
     }
   };
 
   const handleDeleteKey = async (keyId: string) => {
-    try {
+    const handleError = createErrorHandler(setError);
+    
+    const operation = async () => {
       setDeletingKey(keyId);
-      setError(null);
       await sshKeyApi.deleteSSHKey(keyId);
+    };
+
+    const result = await handleError(operation);
+    if (result !== null) {
       setSSHKeys(sshKeys.filter(key => key.id !== keyId));
-    } catch (err) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to delete SSH key');
-    } finally {
-      setDeletingKey(null);
     }
+    setDeletingKey(null);
   };
 
   const formatFingerprint = (fingerprint: string) => {
