@@ -14,7 +14,8 @@ import (
 )
 
 type MFAService struct {
-	db *gorm.DB
+	db           *gorm.DB
+	emailService EmailService
 }
 
 type MFASetupRequest struct {
@@ -93,7 +94,17 @@ func (s *SMSVerificationCode) TableName() string {
 }
 
 func NewMFAService(db *gorm.DB) *MFAService {
-	return &MFAService{db: db}
+	return &MFAService{
+		db:           db,
+		emailService: nil, // Will be set separately when needed
+	}
+}
+
+func NewMFAServiceWithEmail(db *gorm.DB, emailService EmailService) *MFAService {
+	return &MFAService{
+		db:           db,
+		emailService: emailService,
+	}
 }
 
 func (s *MFAService) SetupTOTP(userID uuid.UUID, issuer, accountName string) (*MFASetupResponse, error) {
@@ -150,6 +161,26 @@ func (s *MFAService) VerifyTOTP(userID uuid.UUID, secret, code string) (bool, er
 		}).Error
 		if err != nil {
 			return false, fmt.Errorf("failed to enable MFA: %w", err)
+		}
+		
+		// Send MFA setup notification email
+		if s.emailService != nil {
+			var user models.User
+			if err := s.db.Where("id = ?", userID).First(&user).Error; err == nil {
+				// Get backup codes for this user
+				var backupCodes []BackupCode
+				s.db.Where("user_id = ? AND used = false", userID).Find(&backupCodes)
+				
+				codes := make([]string, len(backupCodes))
+				for i, bc := range backupCodes {
+					codes[i] = bc.Code
+				}
+				
+				// Send email notification (don't fail if email fails)
+				if err := s.emailService.SendMFASetupEmail(user.Email, codes); err != nil {
+					fmt.Printf("Failed to send MFA setup email: %v\n", err)
+				}
+			}
 		}
 	}
 
@@ -220,6 +251,17 @@ func (s *MFAService) RegenerateBackupCodes(userID uuid.UUID) ([]string, error) {
 		}
 		if err := s.db.Create(&backupCode).Error; err != nil {
 			return nil, fmt.Errorf("failed to store backup code: %w", err)
+		}
+	}
+
+	// Send email notification about new backup codes
+	if s.emailService != nil {
+		var user models.User
+		if err := s.db.Where("id = ?", userID).First(&user).Error; err == nil {
+			// Send email notification (don't fail if email fails)
+			if err := s.emailService.SendMFASetupEmail(user.Email, backupCodes); err != nil {
+				fmt.Printf("Failed to send backup codes regeneration email: %v\n", err)
+			}
 		}
 	}
 

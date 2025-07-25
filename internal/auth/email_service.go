@@ -16,6 +16,8 @@ type SMTPEmailService struct {
 	password string
 	from     string
 	useTLS   bool
+	baseURL  string
+	appName  string
 }
 
 func NewSMTPEmailService(cfg *config.Config) EmailService {
@@ -26,12 +28,14 @@ func NewSMTPEmailService(cfg *config.Config) EmailService {
 		password: cfg.SMTP.Password,
 		from:     cfg.SMTP.From,
 		useTLS:   cfg.SMTP.UseTLS,
+		baseURL:  cfg.Application.BaseURL,
+		appName:  cfg.Application.Name,
 	}
 }
 
 func (s *SMTPEmailService) SendPasswordResetEmail(to, token string) error {
 	subject := "Password Reset Request"
-	resetURL := fmt.Sprintf("%s/reset-password?token=%s", getBaseURL(), token)
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.baseURL, token)
 	
 	body := fmt.Sprintf(`
 		<html>
@@ -50,7 +54,7 @@ func (s *SMTPEmailService) SendPasswordResetEmail(to, token string) error {
 
 func (s *SMTPEmailService) SendEmailVerification(to, token string) error {
 	subject := "Email Verification"
-	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", getBaseURL(), token)
+	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", s.baseURL, token)
 	
 	body := fmt.Sprintf(`
 		<html>
@@ -62,6 +66,64 @@ func (s *SMTPEmailService) SendEmailVerification(to, token string) error {
 		</body>
 		</html>
 	`, verifyURL)
+	
+	return s.sendEmail(to, subject, body)
+}
+
+func (s *SMTPEmailService) SendMFASetupEmail(to string, backupCodes []string) error {
+	subject := fmt.Sprintf("Two-Factor Authentication Setup - %s", s.appName)
+	
+	codesHTML := ""
+	for _, code := range backupCodes {
+		codesHTML += fmt.Sprintf("<div style=\"background-color: #f8f9fa; padding: 8px; margin: 4px 0; font-family: monospace; border-radius: 4px;\">%s</div>", code)
+	}
+	
+	body := fmt.Sprintf(`
+		<html>
+		<head>
+			<meta charset="utf-8">
+			<title>Two-Factor Authentication Setup</title>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+				.header { background-color: #ffc107; color: #333; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+				.content { padding: 20px; background-color: #ffffff; border: 1px solid #dee2e6; }
+				.footer { padding: 20px; font-size: 14px; color: #666; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px; }
+				.warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 4px; margin: 15px 0; }
+			</style>
+		</head>
+		<body>
+			<div class="header">
+				<h1>%s - Two-Factor Authentication</h1>
+			</div>
+			<div class="content">
+				<h2>Congratulations! 🎉</h2>
+				<p>You have successfully enabled two-factor authentication for your account. Your account is now more secure!</p>
+				
+				<h3>Important: Save Your Backup Codes</h3>
+				<p>Please save these backup codes in a safe place. You can use them to access your account if you lose your primary authentication method.</p>
+				
+				<div style="margin: 20px 0;">
+					%s
+				</div>
+				
+				<div class="warning">
+					<strong>⚠️ Important Security Notes:</strong>
+					<ul>
+						<li>Each backup code can only be used once</li>
+						<li>Store these codes in a secure location (password manager, safe, etc.)</li>
+						<li>Do not share these codes with anyone</li>
+						<li>You can regenerate new codes anytime from your security settings</li>
+					</ul>
+				</div>
+				
+				<p>If you didn't enable two-factor authentication, please contact our support team immediately.</p>
+			</div>
+			<div class="footer">
+				<p>This is an automated security message from %s. Please do not reply to this email.</p>
+			</div>
+		</body>
+		</html>
+	`, s.appName, codesHTML, s.appName)
 	
 	return s.sendEmail(to, subject, body)
 }
@@ -153,10 +215,6 @@ func (s *SMTPEmailService) sendEmail(to, subject, body string) error {
 	return nil
 }
 
-func getBaseURL() string {
-	// TODO: Get this from configuration
-	return "http://localhost:3000"
-}
 
 func extractTokenFromURL(body string) string {
 	// Simple token extraction for mock fallback
@@ -213,6 +271,10 @@ func (s *TemplatedEmailService) SendPasswordResetEmail(to, token string) error {
 
 func (s *TemplatedEmailService) SendEmailVerification(to, token string) error {
 	return s.smtpService.SendEmailVerification(to, token)
+}
+
+func (s *TemplatedEmailService) SendMFASetupEmail(to string, backupCodes []string) error {
+	return s.smtpService.SendMFASetupEmail(to, backupCodes)
 }
 
 // Email templates

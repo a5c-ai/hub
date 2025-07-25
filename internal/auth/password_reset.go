@@ -145,6 +145,7 @@ func (s *PasswordResetService) generateSecureToken() (string, error) {
 type EmailService interface {
 	SendPasswordResetEmail(to, token string) error
 	SendEmailVerification(to, token string) error
+	SendMFASetupEmail(to string, backupCodes []string) error
 }
 
 // Mock email service for development
@@ -159,5 +160,10 @@ func (s *MockEmailService) SendPasswordResetEmail(to, token string) error {
 func (s *MockEmailService) SendEmailVerification(to, token string) error {
 	verifyURL := fmt.Sprintf("http://localhost:3000/verify-email?token=%s", token)
 	fmt.Printf("Email Verification to %s:\nVerify your email: %s\n", to, verifyURL)
+	return nil
+}
+
+func (s *MockEmailService) SendMFASetupEmail(to string, backupCodes []string) error {
+	fmt.Printf("MFA Setup Email to %s:\nBackup codes: %v\n", to, backupCodes)
 	return nil
 }
