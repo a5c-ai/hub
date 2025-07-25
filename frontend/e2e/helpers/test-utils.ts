@@ -63,7 +63,7 @@ export async function waitForLoadingToComplete(page: Page) {
  */
 export async function expectLoginPage(page: Page) {
   await expect(page).toHaveURL('/login');
-  await expect(page.locator('h1')).toContainText('Sign in');
+  await expect(page.locator('h2')).toContainText('Sign in to Hub');
 }
 
 /**

@@ -13,6 +13,10 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`auth.spec.ts`** - Authentication flow tests (login, register, logout)
 - **`dashboard.spec.ts`** - Dashboard functionality tests
 - **`navigation.spec.ts`** - Navigation and layout tests
+- **`example.spec.ts`** - Basic application loading tests
+- **`registration.spec.ts`** - User registration and validation tests
+- **`repository.spec.ts`** - Repository management tests
+- **`issues.spec.ts`** - Issue management and workflow tests
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage

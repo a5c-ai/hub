@@ -79,6 +79,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Header />
         
         <main
+          data-testid="main-content"
           className={cn(
             'flex-1 overflow-y-auto transition-all duration-200',
             sidebarOpen ? 'lg:ml-0' : 'lg:ml-0'
