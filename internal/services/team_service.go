@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
@@ -397,4 +399,221 @@ func (s *teamMembershipService) GetUserTeams(ctx context.Context, orgName, usern
 	}
 
 	return teams, nil
+}
+
+// Enhanced Team Service with Templates and Performance Tracking
+type TeamTemplateService interface {
+	CreateTeamFromTemplate(ctx context.Context, orgName string, templateID uuid.UUID, req CreateTeamFromTemplateRequest) (*models.Team, error)
+	GetTeamTemplates(ctx context.Context, orgName string) ([]*models.OrganizationTemplate, error)
+	SyncWithExternalSystem(ctx context.Context, orgName, teamName string, externalSystemConfig ExternalSystemConfig) error
+	GetTeamPerformanceMetrics(ctx context.Context, orgName, teamName string, period string) (*TeamPerformanceData, error)
+	TrackTeamActivity(ctx context.Context, orgName, teamName string, activity TeamActivity) error
+}
+
+type CreateTeamFromTemplateRequest struct {
+	Name            string            `json:"name" binding:"required,min=1,max=255"`
+	Description     string            `json:"description,omitempty"`
+	Privacy         models.TeamPrivacy `json:"privacy" binding:"required"`
+	ParentTeamID    *uuid.UUID        `json:"parent_team_id,omitempty"`
+	TemplateConfig  map[string]interface{} `json:"template_config,omitempty"`
+}
+
+type ExternalSystemConfig struct {
+	SystemType   string            `json:"system_type"` // "ldap", "active_directory", "okta", etc.
+	Config       map[string]interface{} `json:"config"`
+	SyncInterval string            `json:"sync_interval"` // "hourly", "daily", "weekly"
+	AutoCreate   bool              `json:"auto_create"`
+	AutoRemove   bool              `json:"auto_remove"`
+}
+
+type TeamPerformanceData struct {
+	TeamName        string    `json:"team_name"`
+	Period          string    `json:"period"`
+	MemberCount     int       `json:"member_count"`
+	CommitsCount    int       `json:"commits_count"`
+	IssuesResolved  int       `json:"issues_resolved"`
+	PullRequests    int       `json:"pull_requests"`
+	CodeReviews     int       `json:"code_reviews"`
+	AvgResponseTime float64   `json:"avg_response_time_hours"`
+	Productivity    float64   `json:"productivity_score"`
+	LastUpdated     time.Time `json:"last_updated"`
+}
+
+type TeamActivity struct {
+	ActivityType string                 `json:"activity_type"`
+	ActorID      uuid.UUID              `json:"actor_id"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	Timestamp    time.Time              `json:"timestamp"`
+}
+
+// Team Template Service Implementation
+type teamTemplateService struct {
+	db *gorm.DB
+	as ActivityService
+	ts TeamService
+}
+
+func NewTeamTemplateService(db *gorm.DB, as ActivityService, ts TeamService) TeamTemplateService {
+	return &teamTemplateService{db: db, as: as, ts: ts}
+}
+
+func (s *teamTemplateService) CreateTeamFromTemplate(ctx context.Context, orgName string, templateID uuid.UUID, req CreateTeamFromTemplateRequest) (*models.Team, error) {
+	var org models.Organization
+	if err := s.db.Where("name = ?", orgName).First(&org).Error; err != nil {
+		return nil, fmt.Errorf("organization not found: %w", err)
+	}
+
+	// Get the template
+	var template models.OrganizationTemplate
+	if err := s.db.Where("id = ? AND organization_id = ? AND template_type = ?", 
+		templateID, org.ID, models.TemplateTypeTeam).First(&template).Error; err != nil {
+		return nil, fmt.Errorf("team template not found: %w", err)
+	}
+
+	// Parse template configuration
+	var templateConfig map[string]interface{}
+	if err := json.Unmarshal([]byte(template.Configuration), &templateConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse template configuration: %w", err)
+	}
+
+	// Create team using template
+	teamReq := CreateTeamRequest{
+		Name:         req.Name,
+		Description:  req.Description,
+		Privacy:      req.Privacy,
+		ParentTeamID: req.ParentTeamID,
+	}
+
+	// Apply template defaults if not overridden
+	if req.Description == "" {
+		if desc, ok := templateConfig["default_description"].(string); ok {
+			teamReq.Description = desc
+		}
+	}
+
+	team, err := s.ts.Create(ctx, orgName, teamReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply template-specific configurations
+	if err := s.applyTemplateConfiguration(ctx, team, templateConfig, req.TemplateConfig); err != nil {
+		// If configuration fails, we should still return the team but log the error
+		if s.as != nil {
+			go func() {
+				s.as.LogActivity(context.Background(), org.ID, uuid.Nil, models.ActivityAction("team.template_configuration_failed"), "team", &team.ID, map[string]interface{}{
+					"template_id": templateID,
+					"error":       err.Error(),
+				})
+			}()
+		}
+	}
+
+	// Update template usage count
+	s.db.Model(&template).UpdateColumn("usage_count", gorm.Expr("usage_count + ?", 1))
+
+	return team, nil
+}
+
+func (s *teamTemplateService) GetTeamTemplates(ctx context.Context, orgName string) ([]*models.OrganizationTemplate, error) {
+	var org models.Organization
+	if err := s.db.Where("name = ?", orgName).First(&org).Error; err != nil {
+		return nil, fmt.Errorf("organization not found: %w", err)
+	}
+
+	var templates []*models.OrganizationTemplate
+	if err := s.db.Where("organization_id = ? AND template_type = ?", 
+		org.ID, models.TemplateTypeTeam).Find(&templates).Error; err != nil {
+		return nil, fmt.Errorf("failed to get team templates: %w", err)
+	}
+
+	return templates, nil
+}
+
+func (s *teamTemplateService) SyncWithExternalSystem(ctx context.Context, orgName, teamName string, config ExternalSystemConfig) error {
+	// This would implement integration with external systems like LDAP, Active Directory, etc.
+	// For now, it's a placeholder implementation
+	return fmt.Errorf("external system sync not yet implemented for system type: %s", config.SystemType)
+}
+
+func (s *teamTemplateService) GetTeamPerformanceMetrics(ctx context.Context, orgName, teamName string, period string) (*TeamPerformanceData, error) {
+	var org models.Organization
+	if err := s.db.Where("name = ?", orgName).First(&org).Error; err != nil {
+		return nil, fmt.Errorf("organization not found: %w", err)
+	}
+
+	var team models.Team
+	if err := s.db.Where("organization_id = ? AND name = ?", org.ID, teamName).First(&team).Error; err != nil {
+		return nil, fmt.Errorf("team not found: %w", err)
+	}
+
+	// Calculate performance metrics based on period
+	var memberCount int64
+	s.db.Model(&models.TeamMember{}).Where("team_id = ?", team.ID).Count(&memberCount)
+
+	// These would integrate with actual data sources (git commits, issues, PRs, etc.)
+	performance := &TeamPerformanceData{
+		TeamName:        teamName,
+		Period:          period,
+		MemberCount:     int(memberCount),
+		CommitsCount:    0,  // Would query git data
+		IssuesResolved:  0,  // Would query issue data
+		PullRequests:    0,  // Would query PR data
+		CodeReviews:     0,  // Would query review data
+		AvgResponseTime: 0,  // Would calculate from timestamps
+		Productivity:    0,  // Would calculate based on various metrics
+		LastUpdated:     time.Now(),
+	}
+
+	return performance, nil
+}
+
+func (s *teamTemplateService) TrackTeamActivity(ctx context.Context, orgName, teamName string, activity TeamActivity) error {
+	// Log team-specific activity for performance tracking
+	if s.as != nil {
+		var org models.Organization
+		if err := s.db.Where("name = ?", orgName).First(&org).Error; err != nil {
+			return fmt.Errorf("organization not found: %w", err)
+		}
+
+		var team models.Team
+		if err := s.db.Where("organization_id = ? AND name = ?", org.ID, teamName).First(&team).Error; err != nil {
+			return fmt.Errorf("team not found: %w", err)
+		}
+
+		go func() {
+			s.as.LogActivity(context.Background(), org.ID, activity.ActorID, 
+				models.ActivityAction("team."+activity.ActivityType), "team", &team.ID, activity.Metadata)
+		}()
+	}
+
+	return nil
+}
+
+func (s *teamTemplateService) applyTemplateConfiguration(ctx context.Context, team *models.Team, templateConfig, userConfig map[string]interface{}) error {
+	// Apply template-specific configurations such as:
+	// - Default repository permissions
+	// - Default branch protection rules
+	// - Integration settings
+	// - Notification preferences
+	
+	// This is a simplified implementation - would be expanded based on template types
+	if permissions, ok := templateConfig["default_permissions"].(map[string]interface{}); ok {
+		// Apply default repository permissions for the team
+		_ = permissions // Would implement permission application logic
+	}
+
+	if integrations, ok := templateConfig["integrations"].(map[string]interface{}); ok {
+		// Configure team integrations
+		_ = integrations // Would implement integration setup logic
+	}
+
+	// Override with user-provided configuration
+	for key, value := range userConfig {
+		// Apply user overrides
+		_ = key
+		_ = value
+	}
+
+	return nil
 }
