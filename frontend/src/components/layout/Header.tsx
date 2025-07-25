@@ -16,6 +16,7 @@ import {
   Input,
 } from '@/components/ui';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 
@@ -112,6 +113,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
+          <OfflineIndicator className="hidden sm:flex" />
+          
           <Dropdown
             trigger={
               <Button variant="ghost" size="icon">
