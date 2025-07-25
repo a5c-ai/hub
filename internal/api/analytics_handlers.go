@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,19 +12,22 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // AnalyticsHandlers contains handlers for analytics-related endpoints
 type AnalyticsHandlers struct {
 	analyticsService services.AnalyticsService
 	logger           *logrus.Logger
+	db               *gorm.DB
 }
 
 // NewAnalyticsHandlers creates a new analytics handlers instance
-func NewAnalyticsHandlers(analyticsService services.AnalyticsService, logger *logrus.Logger) *AnalyticsHandlers {
+func NewAnalyticsHandlers(analyticsService services.AnalyticsService, logger *logrus.Logger, db *gorm.DB) *AnalyticsHandlers {
 	return &AnalyticsHandlers{
 		analyticsService: analyticsService,
 		logger:           logger,
+		db:               db,
 	}
 }
 
@@ -56,9 +60,13 @@ func (h *AnalyticsHandlers) GetRepositoryAnalytics(c *gin.Context) {
 		}
 	}
 
-	// TODO: Get repository ID from owner/repo - this requires repository service integration
-	// For now, using a placeholder
-	repoID := uuid.New() // This should be resolved from owner/repo
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
 
 	filters := services.InsightFilters{
 		StartDate: startDate,
@@ -86,8 +94,22 @@ func (h *AnalyticsHandlers) GetRepositoryCodeStats(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for code statistics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Code statistics not implemented yet"})
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	codeStats, err := h.analyticsService.GetRepositoryCodeStats(c.Request.Context(), repoID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository code stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get code statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, codeStats)
 }
 
 // GetRepositoryContributors handles GET /api/v1/repositories/:owner/:repo/analytics/contributors
@@ -100,8 +122,45 @@ func (h *AnalyticsHandlers) GetRepositoryContributors(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for contributor analytics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Contributor analytics not implemented yet"})
+	// Parse query parameters
+	period := services.Period(c.DefaultQuery("period", "daily"))
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+	if startDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
+			startDate = &parsed
+		}
+	}
+	if endDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
+			endDate = &parsed
+		}
+	}
+
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	filters := services.InsightFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Period:    period,
+	}
+
+	contributorStats, err := h.analyticsService.GetRepositoryContributorStats(c.Request.Context(), repoID, filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository contributor stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get contributor analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, contributorStats)
 }
 
 // GetRepositoryActivity handles GET /api/v1/repositories/:owner/:repo/analytics/activity
@@ -114,8 +173,45 @@ func (h *AnalyticsHandlers) GetRepositoryActivity(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for activity analytics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Activity analytics not implemented yet"})
+	// Parse query parameters
+	period := services.Period(c.DefaultQuery("period", "daily"))
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+	if startDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
+			startDate = &parsed
+		}
+	}
+	if endDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
+			endDate = &parsed
+		}
+	}
+
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	filters := services.InsightFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Period:    period,
+	}
+
+	activityStats, err := h.analyticsService.GetRepositoryActivityStats(c.Request.Context(), repoID, filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository activity stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get activity analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, activityStats)
 }
 
 // GetRepositoryPerformance handles GET /api/v1/repositories/:owner/:repo/analytics/performance
@@ -128,8 +224,45 @@ func (h *AnalyticsHandlers) GetRepositoryPerformance(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for performance analytics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Performance analytics not implemented yet"})
+	// Parse query parameters
+	period := services.Period(c.DefaultQuery("period", "daily"))
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+	if startDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
+			startDate = &parsed
+		}
+	}
+	if endDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
+			endDate = &parsed
+		}
+	}
+
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	filters := services.InsightFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Period:    period,
+	}
+
+	performanceStats, err := h.analyticsService.GetRepositoryPerformanceStats(c.Request.Context(), repoID, filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository performance stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get performance analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, performanceStats)
 }
 
 // GetRepositoryIssues handles GET /api/v1/repositories/:owner/:repo/analytics/issues
@@ -142,8 +275,45 @@ func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for issue analytics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Issue analytics not implemented yet"})
+	// Parse query parameters
+	period := services.Period(c.DefaultQuery("period", "daily"))
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+	if startDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
+			startDate = &parsed
+		}
+	}
+	if endDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
+			endDate = &parsed
+		}
+	}
+
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	filters := services.InsightFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Period:    period,
+	}
+
+	issueStats, err := h.analyticsService.GetRepositoryIssueStats(c.Request.Context(), repoID, filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository issue stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get issue analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, issueStats)
 }
 
 // GetRepositoryPulls handles GET /api/v1/repositories/:owner/:repo/analytics/pulls
@@ -156,8 +326,45 @@ func (h *AnalyticsHandlers) GetRepositoryPulls(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for pull request analytics
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Pull request analytics not implemented yet"})
+	// Parse query parameters
+	period := services.Period(c.DefaultQuery("period", "daily"))
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+
+	var startDate, endDate *time.Time
+	if startDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
+			startDate = &parsed
+		}
+	}
+	if endDateStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
+			endDate = &parsed
+		}
+	}
+
+	// Resolve repository ID from owner/repo
+	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to resolve repository")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		return
+	}
+
+	filters := services.InsightFilters{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Period:    period,
+	}
+
+	prStats, err := h.analyticsService.GetRepositoryPRStats(c.Request.Context(), repoID, filters)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository PR stats")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get pull request analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, prStats)
 }
 
 // User Analytics Endpoints
@@ -555,4 +762,67 @@ func (h *AnalyticsHandlers) isAdmin(c *gin.Context) bool {
 	// TODO: Implement admin check - this should check user role from context or database
 	// For now, return false as a placeholder
 	return false
+}
+
+// getRepositoryID resolves repository ID from owner and repository name
+func (h *AnalyticsHandlers) getRepositoryID(ctx context.Context, owner, name string) (uuid.UUID, error) {
+	// This needs to integrate with repository service
+	// For now, we'll do a direct database lookup
+	
+	// First, resolve the owner name to owner ID and type
+	var ownerID uuid.UUID
+	var ownerType string
+	
+	// Try to find a user with this username
+	var user struct {
+		ID uuid.UUID `json:"id"`
+	}
+	err := h.db.WithContext(ctx).
+		Model(&models.User{}).Select("id").Where("username = ?", owner).First(&user).Error
+	if err == nil {
+		ownerID = user.ID
+		ownerType = "user"
+	} else if err == gorm.ErrRecordNotFound {
+		// Try to find an organization with this name
+		var org struct {
+			ID uuid.UUID `json:"id"`
+		}
+		err = h.db.WithContext(ctx).
+			Model(&models.Organization{}).Select("id").Where("name = ?", owner).First(&org).Error
+		if err == nil {
+			ownerID = org.ID
+			ownerType = "organization"
+		} else if err == gorm.ErrRecordNotFound {
+			return uuid.Nil, fmt.Errorf("owner not found")
+		} else {
+			return uuid.Nil, fmt.Errorf("failed to find organization: %w", err)
+		}
+	} else {
+		return uuid.Nil, fmt.Errorf("failed to find user: %w", err)
+	}
+
+	// Now find the repository
+	var repo struct {
+		ID uuid.UUID `json:"id"`
+	}
+	
+	query := h.db.WithContext(ctx).
+		Model(&models.Repository{}).Select("id").
+		Where("name = ? AND owner_id = ?", name, ownerID)
+		
+	if ownerType == "user" {
+		query = query.Where("owner_type = ?", "user")
+	} else {
+		query = query.Where("owner_type = ?", "organization")
+	}
+	
+	err = query.First(&repo).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return uuid.Nil, fmt.Errorf("repository not found")
+		}
+		return uuid.Nil, fmt.Errorf("failed to find repository: %w", err)
+	}
+
+	return repo.ID, nil
 }
