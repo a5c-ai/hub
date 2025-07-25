@@ -17,6 +17,9 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`registration.spec.ts`** - User registration and validation tests
 - **`repository.spec.ts`** - Repository management tests
 - **`issues.spec.ts`** - Issue management and workflow tests
+- **`user-profile.spec.ts`** - User profile management and public profile tests
+- **`user-security.spec.ts`** - Security settings, password, SSH keys, and 2FA tests
+- **`user-preferences.spec.ts`** - Notifications, appearance, accessibility, and privacy tests
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage
@@ -45,6 +48,29 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - User menu interactions
 - Keyboard navigation
 - Loading states
+
+#### User Settings & Profile Tests
+- Profile information editing and saving
+- Avatar management and file uploads
+- Profile visibility and public profile display
+- Account settings and preferences
+- Theme switching and appearance customization
+
+#### Security Tests
+- Password change functionality with validation
+- SSH key management (add, remove, validate)
+- Two-factor authentication setup and management
+- Security audit logs and session management
+- Account security best practices
+
+#### User Preferences Tests
+- Email notification preferences and frequency
+- Web notification enablement and permissions
+- Quiet hours and notification filtering
+- Accessibility features (high contrast, large fonts, reduced motion)
+- Language, timezone, and localization settings
+- Privacy controls and data visibility settings
+- Data export and portability features
 
 ## Configuration
 
