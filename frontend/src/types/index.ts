@@ -380,6 +380,21 @@ export interface AuthState {
   error: string | null;
 }
 
+// SSH Key types
+export interface SSHKey {
+  id: string;
+  title: string;
+  fingerprint: string;
+  key_type: string;
+  last_used_at?: string;
+  created_at: string;
+}
+
+export interface CreateSSHKeyRequest {
+  title: string;
+  key_data: string;
+}
+
 // Backend API Response Types
 export interface IssuesListResponse {
   issues: Issue[];

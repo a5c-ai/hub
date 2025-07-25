@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { SSHKeyManagement } from '@/components/settings/SSHKeyManagement';
 import { useAuthStore } from '@/store/auth';
 import api from '@/lib/api';
 
@@ -299,6 +300,8 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </Card>
+
+                <SSHKeyManagement />
                 
                 <Card>
                   <div className="p-6">
