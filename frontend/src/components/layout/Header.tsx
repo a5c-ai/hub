@@ -15,6 +15,7 @@ import {
   Dropdown,
   Input,
 } from '@/components/ui';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 
@@ -126,6 +127,8 @@ export function Header() {
               3
             </span>
           </Button>
+
+          <ThemeToggle variant="button" size="md" />
 
           <Dropdown
             trigger={
