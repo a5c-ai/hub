@@ -48,19 +48,19 @@ if [[ -f "go.mod" ]]; then
     export GOMAXPROCS=2  # Reduced from 4 to prevent resource exhaustion
     
     # Download with retry logic and timeout
-    for i in {1..5}; do
+    for i in {1..3}; do
         echo "Attempt $i: Downloading Go modules..."
-        if timeout 20m go mod download -x; then
+        if timeout 25m go mod download -x; then
             echo "✅ Go modules downloaded successfully"
             break
         else
             echo "❌ Attempt $i failed, retrying..."
-            if [ $i -eq 5 ]; then
+            if [ $i -eq 3 ]; then
                 echo "🚨 All Go download attempts failed"
                 exit 1
             fi
             # Exponential backoff
-            sleep $((i * 10))
+            sleep $((i * 15))
         fi
     done
     
@@ -101,12 +101,12 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     for i in {1..3}; do
         echo "Attempt $i: Installing frontend dependencies..."
         if [[ -f "package-lock.json" ]]; then
-            if timeout 20m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 25m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi
         else
-            if timeout 20m npm install --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 25m npm install --prefer-offline --no-audit --no-fund --progress=false; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi

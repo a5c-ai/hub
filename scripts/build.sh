@@ -65,9 +65,9 @@ export GOFLAGS="-p=2 -buildvcs=false"  # Reduced parallelism
 
 # Use longer timeout but with progress monitoring
 log "Starting Go build with conservative resource settings..."
-timeout 20m go build \
+timeout 30m go build \
     -ldflags "$LDFLAGS" \
-    -v \
+    -a \
     -o "$OUTPUT_DIR/$BINARY_NAME" \
     ./cmd/server
 
@@ -105,7 +105,7 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     
     # Build with timeout and better error handling
     log "Starting frontend build with conservative resource settings..."
-    timeout 25m npm run build
+    timeout 35m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
