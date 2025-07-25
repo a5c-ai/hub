@@ -35,7 +35,7 @@ export default function RepositoryBrowser({
       try {
         const branchesResponse = await repoApi.getBranches(owner, repo);
         const branches = branchesResponse.data;
-        const branchNames = branches.map((branch: any) => branch.name);
+        const branchNames = branches.map((branch: { name: string }) => branch.name);
         setAvailableBranches(branchNames);
       } catch (branchError) {
         console.warn('Failed to fetch branches:', branchError);
@@ -64,7 +64,7 @@ export default function RepositoryBrowser({
               usedRef = availableBranches[0];
               response = await repoApi.getTree(owner, repo, currentPath, usedRef);
               setActualRef(usedRef);
-            } catch (branchError) {
+            } catch {
               throw firstError;
             }
           } else {

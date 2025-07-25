@@ -4,19 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
-  DocumentTextIcon,
+  // DocumentTextIcon,
   FolderIcon,
-  UsersIcon,
+  // UsersIcon,
   CogIcon,
-  ChartBarIcon,
+  // ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
-  DocumentTextIcon as DocumentTextIconSolid,
+  // DocumentTextIcon as DocumentTextIconSolid,
   FolderIcon as FolderIconSolid,
-  UsersIcon as UsersIconSolid,
+  // UsersIcon as UsersIconSolid,
   CogIcon as CogIconSolid,
-  ChartBarIcon as ChartBarIconSolid,
+  // ChartBarIcon as ChartBarIconSolid,
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app';

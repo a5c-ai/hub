@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -63,17 +63,7 @@ export default function WorkflowRunDetailPage() {
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [logs, setLogs] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchWorkflowRun();
-  }, [owner, repo, runId]);
-
-  useEffect(() => {
-    if (run && run.jobs.length > 0 && !selectedJob) {
-      setSelectedJob(run.jobs[0].id);
-    }
-  }, [run, selectedJob]);
-
-  const fetchWorkflowRun = async () => {
+  const fetchWorkflowRun = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runs/${runId}`);
       if (response.ok) {
@@ -87,7 +77,17 @@ export default function WorkflowRunDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo, runId]);
+
+  useEffect(() => {
+    fetchWorkflowRun();
+  }, [fetchWorkflowRun]);
+
+  useEffect(() => {
+    if (run && run.jobs.length > 0 && !selectedJob) {
+      setSelectedJob(run.jobs[0].id);
+    }
+  }, [run, selectedJob]);
 
   const fetchJobLogs = async (jobId: string) => {
     if (logs[jobId]) return; // Already fetched
@@ -208,7 +208,7 @@ export default function WorkflowRunDetailPage() {
           <div>
             <span className="text-sm text-gray-500">Status</span>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+              <Badge variant={getStatusColor(run.status, run.conclusion) as 'default' | 'secondary' | 'outline' | 'destructive'}>
                 {run.conclusion || run.status}
               </Badge>
             </div>
@@ -317,13 +317,13 @@ export default function WorkflowRunDetailPage() {
                   <h4 className="font-medium">Logs</h4>
                 </div>
                 <div className="p-4">
-                  {logs[selectedJob] ? (
+                  {selectedJob && logs[selectedJob] ? (
                     <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
                       {logs[selectedJob]}
                     </pre>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      <p>Click "View logs" to see the build output</p>
+                      <p>Click &quot;View logs&quot; to see the build output</p>
                       <Button
                         variant="outline"
                         className="mt-2"

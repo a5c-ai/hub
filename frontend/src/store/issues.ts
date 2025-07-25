@@ -10,6 +10,14 @@ import {
   IssueFilters,
   PaginatedResponse
 } from '@/types';
+
+type IssueResponse = {
+  issues?: Issue[];
+  data?: Issue[];
+  total?: number;
+  page?: number;
+  per_page?: number;
+};
 import { issueApi, commentApi, labelApi, milestoneApi } from '@/lib/api';
 
 // Helper function to extract error message
@@ -145,10 +153,10 @@ export const useIssueStore = create<IssueStore>()(
           // Backend returns { issues: Issue[], total: number, page: number, per_page: number }
           // not the expected PaginatedResponse format
           set({
-            issues: response.issues || response.data || [],
-            issuesTotal: response.total || 0,
-            currentPage: response.page || 1,
-            totalPages: Math.ceil((response.total || 0) / (response.per_page || 30)),
+            issues: (response as IssueResponse).issues || (response as IssueResponse).data || [],
+            issuesTotal: (response as IssueResponse).total || 0,
+            currentPage: (response as IssueResponse).page || 1,
+            totalPages: Math.ceil(((response as IssueResponse).total || 0) / ((response as IssueResponse).per_page || 30)),
             filters: finalFilters,
             isLoadingIssues: false,
           });
@@ -169,10 +177,10 @@ export const useIssueStore = create<IssueStore>()(
           
           // Backend returns { issues: Issue[], total: number, page: number, per_page: number }
           set({
-            issues: response.issues || response.data || [],
-            issuesTotal: response.total || 0,
-            currentPage: response.page || 1,
-            totalPages: Math.ceil((response.total || 0) / (response.per_page || 30)),
+            issues: (response as IssueResponse).issues || (response as IssueResponse).data || [],
+            issuesTotal: (response as IssueResponse).total || 0,
+            currentPage: (response as IssueResponse).page || 1,
+            totalPages: Math.ceil(((response as IssueResponse).total || 0) / ((response as IssueResponse).per_page || 30)),
             filters: finalFilters,
             isLoadingIssues: false,
           });
@@ -191,7 +199,7 @@ export const useIssueStore = create<IssueStore>()(
           const response = await issueApi.getIssue(owner, repo, number);
           
           // Backend returns the issue object directly, not wrapped in a response
-          const issue = response.data || response;
+          const issue = (response as { data?: Issue }).data || (response as unknown as Issue);
           
           set({
             currentIssue: issue,
@@ -213,7 +221,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ isCreating: false });
           
           // Backend returns the issue object directly, not wrapped in a response
-          const issue = response.data || response;
+          const issue = (response as { data?: Issue }).data || (response as unknown as Issue);
           
           // Add the new issue to the list if it matches current filters
           const state = get();
@@ -239,7 +247,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ isUpdating: false });
           
           // Backend returns the issue object directly, not wrapped in a response
-          const issue = response.data || response;
+          const issue = (response as { data?: Issue }).data || (response as unknown as Issue);
           
           // Update current issue if it's loaded
           const state = get();
