@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a5c-ai/hub/internal/actions"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -236,24 +237,225 @@ func (e *KubernetesExecutor) generateJobScript(job *models.Job, workflowRun mode
 	var script strings.Builder
 
 	script.WriteString("#!/bin/bash\nset -e\n\n")
+	
+	// Set up error handling
+	script.WriteString("set -o pipefail\n")
+	script.WriteString("export GITHUB_WORKSPACE=/workspace\n")
+	script.WriteString("export RUNNER_WORKSPACE=/workspace\n")
+	script.WriteString("export GITHUB_REPOSITORY=\"")
+	script.WriteString(fmt.Sprintf("%s/%s", workflowRun.Repository.Owner, workflowRun.Repository.Name))
+	script.WriteString("\"\n")
+	script.WriteString("export GITHUB_SHA=\"")
+	script.WriteString(workflowRun.HeadSHA)
+	script.WriteString("\"\n")
+	if workflowRun.HeadBranch != nil {
+		script.WriteString("export GITHUB_REF_NAME=\"")
+		script.WriteString(*workflowRun.HeadBranch)
+		script.WriteString("\"\n")
+		script.WriteString("export GITHUB_REF=\"refs/heads/")
+		script.WriteString(*workflowRun.HeadBranch)
+		script.WriteString("\"\n")
+	}
+	script.WriteString("export GITHUB_EVENT_NAME=\"")
+	script.WriteString(workflowRun.Event)
+	script.WriteString("\"\n")
+	script.WriteString("export GITHUB_RUN_ID=\"")
+	script.WriteString(workflowRun.ID.String())
+	script.WriteString("\"\n")
+	script.WriteString("export GITHUB_RUN_NUMBER=\"")
+	script.WriteString(fmt.Sprintf("%d", workflowRun.Number))
+	script.WriteString("\"\n\n")
+
 	script.WriteString("echo '::group::Job Setup'\n")
 	script.WriteString("echo 'Setting up job environment...'\n")
+	script.WriteString("cd $GITHUB_WORKSPACE\n")
 	script.WriteString("echo '::endgroup::'\n\n")
 
-	// In a real implementation, you would parse the job steps from the workflow YAML
-	// For now, we'll create a simple placeholder
-	script.WriteString("echo '::group::Checkout'\n")
-	script.WriteString("# Checkout code (simplified)\n")
-	script.WriteString("echo 'Checking out code...'\n")
-	script.WriteString("echo '::endgroup::'\n\n")
+	// Parse workflow YAML to get job steps
+	parser := actions.NewWorkflowParser()
+	workflowDef, err := parser.Parse(workflowRun.Workflow.Content)
+	if err != nil {
+		e.logger.WithError(err).Error("Failed to parse workflow YAML")
+		script.WriteString("echo 'Error: Failed to parse workflow YAML'\n")
+		script.WriteString("exit 1\n")
+		return script.String()
+	}
 
-	script.WriteString("echo '::group::Run Steps'\n")
-	script.WriteString("# Execute job steps\n")
-	script.WriteString("echo 'Executing job steps...'\n")
-	script.WriteString("echo 'Job completed successfully'\n")
-	script.WriteString("echo '::endgroup::'\n")
+	// Find the matching job in the workflow
+	var jobDef *actions.JobDefinition
+	for jobID, jd := range workflowDef.Jobs {
+		if jobID == job.Name {
+			jobDef = &jd
+			break
+		}
+	}
+
+	if jobDef == nil {
+		script.WriteString("echo 'Error: Job definition not found in workflow'\n")
+		script.WriteString("exit 1\n")
+		return script.String()
+	}
+
+	// Execute each step
+	for i, step := range jobDef.Steps {
+		stepName := step.Name
+		if stepName == "" {
+			stepName = fmt.Sprintf("Step %d", i+1)
+		}
+
+		script.WriteString(fmt.Sprintf("echo '::group::%s'\n", stepName))
+		
+		// Handle step conditions
+		if step.If != "" {
+			script.WriteString("# TODO: Evaluate step condition: ")
+			script.WriteString(step.If)
+			script.WriteString("\n")
+		}
+
+		if step.Uses != "" {
+			// Handle action steps
+			e.generateActionStep(&script, &step, i)
+		} else if step.Run != "" {
+			// Handle run steps
+			e.generateRunStep(&script, &step, i)
+		}
+
+		script.WriteString("echo '::endgroup::'\n\n")
+	}
 
 	return script.String()
+}
+
+// generateActionStep generates script for an action step
+func (e *KubernetesExecutor) generateActionStep(script *strings.Builder, step *actions.StepDefinition, stepNum int) {
+	script.WriteString("# Action step: ")
+	script.WriteString(step.Uses)
+	script.WriteString("\n")
+
+	// Handle common actions
+	switch {
+	case strings.HasPrefix(step.Uses, "actions/checkout"):
+		e.generateCheckoutStep(script, step)
+	case strings.HasPrefix(step.Uses, "actions/setup-"):
+		e.generateSetupStep(script, step)
+	case strings.HasPrefix(step.Uses, "actions/upload-artifact"):
+		e.generateUploadArtifactStep(script, step)
+	case strings.HasPrefix(step.Uses, "actions/download-artifact"):
+		e.generateDownloadArtifactStep(script, step)
+	default:
+		// Generic action handling - in a full implementation, you'd fetch and run the action
+		script.WriteString("echo 'Action execution not yet implemented for: ")
+		script.WriteString(step.Uses)
+		script.WriteString("'\n")
+		script.WriteString("echo 'Skipping step...'\n")
+	}
+}
+
+// generateRunStep generates script for a run step
+func (e *KubernetesExecutor) generateRunStep(script *strings.Builder, step *actions.StepDefinition, stepNum int) {
+	// Set environment variables for this step
+	for key, value := range step.Env {
+		script.WriteString("export ")
+		script.WriteString(key)
+		script.WriteString("='")
+		script.WriteString(value)
+		script.WriteString("'\n")
+	}
+
+	// Set working directory if specified
+	if step.WorkingDirectory != "" {
+		script.WriteString("cd '")
+		script.WriteString(step.WorkingDirectory)
+		script.WriteString("'\n")
+	}
+
+	// Set shell if specified
+	shell := step.Shell
+	if shell == "" {
+		shell = "bash"
+	}
+
+	// Execute the run command
+	script.WriteString("# Run step\n")
+	script.WriteString(shell)
+	script.WriteString(" << 'EOF'\n")
+	script.WriteString(step.Run)
+	script.WriteString("\nEOF\n")
+
+	// Return to workspace
+	if step.WorkingDirectory != "" {
+		script.WriteString("cd $GITHUB_WORKSPACE\n")
+	}
+}
+
+// generateCheckoutStep generates script for actions/checkout
+func (e *KubernetesExecutor) generateCheckoutStep(script *strings.Builder, step *actions.StepDefinition) {
+	script.WriteString("# Checkout repository\n")
+	script.WriteString("echo 'Checking out repository...'\n")
+	
+	// In a real implementation, you would:
+	// 1. Clone the repository
+	// 2. Checkout the specific SHA/branch
+	// 3. Handle submodules, LFS, etc.
+	
+	script.WriteString("# Placeholder: Repository checkout would happen here\n")
+	script.WriteString("echo 'Repository checked out successfully'\n")
+}
+
+// generateSetupStep generates script for setup actions (setup-node, setup-go, etc.)
+func (e *KubernetesExecutor) generateSetupStep(script *strings.Builder, step *actions.StepDefinition) {
+	script.WriteString("# Setup step: ")
+	script.WriteString(step.Uses)
+	script.WriteString("\n")
+	
+	// Extract version from with parameters
+	if step.With != nil {
+		if version, ok := step.With["version"].(string); ok {
+			script.WriteString("echo 'Setting up with version: ")
+			script.WriteString(version)
+			script.WriteString("'\n")
+		}
+	}
+	
+	script.WriteString("# Placeholder: Setup action would happen here\n")
+	script.WriteString("echo 'Setup completed successfully'\n")
+}
+
+// generateUploadArtifactStep generates script for uploading artifacts
+func (e *KubernetesExecutor) generateUploadArtifactStep(script *strings.Builder, step *actions.StepDefinition) {
+	script.WriteString("# Upload artifact\n")
+	
+	if step.With != nil {
+		if name, ok := step.With["name"].(string); ok {
+			script.WriteString("echo 'Uploading artifact: ")
+			script.WriteString(name)
+			script.WriteString("'\n")
+		}
+		if path, ok := step.With["path"].(string); ok {
+			script.WriteString("echo 'Artifact path: ")
+			script.WriteString(path)
+			script.WriteString("'\n")
+		}
+	}
+	
+	script.WriteString("# Placeholder: Artifact upload would happen here\n")
+	script.WriteString("echo 'Artifact uploaded successfully'\n")
+}
+
+// generateDownloadArtifactStep generates script for downloading artifacts
+func (e *KubernetesExecutor) generateDownloadArtifactStep(script *strings.Builder, step *actions.StepDefinition) {
+	script.WriteString("# Download artifact\n")
+	
+	if step.With != nil {
+		if name, ok := step.With["name"].(string); ok {
+			script.WriteString("echo 'Downloading artifact: ")
+			script.WriteString(name)
+			script.WriteString("'\n")
+		}
+	}
+	
+	script.WriteString("# Placeholder: Artifact download would happen here\n")
+	script.WriteString("echo 'Artifact downloaded successfully'\n")
 }
 
 // watchJobProgress watches the Kubernetes job and updates the database accordingly

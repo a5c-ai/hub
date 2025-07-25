@@ -53,10 +53,21 @@ func (s *ArtifactService) UploadArtifact(ctx context.Context, workflowRunID uuid
 		ExpiresAt:     timePtr(time.Now().AddDate(0, 0, s.retentionDays)),
 	}
 
-	// TODO: In a real implementation, you would:
-	// 1. Stream the data to storage (Azure Blob, S3, etc.)
-	// 2. Verify the upload was successful
-	// 3. Handle compression if needed
+	// In a real implementation, this would upload to configured storage backend
+	// (Azure Blob Storage, AWS S3, Google Cloud Storage, MinIO, etc.)
+	// For now, we simulate the upload
+	s.logger.WithFields(logrus.Fields{
+		"workflow_run_id": workflowRunID,
+		"name":            name,
+		"size_bytes":      sizeBytes,
+		"path":            storagePath,
+	}).Info("Uploading artifact to storage backend")
+
+	// TODO: Implement actual storage integration:
+	// 1. Upload to configured storage backend
+	// 2. Verify upload integrity
+	// 3. Handle compression/encryption if enabled
+	// 4. Set proper access controls
 
 	// Save artifact metadata to database
 	if err := s.db.WithContext(ctx).Create(artifact).Error; err != nil {
