@@ -22,12 +22,15 @@ interface PWAProviderProps {
 }
 
 export function PWAProvider({ children }: PWAProviderProps) {
+  const [mounted, setMounted] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
+    
     const pwa = PWAManager.getInstance();
 
     // Initial status check
@@ -110,10 +113,10 @@ export function PWAProvider({ children }: PWAProviderProps) {
   };
 
   const contextValue: PWAContextType = {
-    canInstall,
-    isInstalled,
-    updateAvailable,
-    isOnline,
+    canInstall: mounted ? canInstall : false,
+    isInstalled: mounted ? isInstalled : false,
+    updateAvailable: mounted ? updateAvailable : false,
+    isOnline: mounted ? isOnline : true,
     installApp,
     updateApp,
     checkForUpdates,
@@ -138,9 +141,12 @@ export function usePWAContext(): PWAContextType {
 
 // Hook for checking if running as PWA
 export function useIsPWA(): boolean {
+  const [mounted, setMounted] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
     const checkPWA = () => {
       // Check if running as standalone app
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -161,5 +167,5 @@ export function useIsPWA(): boolean {
     };
   }, []);
 
-  return isPWA;
+  return mounted ? isPWA : false;
 }

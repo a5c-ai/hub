@@ -30,18 +30,21 @@ export const useThemeStore = create<ThemeState & ThemeActions>()(
     (set, get) => ({
       // State
       theme: 'system',
-      resolvedTheme: 'light',
+      resolvedTheme: 'light', // Always start with light to prevent hydration mismatch
 
       // Actions
       setTheme: (theme: Theme) => {
         const resolved = resolveTheme(theme);
         set({ theme, resolvedTheme: resolved });
         
-        // Apply theme to document
+        // Apply theme to document only after hydration is complete
         if (typeof window !== 'undefined') {
-          const root = window.document.documentElement;
-          root.classList.remove('light', 'dark');
-          root.classList.add(resolved);
+          // Use requestAnimationFrame to ensure DOM is ready and hydration is complete
+          requestAnimationFrame(() => {
+            const root = window.document.documentElement;
+            root.classList.remove('light', 'dark');
+            root.classList.add(resolved);
+          });
         }
       },
 
@@ -64,11 +67,13 @@ export const useThemeStore = create<ThemeState & ThemeActions>()(
           const resolved = resolveTheme(state.theme);
           state.resolvedTheme = resolved;
           
-          // Apply theme to document
+          // Apply theme to document after hydration is complete
           if (typeof window !== 'undefined') {
-            const root = window.document.documentElement;
-            root.classList.remove('light', 'dark');
-            root.classList.add(resolved);
+            requestAnimationFrame(() => {
+              const root = window.document.documentElement;
+              root.classList.remove('light', 'dark');
+              root.classList.add(resolved);
+            });
           }
         }
       },
