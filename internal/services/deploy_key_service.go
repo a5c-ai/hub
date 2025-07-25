@@ -2,7 +2,10 @@ package services
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/md5"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -239,15 +242,37 @@ func (s *DeployKeyService) GetKeySize(keyStr string) (int, error) {
 		return 0, err
 	}
 	
-	switch key := publicKey.(type) {
-	case *ssh.RSAKey:
-		return key.Size() * 8, nil
-	case *ssh.ECDSAKey:
-		return key.Size() * 8, nil
-	case *ssh.ED25519Key:
-		return 256, nil // Ed25519 keys are always 256 bits
+	// Use the CryptoPublicKey interface to get the underlying crypto type
+	if cryptoKey, ok := publicKey.(ssh.CryptoPublicKey); ok {
+		switch key := cryptoKey.CryptoPublicKey().(type) {
+		case *rsa.PublicKey:
+			return key.Size() * 8, nil
+		case *ecdsa.PublicKey:
+			return key.Curve.Params().BitSize, nil
+		case ed25519.PublicKey:
+			return 256, nil // Ed25519 keys are always 256 bits
+		default:
+			return 0, fmt.Errorf("unsupported key type: %T", key)
+		}
+	}
+	
+	// Fallback: try to determine size from the SSH key type string
+	keyType := publicKey.Type()
+	switch keyType {
+	case "ssh-rsa":
+		// For RSA keys, we can't determine the exact size without the crypto key
+		// Return a common default or parse the key data
+		return 2048, nil // Common default
+	case "ecdsa-sha2-nistp256":
+		return 256, nil
+	case "ecdsa-sha2-nistp384":
+		return 384, nil
+	case "ecdsa-sha2-nistp521":
+		return 521, nil
+	case "ssh-ed25519":
+		return 256, nil
 	default:
-		return 0, nil
+		return 0, fmt.Errorf("unknown key type: %s", keyType)
 	}
 }
 
