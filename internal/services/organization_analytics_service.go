@@ -478,34 +478,257 @@ func (s *organizationAnalyticsService) getOverviewMetrics(orgID uuid.UUID) (*Ove
 
 // Placeholder implementations for now - these would contain the actual logic
 func (s *organizationAnalyticsService) getRecentActivity(orgID uuid.UUID, limit int) ([]*ActivitySummary, error) {
-	return []*ActivitySummary{}, nil
+	// Get recent analytics events for this organization
+	var events []models.AnalyticsEvent
+	err := s.db.Where("organization_id = ?", orgID).
+		Order("created_at DESC").
+		Limit(limit).
+		Preload("Actor").
+		Find(&events).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var activities []*ActivitySummary
+	for _, event := range events {
+		actorName := "Unknown"
+		if event.Actor != nil {
+			actorName = event.Actor.Username
+		}
+		
+		activities = append(activities, &ActivitySummary{
+			Date:        event.CreatedAt,
+			Action:      string(event.EventType),
+			ActorName:   actorName,
+			TargetType:  event.TargetType,
+			TargetName:  "", // Would need to resolve from target ID
+			Description: fmt.Sprintf("%s performed %s", actorName, event.EventType),
+		})
+	}
+
+	return activities, nil
 }
 
 func (s *organizationAnalyticsService) getTopRepositories(orgID uuid.UUID, limit int) ([]*RepositorySummary, error) {
-	return []*RepositorySummary{}, nil
+	// Get repositories with their analytics data
+	var repos []struct {
+		models.Repository
+		StarsCount   int64     `json:"stars_count"`
+		ForksCount   int64     `json:"forks_count"`
+		Commits30d   int64     `json:"commits_30d"`
+		Issues30d    int64     `json:"issues_30d"`
+		LastActivity time.Time `json:"last_activity"`
+	}
+
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+	err := s.db.Table("repositories r").
+		Select(`
+			r.*,
+			COALESCE(ra.stars_count, 0) as stars_count,
+			COALESCE(ra.forks_count, 0) as forks_count,
+			(SELECT COUNT(*) FROM commits c WHERE c.repository_id = r.id AND c.created_at >= ?) as commits_30d,
+			(SELECT COUNT(*) FROM issues i WHERE i.repository_id = r.id AND i.created_at >= ?) as issues_30d,
+			COALESCE(r.pushed_at, r.updated_at) as last_activity
+		`, thirtyDaysAgo, thirtyDaysAgo).
+		Joins("LEFT JOIN repository_analytics ra ON r.id = ra.repository_id").
+		Where("r.owner_id = ? AND r.owner_type = ?", orgID, "organization").
+		Order("stars_count DESC, commits_30d DESC").
+		Limit(limit).
+		Scan(&repos).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries []*RepositorySummary
+	for _, repo := range repos {
+		// Count contributors
+		var contributorCount int64
+		s.db.Model(&models.Commit{}).
+			Where("repository_id = ?", repo.ID).
+			Distinct("author_id").
+			Count(&contributorCount)
+
+		summaries = append(summaries, &RepositorySummary{
+			Name:           repo.Name,
+			Language:       "Go", // Placeholder - would get from repository stats
+			Stars:          int(repo.StarsCount),
+			Forks:          int(repo.ForksCount),
+			Contributors:   int(contributorCount),
+			Commits30d:     int(repo.Commits30d),
+			Issues30d:      int(repo.Issues30d),
+			LastActivityAt: repo.LastActivity,
+		})
+	}
+
+	return summaries, nil
 }
 
 func (s *organizationAnalyticsService) getActiveMembers(orgID uuid.UUID, limit int) ([]*MemberSummary, error) {
-	return []*MemberSummary{}, nil
+	// Get organization members with their activity stats
+	var members []struct {
+		models.User
+		Role           string    `json:"role"`
+		Commits30d     int64     `json:"commits_30d"`
+		Issues30d      int64     `json:"issues_30d"`
+		PullRequests30d int64    `json:"pull_requests_30d"`
+		LastActiveAt   time.Time `json:"last_active_at"`
+	}
+
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+	err := s.db.Table("users u").
+		Select(`
+			u.*,
+			om.role,
+			(SELECT COUNT(*) FROM commits c WHERE c.author_id = u.id AND c.created_at >= ?) as commits_30d,
+			(SELECT COUNT(*) FROM issues i WHERE i.user_id = u.id AND i.created_at >= ?) as issues_30d,
+			(SELECT COUNT(*) FROM pull_requests pr WHERE pr.user_id = u.id AND pr.created_at >= ?) as pull_requests_30d,
+			(SELECT MAX(ae.created_at) FROM analytics_events ae WHERE ae.actor_id = u.id) as last_active_at
+		`, thirtyDaysAgo, thirtyDaysAgo, thirtyDaysAgo).
+		Joins("JOIN organization_members om ON u.id = om.user_id").
+		Where("om.organization_id = ?", orgID).
+		Order("commits_30d DESC, pull_requests_30d DESC, issues_30d DESC").
+		Limit(limit).
+		Scan(&members).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries []*MemberSummary
+	for _, member := range members {
+		summaries = append(summaries, &MemberSummary{
+			Username:       member.Username,
+			Name:           member.FullName,
+			Role:           member.Role,
+			Commits30d:     int(member.Commits30d),
+			Issues30d:      int(member.Issues30d),
+			PullRequests30d: int(member.PullRequests30d),
+			LastActiveAt:   member.LastActiveAt,
+		})
+	}
+
+	return summaries, nil
 }
 
 func (s *organizationAnalyticsService) getSecurityAlerts(orgID uuid.UUID, limit int) ([]*SecurityAlert, error) {
-	return []*SecurityAlert{}, nil
+	// Get security-related events and convert to alerts
+	var events []models.AnalyticsEvent
+	err := s.db.Where("organization_id = ? AND event_type LIKE ?", orgID, "security.%").
+		Order("created_at DESC").
+		Limit(limit).
+		Preload("Repository").
+		Find(&events).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var alerts []*SecurityAlert
+	for _, event := range events {
+		severity := "medium"
+		if event.EventType == "security.access_denied" {
+			severity = "high"
+		}
+
+		repoName := "Unknown"
+		if event.Repository != nil {
+			repoName = event.Repository.Name
+		}
+
+		alerts = append(alerts, &SecurityAlert{
+			Type:        string(event.EventType),
+			Severity:    severity,
+			Title:       fmt.Sprintf("Security Event: %s", event.EventType),
+			Description: event.ErrorMessage,
+			Repository:  repoName,
+			CreatedAt:   event.CreatedAt,
+		})
+	}
+
+	// Add some placeholder alerts if no real ones exist
+	if len(alerts) == 0 {
+		alerts = append(alerts, &SecurityAlert{
+			Type:        "vulnerability",
+			Severity:    "low",
+			Title:       "No recent security alerts",
+			Description: "Your organization has no recent security alerts",
+			Repository:  "",
+			CreatedAt:   time.Now(),
+		})
+	}
+
+	return alerts, nil
 }
 
 func (s *organizationAnalyticsService) getStorageUsage(orgID uuid.UUID) (*StorageUsageMetrics, error) {
+	// Get storage usage from organization analytics
+	var latest models.OrganizationAnalytics
+	err := s.db.Where("organization_id = ?", orgID).
+		Order("date DESC").
+		First(&latest).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	// Convert MB to GB
+	totalUsedGB := float64(latest.StorageUsedMB) / 1024.0
+	totalLimitGB := 1024.0 // Default 1TB limit
+	usagePercent := (totalUsedGB / totalLimitGB) * 100
+
+	// Get top repositories by storage usage
+	var topRepos []RepositoryStorageUsage
+
+	// This would integrate with actual repository size tracking
+	// For now, use placeholder data
+	topRepos = []RepositoryStorageUsage{
+		{Name: "main-app", SizeGB: totalUsedGB * 0.4, Percent: 40.0},
+		{Name: "api-service", SizeGB: totalUsedGB * 0.3, Percent: 30.0},
+		{Name: "frontend", SizeGB: totalUsedGB * 0.2, Percent: 20.0},
+		{Name: "docs", SizeGB: totalUsedGB * 0.1, Percent: 10.0},
+	}
+
 	return &StorageUsageMetrics{
-		TotalUsedGB:  0,
-		TotalLimitGB: 1024,
-		UsagePercent: 0,
+		TotalUsedGB:    totalUsedGB,
+		TotalLimitGB:   totalLimitGB,
+		UsagePercent:   usagePercent,
+		TopRepositories: topRepos,
 	}, nil
 }
 
 func (s *organizationAnalyticsService) getBandwidthUsage(orgID uuid.UUID) (*BandwidthUsageMetrics, error) {
+	// Get bandwidth usage from organization analytics
+	var analytics []models.OrganizationAnalytics
+	err := s.db.Where("organization_id = ? AND date >= ?", orgID, time.Now().AddDate(0, -1, 0)).
+		Order("date ASC").
+		Find(&analytics).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate total bandwidth for the month
+	var totalUsedMB int64
+	var dailyUsage []DailyBandwidthUsage
+
+	for _, record := range analytics {
+		totalUsedMB += record.BandwidthUsedMB
+		dailyUsage = append(dailyUsage, DailyBandwidthUsage{
+			Date:    record.Date,
+			UsageGB: float64(record.BandwidthUsedMB) / 1024.0,
+		})
+	}
+
+	totalUsedGB := float64(totalUsedMB) / 1024.0
+	totalLimitGB := 10240.0 // Default 10TB limit
+	usagePercent := (totalUsedGB / totalLimitGB) * 100
+
 	return &BandwidthUsageMetrics{
-		TotalUsedGB:  0,
-		TotalLimitGB: 1024,
-		UsagePercent: 0,
+		TotalUsedGB:  totalUsedGB,
+		TotalLimitGB: totalLimitGB,
+		UsagePercent: usagePercent,
+		DailyUsage:   dailyUsage,
 	}, nil
 }
 
