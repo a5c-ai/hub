@@ -430,8 +430,15 @@ func (h *AnalyticsHandlers) GetUserContributions(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implementation for user contributions
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "User contributions analytics not implemented yet"})
+	// Get user contributions analytics
+	contributions, err := h.getUserContributions(c.Request.Context(), uid)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get user contributions")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user contributions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, contributions)
 }
 
 // GetUserRepositories handles GET /api/v1/user/analytics/repositories
@@ -825,4 +832,76 @@ func (h *AnalyticsHandlers) getRepositoryID(ctx context.Context, owner, name str
 	}
 
 	return repo.ID, nil
+}
+
+// getUserContributions gets user contributions across all repositories
+func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uuid.UUID) (gin.H, error) {
+	// First get the user's email to match against commits
+	var user models.User
+	if err := h.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Get user's commits across all repositories
+	var commitStats struct {
+		TotalCommits int64 `json:"total_commits"`
+		TotalAdditions int64 `json:"total_additions"`
+		TotalDeletions int64 `json:"total_deletions"`
+	}
+
+	err := h.db.WithContext(ctx).Model(&models.Commit{}).
+		Select("COUNT(*) as total_commits, COALESCE(SUM(additions), 0) as total_additions, COALESCE(SUM(deletions), 0) as total_deletions").
+		Where("author_email = ?", user.Email).
+		Scan(&commitStats).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit stats: %w", err)
+	}
+
+	// Get user's issues count
+	var issueCount int64
+	h.db.WithContext(ctx).Model(&models.Issue{}).Where("user_id = ?", userID).Count(&issueCount)
+
+	// Get user's pull requests count
+	var prCount int64
+	h.db.WithContext(ctx).Model(&models.PullRequest{}).Where("user_id = ?", userID).Count(&prCount)
+
+	// Get repositories user has contributed to
+	var repoCount int64
+	h.db.WithContext(ctx).Model(&models.Commit{}).
+		Where("author_email = ?", user.Email).
+		Distinct("repository_id").Count(&repoCount)
+
+	// Get contribution activity for the last 12 months
+	since := time.Now().AddDate(-1, 0, 0)
+	var monthlyContributions []struct {
+		Month string `json:"month"`
+		Count int64  `json:"count"`
+	}
+
+	err = h.db.WithContext(ctx).Model(&models.Commit{}).
+		Select("DATE_TRUNC('month', created_at) as month, COUNT(*) as count").
+		Where("author_email = ? AND created_at >= ?", user.Email, since).
+		Group("DATE_TRUNC('month', created_at)").
+		Order("month ASC").
+		Scan(&monthlyContributions).Error
+
+	if err != nil {
+		h.logger.WithError(err).Warn("Failed to get monthly contributions")
+		monthlyContributions = []struct {
+			Month string `json:"month"`
+			Count int64  `json:"count"`
+		}{}
+	}
+
+	return gin.H{
+		"total_commits":         commitStats.TotalCommits,
+		"total_additions":       commitStats.TotalAdditions,
+		"total_deletions":       commitStats.TotalDeletions,
+		"total_issues":          issueCount,
+		"total_pull_requests":   prCount,
+		"repositories_contributed": repoCount,
+		"monthly_contributions": monthlyContributions,
+		"last_updated":         time.Now().Format(time.RFC3339),
+	}, nil
 }
