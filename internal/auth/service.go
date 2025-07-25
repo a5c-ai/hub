@@ -71,16 +71,23 @@ type AuthService interface {
 }
 
 type authService struct {
-	db         *gorm.DB
-	jwtManager *JWTManager
-	config     *config.Config
+	db             *gorm.DB
+	jwtManager     *JWTManager
+	config         *config.Config
+	sessionService *SessionService
+	blacklistService *TokenBlacklistService
 }
 
 func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) AuthService {
+	sessionService := NewSessionService(db)
+	blacklistService := NewTokenBlacklistService(db)
+	
 	return &authService{
-		db:         db,
-		jwtManager: jwtManager,
-		config:     cfg,
+		db:               db,
+		jwtManager:       jwtManager,
+		config:           cfg,
+		sessionService:   sessionService,
+		blacklistService: blacklistService,
 	}
 }
 
@@ -136,9 +143,10 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	refreshToken, err := s.generateRefreshToken(&user)
+	// Create a proper session with refresh token
+	session, err := s.sessionService.CreateSession(user.ID, "", "", false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
 	// Update last login time
@@ -152,7 +160,7 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 	return &AuthResponse{
 		User:         &user,
 		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		RefreshToken: session.RefreshToken,
 		ExpiresIn:    int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
 	}, nil
 }
@@ -206,19 +214,24 @@ func (s *authService) Register(ctx context.Context, req RegisterRequest) (*model
 }
 
 func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
-	// TODO: Implement refresh token validation
-	// For now, validate the refresh token format and extract user ID
-	
-	var user models.User
-	// This is a simplified implementation - in production, you'd store refresh tokens
-	claims, err := s.jwtManager.ValidateToken(refreshToken)
+	// Validate and refresh the session
+	session, err := s.sessionService.RefreshSession(refreshToken)
 	if err != nil {
-		return nil, errors.New("invalid refresh token")
+		return nil, fmt.Errorf("invalid or expired refresh token: %w", err)
 	}
 
-	err = s.db.First(&user, claims.UserID).Error
+	// Get user information
+	var user models.User
+	err = s.db.First(&user, session.UserID).Error
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	// Check if user is still active
+	if !user.IsActive {
+		// Revoke session for inactive user
+		s.sessionService.RevokeSession(refreshToken)
+		return nil, errors.New("account is disabled")
 	}
 
 	// Generate new access token
@@ -227,20 +240,54 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*A
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
+	// Remove sensitive information
+	user.PasswordHash = ""
+
 	return &AuthResponse{
-		User:        &user,
-		AccessToken: accessToken,
-		ExpiresIn:   int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
+		User:         &user,
+		AccessToken:  accessToken,
+		RefreshToken: session.RefreshToken,
+		ExpiresIn:    int64(time.Duration(s.config.JWT.ExpirationHour) * time.Hour / time.Second),
 	}, nil
 }
 
 func (s *authService) Logout(ctx context.Context, userID uuid.UUID) error {
-	// TODO: Implement token blacklisting or session invalidation
-	// For now, just return success as JWT tokens are stateless
+	// Revoke all user sessions
+	if err := s.sessionService.RevokeUserSessions(userID); err != nil {
+		return fmt.Errorf("failed to revoke user sessions: %w", err)
+	}
+
+	// Add current tokens to blacklist (if any active tokens exist)
+	if err := s.blacklistService.BlacklistUserTokens(userID); err != nil {
+		return fmt.Errorf("failed to blacklist user tokens: %w", err)
+	}
+
+	return nil
+}
+
+// LogoutFromDevice revokes a specific session/device
+func (s *authService) LogoutFromDevice(ctx context.Context, refreshToken string) error {
+	// Revoke specific session
+	if err := s.sessionService.RevokeSession(refreshToken); err != nil {
+		return fmt.Errorf("failed to revoke session: %w", err)
+	}
+
+	// Blacklist the refresh token
+	if err := s.blacklistService.BlacklistToken(refreshToken, time.Now().Add(30*24*time.Hour)); err != nil {
+		return fmt.Errorf("failed to blacklist token: %w", err)
+	}
+
 	return nil
 }
 
 func (s *authService) VerifyToken(ctx context.Context, token string) (*models.User, error) {
+	// Check if token is blacklisted
+	if blacklisted, err := s.blacklistService.IsTokenBlacklisted(token); err != nil {
+		return nil, fmt.Errorf("failed to check token blacklist: %w", err)
+	} else if blacklisted {
+		return nil, errors.New("token has been revoked")
+	}
+
 	claims, err := s.jwtManager.ValidateToken(token)
 	if err != nil {
 		return nil, err
@@ -425,10 +472,26 @@ func (s *authService) InitiatePasswordReset(email string) error {
 	return nil
 }
 
-func (s *authService) generateRefreshToken(user *models.User) (string, error) {
-	// For now, use the same JWT generation but with longer expiration
-	// In production, you might want separate refresh token logic
-	return s.jwtManager.GenerateToken(user)
+// GetUserSessions returns active sessions for a user
+func (s *authService) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]Session, error) {
+	return s.sessionService.GetUserSessions(userID)
+}
+
+// RevokeUserSession revokes a specific user session
+func (s *authService) RevokeUserSession(ctx context.Context, userID uuid.UUID, sessionID uuid.UUID) error {
+	// Get session to verify it belongs to the user
+	sessions, err := s.sessionService.GetUserSessions(userID)
+	if err != nil {
+		return err
+	}
+
+	for _, session := range sessions {
+		if session.ID == sessionID {
+			return s.sessionService.RevokeSession(session.RefreshToken)
+		}
+	}
+
+	return errors.New("session not found")
 }
 
 func (s *authService) sendVerificationEmail(user *models.User) error {

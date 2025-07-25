@@ -287,6 +287,17 @@ func (s *SAMLService) findOrCreateSAMLUser(userInfo *SAMLUserInfo) (*models.User
 			user.FullName = userInfo.Name
 		}
 		s.db.Save(&user)
+		
+		// Handle group-based organization assignment for existing users
+		if len(userInfo.Groups) > 0 {
+			for _, group := range userInfo.Groups {
+				if err := s.createOrAssignOrganization(user.ID, group); err != nil {
+					// Log error but don't fail the process
+					fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
+				}
+			}
+		}
+		
 		return &user, nil
 	}
 
@@ -318,6 +329,16 @@ func (s *SAMLService) findOrCreateSAMLUser(userInfo *SAMLUserInfo) (*models.User
 
 	if err := s.db.Create(&user).Error; err != nil {
 		return nil, err
+	}
+
+	// Handle group-based organization assignment for new users
+	if len(userInfo.Groups) > 0 {
+		for _, group := range userInfo.Groups {
+			if err := s.createOrAssignOrganization(user.ID, group); err != nil {
+				// Log error but don't fail the process
+				fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
+			}
+		}
 	}
 
 	return &user, nil
@@ -373,4 +394,53 @@ func (s *SAMLService) GenerateMetadata() (string, error) {
 func getSAMLBaseURL() string {
 	// This should be configurable
 	return "http://localhost:8080"
+}
+
+// createOrAssignOrganization creates an organization if it doesn't exist and assigns the user
+func (s *SAMLService) createOrAssignOrganization(userID uuid.UUID, groupName string) error {
+	// Check if organization exists
+	var org models.Organization
+	err := s.db.Where("name = ?", groupName).First(&org).Error
+	
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Create new organization
+		org = models.Organization{
+			ID:          uuid.New(),
+			Name:        groupName,
+			DisplayName: groupName,
+			Description: fmt.Sprintf("Organization created from SAML group: %s", groupName),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+		
+		if err := s.db.Create(&org).Error; err != nil {
+			return fmt.Errorf("failed to create organization: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to query organization: %w", err)
+	}
+	
+	// Check if user is already a member
+	var existingMember models.OrganizationMember
+	err = s.db.Where("organization_id = ? AND user_id = ?", org.ID, userID).First(&existingMember).Error
+	
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Add user as organization member
+		member := models.OrganizationMember{
+			ID:             uuid.New(),
+			OrganizationID: org.ID,
+			UserID:         userID,
+			Role:           models.OrgRoleMember, // Default role
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
+		}
+		
+		if err := s.db.Create(&member).Error; err != nil {
+			return fmt.Errorf("failed to add user to organization: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to check organization membership: %w", err)
+	}
+	
+	return nil
 }
