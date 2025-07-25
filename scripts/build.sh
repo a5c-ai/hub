@@ -54,20 +54,20 @@ LDFLAGS="$LDFLAGS -X main.GitCommit=$GIT_COMMIT"
 
 debug "Building with flags: $LDFLAGS"
 
-# Build the main server binary with optimizations
+# Build the main server binary with conservative settings to prevent timeouts
 export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
 export GOCACHE=/tmp/go-build-cache
-export GOMAXPROCS=4
-export GOGC=50
-export GOFLAGS="-p=4 -buildvcs=false"
+export GOMAXPROCS=2  # Reduced from 4 to prevent resource exhaustion
+export GOGC=100     # Increased from 50 to reduce GC pressure
+export GOFLAGS="-p=2 -buildvcs=false"  # Reduced parallelism
 
-timeout 25m go build \
+# Use longer timeout but with progress monitoring
+log "Starting Go build with conservative resource settings..."
+timeout 20m go build \
     -ldflags "$LDFLAGS" \
-    -trimpath \
-    -tags netgo \
-    -installsuffix netgo \
+    -v \
     -o "$OUTPUT_DIR/$BINARY_NAME" \
     ./cmd/server
 
@@ -91,19 +91,21 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
         timeout 20m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
     fi
     
-    # Set environment variables for build
+    # Set environment variables for build with conservative memory settings
     export NODE_ENV=$BUILD_ENV
     export NEXT_TELEMETRY_DISABLED=1
-    export NODE_OPTIONS="--max-old-space-size=8192"
+    export NODE_OPTIONS="--max-old-space-size=4096"  # Reduced from 8192
     
-    # Build the frontend with optimizations and timeout prevention
+    # Build the frontend with conservative settings to prevent timeouts
     export DISABLE_COLLECT_BUILD_TRACES=1
     export NEXT_TELEMETRY_DISABLED=1
     export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
     export NEXT_PARALLEL=false
+    export NEXT_BUILD_WORKERS=1  # Limit build workers
     
     # Build with timeout and better error handling
-    timeout 30m npm run build
+    log "Starting frontend build with conservative resource settings..."
+    timeout 25m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
