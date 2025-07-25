@@ -54,6 +54,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize search service
 	searchService := services.NewSearchService(database.DB)
 
+	// Initialize Actions services
+	workflowService := services.NewWorkflowService(database.DB, logger)
+	jobQueueService := services.NewJobQueueService(database.DB, logger)
+	runnerService := services.NewRunnerService(database.DB, logger)
+	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
+	actionsEventService := services.NewActionsEventService(database.DB, workflowService, logger)
+	
+	// Set job executor on workflow service to avoid circular dependencies
+	workflowService.SetJobExecutor(jobExecutorService)
+
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
@@ -63,6 +73,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
+	actionsHandlers := NewActionsHandlers(workflowService, logger)
+	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -164,6 +176,17 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
+		// Webhook endpoints (no authentication required for system-level webhooks)
+		webhooks := v1.Group("/webhooks")
+		{
+			webhooks.POST("/push", webhooksHandlers.HandlePushWebhook)
+			webhooks.POST("/pull_request", webhooksHandlers.HandlePullRequestWebhook)
+			webhooks.POST("/issues", webhooksHandlers.HandleIssuesWebhook)
+			webhooks.POST("/release", webhooksHandlers.HandleReleaseWebhook)
+			webhooks.POST("/scheduled", webhooksHandlers.HandleScheduledWebhook)
+			webhooks.POST("/generic", webhooksHandlers.HandleGenericWebhook)
+		}
+
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
@@ -249,6 +272,23 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.DELETE("/:owner/:repo/milestones/:number", milestoneHandlers.DeleteMilestone)
 				repos.POST("/:owner/:repo/milestones/:number/close", milestoneHandlers.CloseMilestone)
 				repos.POST("/:owner/:repo/milestones/:number/reopen", milestoneHandlers.ReopenMilestone)
+
+				// Actions workflow operations (require authentication)
+				repos.GET("/:owner/:repo/actions/workflows", actionsHandlers.ListWorkflows)
+				repos.POST("/:owner/:repo/actions/workflows", actionsHandlers.CreateWorkflow)
+				repos.GET("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.GetWorkflow)
+				repos.PATCH("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.UpdateWorkflow)
+				repos.DELETE("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.DeleteWorkflow)
+				repos.PUT("/:owner/:repo/actions/workflows/:workflow_id/enable", actionsHandlers.EnableWorkflow)
+				repos.PUT("/:owner/:repo/actions/workflows/:workflow_id/disable", actionsHandlers.DisableWorkflow)
+				repos.POST("/:owner/:repo/actions/workflows/:workflow_id/dispatches", actionsHandlers.DispatchWorkflow)
+
+				// Actions workflow run operations (require authentication)
+				repos.GET("/:owner/:repo/actions/runs", actionsHandlers.ListWorkflowRuns)
+				repos.GET("/:owner/:repo/actions/runs/:run_id", actionsHandlers.GetWorkflowRun)
+				repos.POST("/:owner/:repo/actions/runs/:run_id/cancel", actionsHandlers.CancelWorkflowRun)
+				repos.POST("/:owner/:repo/actions/runs/:run_id/rerun", actionsHandlers.RerunWorkflowRun)
+				repos.DELETE("/:owner/:repo/actions/runs/:run_id", actionsHandlers.DeleteWorkflowRun)
 			}
 			
 			// Admin-only operations
