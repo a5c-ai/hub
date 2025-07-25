@@ -16,12 +16,12 @@ import (
 type ActionsHandlers struct {
 	workflowService   *services.WorkflowService
 	runnerService     *services.RunnerService
-	repositoryService *services.RepositoryService
+	repositoryService services.RepositoryService
 	logger            *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService *services.RepositoryService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
 		workflowService:   workflowService,
 		runnerService:     runnerService,

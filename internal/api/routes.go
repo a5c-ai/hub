@@ -80,7 +80,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
-	actionsHandlers := NewActionsHandlers(workflowService, runnerService, logger)
+	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
