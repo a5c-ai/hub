@@ -1,6 +1,6 @@
-const CACHE_NAME = 'hub-v1';
-const STATIC_CACHE_NAME = 'hub-static-v1';
-const DYNAMIC_CACHE_NAME = 'hub-dynamic-v1';
+const CACHE_NAME = 'hub-v2';
+const STATIC_CACHE_NAME = 'hub-static-v2';
+const DYNAMIC_CACHE_NAME = 'hub-dynamic-v2';
 
 // Cache configuration
 const CACHE_DURATION = {

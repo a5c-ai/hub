@@ -36,7 +36,7 @@ export default function RunnersPage() {
 
   const fetchRunners = useCallback(async () => {
     try {
-      const response = await apiClient.get<{ runners: Runner[] }>(`/repositories/${owner}/${repo}/actions/runners`);
+      const response = await apiClient.get<{ runners: Runner[] }>(`/repos/${owner}/${repo}/actions/runners`);
       setRunners(response.data.runners || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -51,7 +51,7 @@ export default function RunnersPage() {
 
   const generateRegistrationToken = async () => {
     try {
-      const response = await apiClient.post<{ token: string }>(`/repositories/${owner}/${repo}/actions/runners/registration-token`);
+      const response = await apiClient.post<{ token: string }>(`/repos/${owner}/${repo}/actions/runners/registration-token`);
       setRegistrationToken(response.data.token);
       setShowAddModal(true);
     } catch (err) {
@@ -61,7 +61,7 @@ export default function RunnersPage() {
 
   const handleDeleteRunner = async (runnerId: string) => {
     try {
-      await apiClient.delete(`/repositories/${owner}/${repo}/actions/runners/${runnerId}`);
+      await apiClient.delete(`/repos/${owner}/${repo}/actions/runners/${runnerId}`);
       await fetchRunners();
       setShowDeleteModal(null);
     } catch (err) {

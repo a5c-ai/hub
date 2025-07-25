@@ -41,54 +41,77 @@ export default function ActionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWorkflows = useCallback(async () => {
+  const fetchWorkflows = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await apiClient.get<{ workflows: Workflow[] }>(`/repositories/${owner}/${repo}/actions/workflows`);
+      const response = await apiClient.get<{ workflows: Workflow[] }>(`/repos/${owner}/${repo}/actions/workflows`);
       setWorkflows(response.data.workflows || []);
+      return { success: true };
     } catch (err: unknown) {
       if (err instanceof Error && 'response' in err) {
         const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
         if (axiosErr.response?.status === 401) {
-          setError('Please log in to access GitHub Actions');
+          return { success: false, error: 'Please log in to access GitHub Actions' };
         } else if (axiosErr.response?.status === 404) {
-          setError('Repository not found or you do not have access to it');
+          return { success: false, error: `Repository "${owner}/${repo}" not found. Please check that:\n• The repository name is spelled correctly\n• You have access to this repository\n• The repository exists\n\nTry visiting /repositories/admin/sample-project/actions for a working example.` };
         } else if (axiosErr.response?.status === 400) {
-          setError(`Bad request: ${axiosErr.response?.data?.error || axiosErr.message}`);
+          return { success: false, error: `Bad request: ${axiosErr.response?.data?.error || axiosErr.message}` };
         } else {
-          setError(axiosErr instanceof Error ? axiosErr.message : 'Failed to fetch workflows');
+          return { success: false, error: `Failed to fetch workflows: ${axiosErr.response?.data?.error || axiosErr.message || 'Unknown error'}` };
         }
       } else {
-        setError('Failed to fetch workflows');
+        return { success: false, error: 'Failed to fetch workflows: Network error' };
       }
     }
   }, [owner, repo]);
 
-  const fetchRecentRuns = useCallback(async () => {
+  const fetchRecentRuns = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await apiClient.get<{ workflow_runs: WorkflowRun[] }>(`/repositories/${owner}/${repo}/actions/runs?limit=10`);
+      const response = await apiClient.get<{ workflow_runs: WorkflowRun[] }>(`/repos/${owner}/${repo}/actions/runs?limit=10`);
       setRecentRuns(response.data.workflow_runs || []);
+      return { success: true };
     } catch (err: unknown) {
       if (err instanceof Error && 'response' in err) {
         const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
         if (axiosErr.response?.status === 401) {
-          setError('Please log in to access GitHub Actions');
+          return { success: false, error: 'Please log in to access GitHub Actions' };
         } else if (axiosErr.response?.status === 404) {
-          setError('Repository not found or you do not have access to it');
+          return { success: false, error: `Repository "${owner}/${repo}" not found. Please check that:\n• The repository name is spelled correctly\n• You have access to this repository\n• The repository exists\n\nTry visiting /repositories/admin/sample-project/actions for a working example.` };
         } else {
-          setError(axiosErr instanceof Error ? axiosErr.message : 'Failed to fetch workflow runs');
+          return { success: false, error: `Failed to fetch workflow runs: ${axiosErr.response?.data?.error || axiosErr.message || 'Unknown error'}` };
         }
       } else {
-        setError('Failed to fetch workflow runs');
+        return { success: false, error: 'Failed to fetch workflow runs: Network error' };
       }
-    } finally {
-      setLoading(false);
     }
   }, [owner, repo]);
 
   useEffect(() => {
-    fetchWorkflows();
-    fetchRecentRuns();
-  }, [fetchWorkflows, fetchRecentRuns]);
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      // Run both calls independently so one failure doesn't block the other
+      const [workflowResult, runsResult] = await Promise.allSettled([
+        fetchWorkflows(),
+        fetchRecentRuns()
+      ]);
+      
+      // Check for errors and set the first error found
+      if (workflowResult.status === 'fulfilled' && !workflowResult.value.success) {
+        setError(workflowResult.value.error || 'Failed to fetch workflows');
+      } else if (runsResult.status === 'fulfilled' && !runsResult.value.success) {
+        setError(runsResult.value.error || 'Failed to fetch workflow runs');
+      } else if (workflowResult.status === 'rejected') {
+        setError('Failed to fetch workflows: Unexpected error');
+      } else if (runsResult.status === 'rejected') {
+        setError('Failed to fetch workflow runs: Unexpected error');
+      }
+      
+      setLoading(false);
+    };
+    
+    loadData();
+  }, [owner, repo, fetchWorkflows, fetchRecentRuns]);
 
 
   const getStatusColor = (status: string, conclusion?: string) => {
@@ -133,7 +156,7 @@ export default function ActionsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <h3 className="text-lg font-medium text-red-800">Error</h3>
-          <p className="text-red-700">{error}</p>
+          <pre className="text-red-700 whitespace-pre-line font-sans">{error}</pre>
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Menu, Transition } from '@headlessui/react';
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { cn } from '@/lib/utils';
 
@@ -21,55 +21,40 @@ interface DropdownProps {
 export function Dropdown({ trigger, items, align = 'right', className }: DropdownProps) {
   return (
     <Menu as="div" className={cn('relative inline-block text-left', className)}>
-      <Menu.Button as="div">
-        {trigger}
-      </Menu.Button>
-
-      <Transition
-        as={Fragment}
-        enter="transition ease-out duration-100"
-        enterFrom="transform opacity-0 scale-95"
-        enterTo="transform opacity-100 scale-100"
-        leave="transition ease-in duration-75"
-        leaveFrom="transform opacity-100 scale-100"
-        leaveTo="transform opacity-0 scale-95"
+      <MenuButton>{trigger}</MenuButton>
+      <MenuItems
+        anchor="bottom"
+        className={cn(
+          'z-50 mt-2 w-56 origin-top-right divide-y divide-border rounded-md bg-popover shadow-lg ring-1 ring-border ring-opacity-5 focus:outline-none',
+          align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'
+        )}
       >
-        <Menu.Items
-          className={cn(
-            'absolute z-50 mt-2 w-56 origin-top-right divide-y divide-border rounded-md bg-popover shadow-lg ring-1 ring-border ring-opacity-5 focus:outline-none',
-            align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'
-          )}
-        >
-          <div className="px-1 py-1">
-            {items.map((item, index) => (
-              <Menu.Item key={index} disabled={item.disabled}>
-                {({ active }) => (
-                  <button
-                    className={cn(
-                      'group flex w-full items-center rounded-md px-2 py-2 text-sm transition-colors',
-                      active && !item.disabled
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground',
-                      item.disabled && 'opacity-50 cursor-not-allowed',
-                      item.destructive && active && 'bg-destructive text-destructive-foreground',
-                      item.destructive && !active && 'text-destructive'
-                    )}
-                    onClick={item.onClick}
-                    disabled={item.disabled}
-                  >
-                    {item.icon && (
-                      <div className="mr-2 h-4 w-4" aria-hidden="true">
-                        {item.icon}
-                      </div>
-                    )}
-                    {item.label}
-                  </button>
+        <div className="px-1 py-1">
+          {items.map((item, index) => (
+            <MenuItem key={index} disabled={item.disabled}>
+              <button
+                className={cn(
+                  'group flex w-full items-center rounded-md px-2 py-2 text-sm transition-colors',
+                  'data-[focus]:bg-muted data-[focus]:text-foreground',
+                  'text-muted-foreground',
+                  item.disabled && 'opacity-50 cursor-not-allowed',
+                  item.destructive && 'data-[focus]:bg-destructive data-[focus]:text-destructive-foreground',
+                  item.destructive && !item.disabled && 'text-destructive'
                 )}
-              </Menu.Item>
-            ))}
-          </div>
-        </Menu.Items>
-      </Transition>
+                onClick={item.onClick}
+                disabled={item.disabled}
+              >
+                {item.icon && (
+                  <div className="mr-2 h-4 w-4" aria-hidden="true">
+                    {item.icon}
+                  </div>
+                )}
+                {item.label}
+              </button>
+            </MenuItem>
+          ))}
+        </div>
+      </MenuItems>
     </Menu>
   );
 }
