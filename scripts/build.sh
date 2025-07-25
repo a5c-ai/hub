@@ -54,15 +54,37 @@ LDFLAGS="$LDFLAGS -X main.GitCommit=$GIT_COMMIT"
 
 debug "Building with flags: $LDFLAGS"
 
-# Build the main server binary
-go build \
-    -ldflags "$LDFLAGS" \
-    -trimpath \
-    -o "$OUTPUT_DIR/$BINARY_NAME" \
-    ./cmd/server
+# Build the main server binary with timeout protection
+log "Building Go binary with flags: $LDFLAGS"
 
-if [[ $? -ne 0 ]]; then
-    error "Failed to build Go backend"
+# Use timeout to prevent hanging builds in CI
+if command -v timeout >/dev/null 2>&1; then
+    # Use timeout command (available in most Linux systems)
+    timeout 1200s go build \
+        -ldflags "$LDFLAGS" \
+        -trimpath \
+        -o "$OUTPUT_DIR/$BINARY_NAME" \
+        ./cmd/server
+    BUILD_EXIT_CODE=$?
+else
+    # Fallback without timeout
+    go build \
+        -ldflags "$LDFLAGS" \
+        -trimpath \
+        -o "$OUTPUT_DIR/$BINARY_NAME" \
+        ./cmd/server
+    BUILD_EXIT_CODE=$?
+fi
+
+if [[ $BUILD_EXIT_CODE -eq 124 ]]; then
+    error "Go build timed out after 20 minutes"
+    exit 1
+elif [[ $BUILD_EXIT_CODE -ne 0 ]]; then
+    error "Failed to build Go backend (exit code: $BUILD_EXIT_CODE)"
+    error "Debugging information:"
+    error "Go version: $(go version)"
+    error "Go environment relevant vars:"
+    go env | grep -E "(GOPROXY|GOSUMDB|GOCACHE|GOPATH|GOMOD)" || true
     exit 1
 fi
 
@@ -90,10 +112,26 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export DISABLE_COLLECT_BUILD_TRACES=1
     export NEXT_TELEMETRY_DISABLED=1
     export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
-    npm run build
     
-    if [[ $? -ne 0 ]]; then
-        error "Failed to build frontend"
+    # Use timeout for frontend build to prevent hanging
+    log "Building frontend with timeout protection..."
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 1800s npm run build  # 30 minutes timeout for frontend
+        FRONTEND_EXIT_CODE=$?
+    else
+        npm run build
+        FRONTEND_EXIT_CODE=$?
+    fi
+    
+    if [[ $FRONTEND_EXIT_CODE -eq 124 ]]; then
+        error "Frontend build timed out after 30 minutes"
+        exit 1
+    elif [[ $FRONTEND_EXIT_CODE -ne 0 ]]; then
+        error "Failed to build frontend (exit code: $FRONTEND_EXIT_CODE)"
+        error "Frontend debugging information:"
+        error "Node version: $(node --version)"
+        error "NPM version: $(npm --version)"
+        error "NODE_OPTIONS: $NODE_OPTIONS"
         exit 1
     fi
     
