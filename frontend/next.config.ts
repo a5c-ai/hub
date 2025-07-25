@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
       ignoreBuildErrors: false,
     },
     eslint: {
-      // Skip ESLint during build (already done in linting phase)
+      // Allow warnings but fail on errors during builds
       ignoreDuringBuilds: false,
     },
   }),
