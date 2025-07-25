@@ -17,6 +17,9 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`registration.spec.ts`** - User registration and validation tests
 - **`repository.spec.ts`** - Repository management tests
 - **`issues.spec.ts`** - Issue management and workflow tests
+- **`pull-requests.spec.ts`** - Pull request management and creation tests
+- **`pull-request-review.spec.ts`** - Pull request review and collaboration workflow tests
+- **`pull-request-files.spec.ts`** - Pull request file diff and code review tests
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage
@@ -37,6 +40,21 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Navigation to other sections
 - Responsive design on mobile
 - Empty state handling
+
+#### Pull Request Tests
+- List pull requests with different states (open/closed/merged)
+- Filter pull requests by state, author, and labels
+- Create new pull request with form validation
+- Navigate to pull request details
+- Display pull request metadata and statistics
+- Review workflow (approve, request changes, comment)
+- Merge pull request with different merge strategies
+- Close and reopen pull requests
+- Convert draft to ready for review
+- View and navigate changed files with diff display
+- Add inline comments on code lines
+- Resolve and unresolve comment conversations
+- Mobile responsiveness for all PR workflows
 
 #### Navigation Tests
 - Header and sidebar navigation elements
