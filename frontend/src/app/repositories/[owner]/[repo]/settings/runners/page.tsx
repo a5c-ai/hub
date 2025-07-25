@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -34,25 +34,25 @@ export default function RunnersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [registrationToken, setRegistrationToken] = useState<string>('');
 
-  useEffect(() => {
-    fetchRunners();
-  }, [owner, repo]);
-
-  const fetchRunners = async () => {
+  const fetchRunners = useCallback(async () => {
     try {
-      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/runners`);
-      setRunners(data.runners || []);
+      const response = await apiClient.get<{ runners: Runner[] }>(`/repositories/${owner}/${repo}/actions/runners`);
+      setRunners(response.data.runners || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo]);
+
+  useEffect(() => {
+    fetchRunners();
+  }, [fetchRunners]);
 
   const generateRegistrationToken = async () => {
     try {
-      const data = await apiClient.post(`/repositories/${owner}/${repo}/actions/runners/registration-token`);
-      setRegistrationToken(data.token);
+      const response = await apiClient.post<{ token: string }>(`/repositories/${owner}/${repo}/actions/runners/registration-token`);
+      setRegistrationToken(response.data.token);
       setShowAddModal(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -191,7 +191,7 @@ export default function RunnersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{runner.name}</h3>
-                        <Badge variant={getStatusColor(runner.status) as any}>
+                        <Badge variant={getStatusColor(runner.status) as 'default' | 'secondary' | 'outline' | 'destructive'}>
                           {runner.status}
                         </Badge>
                         <Badge variant="outline">

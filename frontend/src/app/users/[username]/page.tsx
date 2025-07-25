@@ -193,7 +193,7 @@ export default function UserProfilePage() {
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                               <Link 
-                                href={`/repositories/${repository.owner.username}/${repository.name}`}
+                                href={`/repositories/${repository.owner?.username}/${repository.name}`}
                                 className="text-lg font-semibold text-blue-600 hover:text-blue-800"
                               >
                                 {repository.name}
