@@ -15,7 +15,7 @@ export default function RepositorySettingsPage() {
   const params = useParams();
   const owner = params.owner as string;
   const repo = params.repo as string;
-  const [repository, setRepository] = useState<Repository | null>(null);
+  const [, setRepository] = useState<Repository | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');

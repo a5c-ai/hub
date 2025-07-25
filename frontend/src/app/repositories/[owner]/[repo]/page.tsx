@@ -25,8 +25,11 @@ export default function RepositoryDetailsPage() {
         setLoading(true);
         const response = await api.get(`/repositories/${owner}/${repo}`);
         setRepository(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch repository');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch repository'
+        );
       } finally {
         setLoading(false);
       }

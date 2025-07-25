@@ -318,7 +318,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-gray-900">Issues and Pull Requests</h4>
-                          <p className="text-sm text-gray-600">Notifications about issues and pull requests you're involved in</p>
+                          <p className="text-sm text-gray-600">Notifications about issues and pull requests you&apos;re involved in</p>
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                       </div>
@@ -326,7 +326,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-gray-900">Repository Updates</h4>
-                          <p className="text-sm text-gray-600">Notifications about repositories you're watching</p>
+                          <p className="text-sm text-gray-600">Notifications about repositories you&apos;re watching</p>
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                       </div>

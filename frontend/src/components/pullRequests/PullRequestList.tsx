@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { pullRequestApi, PullRequestListOptions } from '../../lib/pullRequestApi'
 import { PullRequest } from '../../types'
@@ -26,11 +26,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
   })
   const [totalCount, setTotalCount] = useState(0)
 
-  useEffect(() => {
-    loadPullRequests()
-  }, [repositoryOwner, repositoryName, filters])
-
-  const loadPullRequests = async () => {
+  const loadPullRequests = useCallback(async () => {
     try {
       setLoading(true)
       const response = await pullRequestApi.listPullRequests(repositoryOwner, repositoryName, filters)
@@ -42,7 +38,11 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
     } finally {
       setLoading(false)
     }
-  }
+  }, [repositoryOwner, repositoryName, filters])
+
+  useEffect(() => {
+    loadPullRequests()
+  }, [loadPullRequests])
 
   const handleFilterChange = (newFilters: Partial<PullRequestListOptions>) => {
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }))
