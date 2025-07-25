@@ -24,14 +24,19 @@ Hub is a powerful, self-hosted Git hosting service designed to provide enterpris
 - **Code Review**: Line-by-line commenting, suggestions, and review states
 
 ### CI/CD & Automation
-- **GitHub Actions Compatible**: Run existing workflows with compatible syntax
-- **Custom Runners**: Self-hosted runners with Docker and Kubernetes support
+- **GitHub Actions Compatible**: Complete CI/CD system with GitHub Actions compatibility and real-time log streaming
+- **Advanced Runner Management**: Multi-level runners (repository, organization, global) with Kubernetes execution
+- **Artifact Management**: Complete artifact lifecycle with upload/download, retention policies, and secure storage
+- **Real-time Build Monitoring**: Server-sent events for live log streaming and build status updates
+- **Comprehensive Webhooks**: Advanced webhook system with HMAC verification and trigger evaluation
 - **Status Checks**: Build status integration with merge protection
-- **Webhooks**: Comprehensive webhook system for external integrations
 - **Advanced Triggers**: Custom events and sophisticated automation rules
 
 ### Enterprise Features
-- **Single Sign-On**: SAML, LDAP, Active Directory, and OAuth integration
+- **Enterprise Authentication**: Complete multi-factor authentication with TOTP, SMS, WebAuthn/FIDO2, and backup codes
+- **Single Sign-On**: SAML 2.0, OpenID Connect (OIDC), LDAP, Active Directory, and OAuth integration
+- **Advanced Search**: Elasticsearch-powered search across repositories, code, issues, and users with PostgreSQL fallback
+- **Organization Management**: Custom roles, policy enforcement, team hierarchies, and comprehensive analytics
 - **Audit Logging**: Comprehensive audit trails for compliance and security
 - **Plugin System**: Extensible architecture with marketplace and custom plugins
 - **High Availability**: Multi-node clustering with automatic failover
@@ -41,6 +46,7 @@ Hub is a powerful, self-hosted Git hosting service designed to provide enterpris
 - **Azure-Native**: Purpose-built for Azure with Terraform deployment templates
 - **Kubernetes Ready**: Helm charts and operators for container orchestration
 - **Docker Support**: Simple Docker Compose deployment for development
+- **Progressive Web App**: Mobile-optimized interface with offline support and PWA capabilities
 - **Monitoring**: Built-in Prometheus metrics and structured logging
 - **Security**: Zero-trust architecture with comprehensive security controls
 
@@ -131,6 +137,13 @@ terraform apply
 - **[User Guide](docs/user-guide.md)** - Complete guide for end users
 - **[Admin Guide](docs/admin-guide.md)** - Deployment and administration
 - **[Developer Guide](docs/developer-guide.md)** - Development and API reference
+
+### Feature Documentation
+- **[Authentication System](docs/authentication.md)** - Enterprise authentication, MFA, SSO, and LDAP
+- **[Advanced Search](docs/search.md)** - Elasticsearch integration and search capabilities
+- **[CI/CD Actions](docs/cicd-actions.md)** - GitHub Actions compatible CI/CD system
+- **[Organization Management](docs/organization-management.md)** - Advanced organization features and policies
+- **[Mobile & PWA](docs/mobile-pwa.md)** - Progressive Web App and mobile optimization
 
 ### Quick References
 - **[API Documentation](docs/api/)** - REST and GraphQL APIs
@@ -223,6 +236,20 @@ JWT_SECRET=your-jwt-secret
 GITHUB_OAUTH_CLIENT_ID=your-github-client-id
 GITHUB_OAUTH_CLIENT_SECRET=your-github-client-secret
 
+# Multi-Factor Authentication
+ENABLE_MFA=true
+TOTP_ISSUER=Hub
+SMS_PROVIDER=twilio  # twilio, aws_sns
+SMS_API_KEY=your-sms-api-key
+
+# SSO Configuration
+ENABLE_SAML=true
+SAML_CERTIFICATE_PATH=/certs/saml.crt
+SAML_PRIVATE_KEY_PATH=/certs/saml.key
+ENABLE_LDAP=true
+LDAP_URL=ldap://ldap.company.com
+LDAP_BIND_DN=cn=admin,dc=company,dc=com
+
 # Storage
 GIT_DATA_PATH=/repositories
 STORAGE_BACKEND=local  # local, s3, azure_blob
@@ -253,12 +280,33 @@ auth:
   password_policy:
     min_length: 12
     require_symbols: true
+  mfa:
+    enabled: true
+    totp_issuer: "Hub"
+    sms_provider: "twilio"
+  saml:
+    enabled: true
+    entity_id: "hub.yourdomain.com"
+    certificate_path: "/certs/saml.crt"
+    private_key_path: "/certs/saml.key"
+  ldap:
+    enabled: true
+    url: "ldap://ldap.company.com"
+    bind_dn: "cn=admin,dc=company,dc=com"
 
 oauth:
   github:
     enabled: true
     client_id: ${GITHUB_CLIENT_ID}
     client_secret: ${GITHUB_CLIENT_SECRET}
+  google:
+    enabled: true
+    client_id: ${GOOGLE_CLIENT_ID}
+    client_secret: ${GOOGLE_CLIENT_SECRET}
+  microsoft:
+    enabled: true
+    client_id: ${MICROSOFT_CLIENT_ID}
+    client_secret: ${MICROSOFT_CLIENT_SECRET}
 
 storage:
   backend: azure_blob
@@ -292,6 +340,41 @@ kubectl apply -f k8s/network-policies.yaml
 
 # Regular security scans
 docker scan hub/backend:latest
+```
+
+## 🔍 Advanced Search
+
+Hub includes a powerful search system with Elasticsearch integration and PostgreSQL fallback:
+
+### Search Features
+- **Global Search**: Search across all content types (users, repositories, issues, commits, organizations)
+- **Code Search**: Search within repository files with syntax highlighting
+- **Advanced Filters**: Filter by language, visibility, state, labels, dates, and more
+- **Fuzzy Matching**: Find content even with typos or partial matches
+- **Real-time Results**: Fast search with pagination and result highlighting
+
+### Configuration
+```yaml
+elasticsearch:
+  enabled: true
+  addresses: ["http://localhost:9200"]
+  username: ""
+  password: ""
+  cloud_id: ""
+  api_key: ""
+  index_prefix: "hub"
+```
+
+### Usage Examples
+```bash
+# Global search
+curl "/api/v1/search?q=authentication&type=repositories"
+
+# Code search (requires Elasticsearch)
+curl "/api/v1/search/code?q=func main&language=go"
+
+# Repository search with filters
+curl "/api/v1/search/repositories?q=api&language=typescript&visibility=public"
 ```
 
 ## 📊 Monitoring and Observability
@@ -419,23 +502,31 @@ Contact: [enterprise@a5c.ai](mailto:enterprise@a5c.ai)
 
 ## 🎯 Roadmap
 
-### Version 1.1 (Q2 2024)
-- [ ] Advanced code search with semantic indexing
-- [ ] Mobile-responsive web interface
+### Recently Completed ✅
+- [x] **Advanced Search System**: Elasticsearch integration with code search and PostgreSQL fallback
+- [x] **Enterprise Authentication**: Complete MFA, SAML, LDAP, and OAuth integration
+- [x] **CI/CD Actions System**: GitHub Actions compatible CI/CD with real-time monitoring
+- [x] **Mobile-Responsive PWA**: Progressive Web App with offline support and mobile optimization
+- [x] **Advanced Organization Features**: Custom roles, policy enforcement, and team management
+- [x] **Enhanced Analytics**: Comprehensive organization and repository analytics
+
+### Version 1.1 (Q2 2025)
 - [ ] Container registry integration
-- [ ] Advanced analytics and reporting
-
-### Version 1.2 (Q3 2024)
 - [ ] AI-powered code review assistance
-- [ ] Multi-region replication
-- [ ] Advanced workflow automation
-- [ ] GraphQL subscriptions for real-time updates
-
-### Version 2.0 (Q4 2024)
-- [ ] Distributed architecture with microservices
+- [ ] Advanced workflow automation with custom triggers
 - [ ] Package registry integration
-- [ ] Advanced security scanning
-- [ ] Machine learning insights
+
+### Version 1.2 (Q3 2025)
+- [ ] Multi-region replication and distributed storage
+- [ ] GraphQL subscriptions for real-time updates
+- [ ] Advanced security scanning and vulnerability management
+- [ ] Machine learning insights and recommendations
+
+### Version 2.0 (Q4 2025)
+- [ ] Distributed architecture with microservices
+- [ ] Advanced compliance and governance features
+- [ ] Enhanced AI capabilities for code analysis
+- [ ] Cross-platform mobile applications
 
 ## 📈 Metrics and Stats
 
