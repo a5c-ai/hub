@@ -93,7 +93,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
 	hooksHandlers := NewHooksHandlers(repositoryService, logger)
-	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
+	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, branchService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)

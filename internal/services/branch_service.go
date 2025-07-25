@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/a5c-ai/hub/internal/git"
@@ -21,6 +22,7 @@ type BranchService interface {
 	
 	// Branch protection
 	GetProtectionRule(ctx context.Context, repoID uuid.UUID, pattern string) (*models.BranchProtectionRule, error)
+	GetProtectionRuleForBranch(ctx context.Context, repoID uuid.UUID, branchName string) (*models.BranchProtectionRule, error)
 	CreateProtectionRule(ctx context.Context, repoID uuid.UUID, req CreateBranchProtectionRequest) (*models.BranchProtectionRule, error)
 	UpdateProtectionRule(ctx context.Context, ruleID uuid.UUID, req UpdateBranchProtectionRequest) (*models.BranchProtectionRule, error)
 	DeleteProtectionRule(ctx context.Context, ruleID uuid.UUID) error
@@ -343,18 +345,153 @@ func (s *branchService) GetProtectionRule(ctx context.Context, repoID uuid.UUID,
 }
 
 func (s *branchService) CreateProtectionRule(ctx context.Context, repoID uuid.UUID, req CreateBranchProtectionRequest) (*models.BranchProtectionRule, error) {
-	// TODO: Implement branch protection rule creation
-	return nil, fmt.Errorf("CreateProtectionRule not yet implemented")
+	s.logger.WithFields(logrus.Fields{
+		"repo_id": repoID,
+		"pattern": req.Pattern,
+	}).Info("Creating branch protection rule")
+
+	// Validate request
+	if req.Pattern == "" {
+		return nil, fmt.Errorf("pattern is required")
+	}
+
+	// Check if rule with same pattern already exists
+	var existingRule models.BranchProtectionRule
+	err := s.db.Where("repository_id = ? AND pattern = ?", repoID, req.Pattern).First(&existingRule).Error
+	if err == nil {
+		return nil, fmt.Errorf("protection rule with pattern '%s' already exists", req.Pattern)
+	} else if err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to check existing protection rules: %w", err)
+	}
+
+	// Serialize JSON fields
+	var requiredStatusChecksJSON, requiredPRReviewsJSON, restrictionsJSON string
+
+	if req.RequiredStatusChecks != nil {
+		statusChecksBytes, err := json.Marshal(req.RequiredStatusChecks)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal required status checks: %w", err)
+		}
+		requiredStatusChecksJSON = string(statusChecksBytes)
+	}
+
+	if req.RequiredPullRequestReviews != nil {
+		prReviewsBytes, err := json.Marshal(req.RequiredPullRequestReviews)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal required pull request reviews: %w", err)
+		}
+		requiredPRReviewsJSON = string(prReviewsBytes)
+	}
+
+	if req.Restrictions != nil {
+		restrictionsBytes, err := json.Marshal(req.Restrictions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal restrictions: %w", err)
+		}
+		restrictionsJSON = string(restrictionsBytes)
+	}
+
+	// Create protection rule
+	rule := &models.BranchProtectionRule{
+		RepositoryID:               repoID,
+		Pattern:                    req.Pattern,
+		RequiredStatusChecks:       requiredStatusChecksJSON,
+		EnforceAdmins:              req.EnforceAdmins,
+		RequiredPullRequestReviews: requiredPRReviewsJSON,
+		Restrictions:               restrictionsJSON,
+	}
+
+	if err := s.db.Create(rule).Error; err != nil {
+		return nil, fmt.Errorf("failed to create protection rule: %w", err)
+	}
+
+	s.logger.WithField("rule_id", rule.ID).Info("Created branch protection rule")
+	return rule, nil
 }
 
 func (s *branchService) UpdateProtectionRule(ctx context.Context, ruleID uuid.UUID, req UpdateBranchProtectionRequest) (*models.BranchProtectionRule, error) {
-	// TODO: Implement branch protection rule update
-	return nil, fmt.Errorf("UpdateProtectionRule not yet implemented")
+	s.logger.WithField("rule_id", ruleID).Info("Updating branch protection rule")
+
+	// Get existing rule
+	var rule models.BranchProtectionRule
+	err := s.db.Where("id = ?", ruleID).First(&rule).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("protection rule not found")
+		}
+		return nil, fmt.Errorf("failed to get protection rule: %w", err)
+	}
+
+	// Update fields if provided
+	if req.Pattern != nil {
+		// Check if new pattern conflicts with existing rules
+		var existingRule models.BranchProtectionRule
+		err := s.db.Where("repository_id = ? AND pattern = ? AND id != ?", rule.RepositoryID, *req.Pattern, ruleID).First(&existingRule).Error
+		if err == nil {
+			return nil, fmt.Errorf("protection rule with pattern '%s' already exists", *req.Pattern)
+		} else if err != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("failed to check existing protection rules: %w", err)
+		}
+		rule.Pattern = *req.Pattern
+	}
+
+	if req.EnforceAdmins != nil {
+		rule.EnforceAdmins = *req.EnforceAdmins
+	}
+
+	if req.RequiredStatusChecks != nil {
+		statusChecksBytes, err := json.Marshal(req.RequiredStatusChecks)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal required status checks: %w", err)
+		}
+		rule.RequiredStatusChecks = string(statusChecksBytes)
+	}
+
+	if req.RequiredPullRequestReviews != nil {
+		prReviewsBytes, err := json.Marshal(req.RequiredPullRequestReviews)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal required pull request reviews: %w", err)
+		}
+		rule.RequiredPullRequestReviews = string(prReviewsBytes)
+	}
+
+	if req.Restrictions != nil {
+		restrictionsBytes, err := json.Marshal(req.Restrictions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal restrictions: %w", err)
+		}
+		rule.Restrictions = string(restrictionsBytes)
+	}
+
+	// Save updated rule
+	if err := s.db.Save(&rule).Error; err != nil {
+		return nil, fmt.Errorf("failed to update protection rule: %w", err)
+	}
+
+	s.logger.WithField("rule_id", rule.ID).Info("Updated branch protection rule")
+	return &rule, nil
 }
 
 func (s *branchService) DeleteProtectionRule(ctx context.Context, ruleID uuid.UUID) error {
-	// TODO: Implement branch protection rule deletion
-	return fmt.Errorf("DeleteProtectionRule not yet implemented")
+	s.logger.WithField("rule_id", ruleID).Info("Deleting branch protection rule")
+
+	// Check if rule exists
+	var rule models.BranchProtectionRule
+	err := s.db.Where("id = ?", ruleID).First(&rule).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("protection rule not found")
+		}
+		return fmt.Errorf("failed to get protection rule: %w", err)
+	}
+
+	// Delete the rule
+	if err := s.db.Delete(&rule).Error; err != nil {
+		return fmt.Errorf("failed to delete protection rule: %w", err)
+	}
+
+	s.logger.WithField("rule_id", ruleID).Info("Deleted branch protection rule")
+	return nil
 }
 
 func (s *branchService) ListProtectionRules(ctx context.Context, repoID uuid.UUID) ([]*models.BranchProtectionRule, error) {
@@ -364,4 +501,49 @@ func (s *branchService) ListProtectionRules(ctx context.Context, repoID uuid.UUI
 		return nil, fmt.Errorf("failed to list protection rules: %w", err)
 	}
 	return rules, nil
+}
+
+func (s *branchService) GetProtectionRuleForBranch(ctx context.Context, repoID uuid.UUID, branchName string) (*models.BranchProtectionRule, error) {
+	// Get all protection rules for the repository
+	rules, err := s.ListProtectionRules(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the most specific matching rule
+	// For simplicity, we'll do exact match first, then wildcard patterns
+	for _, rule := range rules {
+		if rule.Pattern == branchName {
+			return rule, nil
+		}
+	}
+
+	// Check for wildcard patterns (basic implementation)
+	for _, rule := range rules {
+		if matchPattern(rule.Pattern, branchName) {
+			return rule, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no protection rule found for branch '%s'", branchName)
+}
+
+// matchPattern provides basic pattern matching for branch protection rules
+// Supports simple wildcard patterns like "main", "feature/*", "*"
+func matchPattern(pattern, branchName string) bool {
+	if pattern == "*" {
+		return true
+	}
+	
+	if pattern == branchName {
+		return true
+	}
+	
+	// Handle simple prefix patterns like "feature/*"
+	if len(pattern) > 2 && pattern[len(pattern)-2:] == "/*" {
+		prefix := pattern[:len(pattern)-2]
+		return len(branchName) >= len(prefix) && branchName[:len(prefix)] == prefix
+	}
+	
+	return false
 }
