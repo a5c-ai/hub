@@ -59,15 +59,24 @@ export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
 export GOCACHE=/tmp/go-build-cache
-export GOMAXPROCS=4
+export GOMAXPROCS=8
 export GOGC=50
 export GOFLAGS="-p=4 -buildvcs=false"
 
-timeout 25m go build \
+# Pre-build dependencies to reduce compilation time
+log "Pre-compiling dependencies..."
+timeout 30m go build -i std
+
+# Increase build timeout and use more aggressive build optimizations
+log "Building main binary..."
+timeout 60m go build \
     -ldflags "$LDFLAGS" \
     -trimpath \
     -tags netgo \
     -installsuffix netgo \
+    -buildmode=default \
+    -compiler=gc \
+    -a \
     -o "$OUTPUT_DIR/$BINARY_NAME" \
     ./cmd/server
 
@@ -102,8 +111,8 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
     export NEXT_PARALLEL=false
     
-    # Build with timeout and better error handling
-    timeout 30m npm run build
+    # Build with increased timeout and better error handling
+    timeout 45m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
