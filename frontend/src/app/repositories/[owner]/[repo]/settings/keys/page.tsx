@@ -261,7 +261,7 @@ export default function DeployKeysPage() {
 
         {/* Create Deploy Key Modal */}
         <Modal 
-          isOpen={showCreateModal} 
+          open={showCreateModal} 
           onClose={() => setShowCreateModal(false)}
           title="Add Deploy Key"
         >

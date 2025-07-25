@@ -294,7 +294,7 @@ export default function WebhooksPage() {
 
         {/* Create Webhook Modal */}
         <Modal 
-          isOpen={showCreateModal} 
+          open={showCreateModal} 
           onClose={() => setShowCreateModal(false)}
           title="Add Webhook"
         >
