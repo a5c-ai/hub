@@ -85,12 +85,12 @@ export default function RunnersPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline' => {
     switch (status) {
-      case 'online': return 'green';
-      case 'busy': return 'yellow';
-      case 'offline': return 'gray';
-      default: return 'gray';
+      case 'online': return 'success';
+      case 'busy': return 'warning';
+      case 'offline': return 'secondary';
+      default: return 'default';
     }
   };
 
@@ -207,7 +207,7 @@ export default function RunnersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{runner.name}</h3>
-                        <Badge variant={getStatusColor(runner.status) as any}>
+                        <Badge variant={getStatusColor(runner.status)}>
                           {runner.status}
                         </Badge>
                         <Badge variant="outline">
@@ -258,7 +258,7 @@ export default function RunnersPage() {
 
       {/* Add Runner Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setRegistrationToken('');
@@ -311,7 +311,7 @@ export default function RunnersPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Remove runner"
       >

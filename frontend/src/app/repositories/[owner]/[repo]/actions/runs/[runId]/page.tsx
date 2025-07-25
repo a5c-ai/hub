@@ -103,15 +103,15 @@ export default function WorkflowRunDetailPage() {
     }
   };
 
-  const getStatusColor = (status: string, conclusion?: string) => {
-    if (status === 'in_progress') return 'yellow';
-    if (status === 'queued') return 'gray';
+  const getStatusColor = (status: string, conclusion?: string): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline' => {
+    if (status === 'in_progress') return 'warning';
+    if (status === 'queued') return 'secondary';
     if (status === 'completed') {
-      if (conclusion === 'success') return 'green';
-      if (conclusion === 'failure') return 'red';
-      if (conclusion === 'cancelled') return 'gray';
+      if (conclusion === 'success') return 'success';
+      if (conclusion === 'failure') return 'destructive';
+      if (conclusion === 'cancelled') return 'secondary';
     }
-    return 'gray';
+    return 'default';
   };
 
   const getStatusIcon = (status: string, conclusion?: string) => {
@@ -208,7 +208,7 @@ export default function WorkflowRunDetailPage() {
           <div>
             <span className="text-sm text-gray-500">Status</span>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+              <Badge variant={getStatusColor(run.status, run.conclusion)}>
                 {run.conclusion || run.status}
               </Badge>
             </div>
@@ -317,13 +317,13 @@ export default function WorkflowRunDetailPage() {
                   <h4 className="font-medium">Logs</h4>
                 </div>
                 <div className="p-4">
-                  {logs[selectedJob] ? (
+                  {selectedJob && logs[selectedJob] ? (
                     <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
                       {logs[selectedJob]}
                     </pre>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      <p>Click "View logs" to see the build output</p>
+                      <p>Click &quot;View logs&quot; to see the build output</p>
                       <Button
                         variant="outline"
                         className="mt-2"

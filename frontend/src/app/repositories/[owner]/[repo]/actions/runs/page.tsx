@@ -75,15 +75,15 @@ export default function WorkflowRunsPage() {
     }
   };
 
-  const getStatusColor = (status: string, conclusion?: string) => {
-    if (status === 'in_progress') return 'yellow';
-    if (status === 'queued') return 'gray';
+  const getStatusColor = (status: string, conclusion?: string): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline' => {
+    if (status === 'in_progress') return 'warning';
+    if (status === 'queued') return 'secondary';
     if (status === 'completed') {
-      if (conclusion === 'success') return 'green';
-      if (conclusion === 'failure') return 'red';
-      if (conclusion === 'cancelled') return 'gray';
+      if (conclusion === 'success') return 'success';
+      if (conclusion === 'failure') return 'destructive';
+      if (conclusion === 'cancelled') return 'secondary';
     }
-    return 'gray';
+    return 'default';
   };
 
   const getStatusIcon = (status: string, conclusion?: string) => {
@@ -246,7 +246,7 @@ export default function WorkflowRunsPage() {
                 </div>
                 
                 <div className="text-right">
-                  <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                  <Badge variant={getStatusColor(run.status, run.conclusion)}>
                     {run.conclusion || run.status}
                   </Badge>
                   

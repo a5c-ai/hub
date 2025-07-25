@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -40,12 +40,7 @@ export default function ActionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchWorkflows();
-    fetchRecentRuns();
-  }, [owner, repo]);
-
-  const fetchWorkflows = async () => {
+  const fetchWorkflows = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/workflows`);
       if (response.ok) {
@@ -57,9 +52,9 @@ export default function ActionsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
-  };
+  }, [owner, repo]);
 
-  const fetchRecentRuns = async () => {
+  const fetchRecentRuns = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runs?limit=10`);
       if (response.ok) {
@@ -73,17 +68,22 @@ export default function ActionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo]);
 
-  const getStatusColor = (status: string, conclusion?: string) => {
-    if (status === 'in_progress') return 'yellow';
-    if (status === 'queued') return 'gray';
+  useEffect(() => {
+    fetchWorkflows();
+    fetchRecentRuns();
+  }, [fetchWorkflows, fetchRecentRuns]);
+
+  const getStatusColor = (status: string, conclusion?: string): 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline' => {
+    if (status === 'in_progress') return 'warning';
+    if (status === 'queued') return 'secondary';
     if (status === 'completed') {
-      if (conclusion === 'success') return 'green';
-      if (conclusion === 'failure') return 'red';
-      if (conclusion === 'cancelled') return 'gray';
+      if (conclusion === 'success') return 'success';
+      if (conclusion === 'failure') return 'destructive';
+      if (conclusion === 'cancelled') return 'secondary';
     }
-    return 'gray';
+    return 'default';
   };
 
   const getStatusIcon = (status: string, conclusion?: string) => {
@@ -223,7 +223,7 @@ export default function ActionsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                    <Badge variant={getStatusColor(run.status, run.conclusion)}>
                       {run.conclusion || run.status}
                     </Badge>
                     <p className="text-sm text-gray-500 mt-1">
