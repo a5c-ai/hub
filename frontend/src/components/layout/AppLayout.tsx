@@ -7,6 +7,10 @@ import { Sidebar } from './Sidebar';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
 import { cn } from '@/lib/utils';
+import { PWAInstallPrompt } from '@/components/ui/PWAInstallPrompt';
+import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt';
+import { OfflineBanner } from '@/components/ui/OfflineIndicator';
+import { MobileBottomNav } from './MobileBottomNav';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -85,17 +89,27 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
+        <OfflineBanner />
         
         <main
           data-testid="main-content"
           className={cn(
-            'flex-1 overflow-y-auto transition-all duration-200',
+            'flex-1 overflow-y-auto transition-all duration-200 pb-16 lg:pb-0',
             sidebarOpen ? 'lg:ml-0' : 'lg:ml-0'
           )}
         >
+          {/* PWA Prompts */}
+          <div className="sticky top-0 z-30 space-y-2 p-4">
+            <PWAUpdatePrompt />
+            <PWAInstallPrompt />
+          </div>
+          
           {children}
         </main>
       </div>
+      
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
