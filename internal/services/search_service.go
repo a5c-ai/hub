@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
@@ -462,23 +463,28 @@ func (s *SearchService) BulkIndexRepositories(repos []models.Repository) error {
 			Description:     repo.Description,
 			OwnerID:         repo.OwnerID.String(),
 			OwnerUsername:   repo.Owner.Username,
-			OwnerType:       repo.OwnerType,
-			Visibility:      repo.Visibility,
-			PrimaryLanguage: repo.PrimaryLanguage,
+			OwnerType:       string(repo.OwnerType),
+			Visibility:      string(repo.Visibility),
+			PrimaryLanguage: "", // Repository model doesn't have this field
 			StarsCount:      repo.StarsCount,
 			ForksCount:      repo.ForksCount,
 			WatchersCount:   repo.WatchersCount,
-			Size:            repo.Size,
+			Size:            int(repo.SizeKB), // Convert int64 to int and use SizeKB field
 			DefaultBranch:   repo.DefaultBranch,
 			CreatedAt:       repo.CreatedAt,
 			UpdatedAt:       repo.UpdatedAt,
-			PushedAt:        repo.PushedAt,
+			PushedAt:        func() time.Time { 
+				if repo.PushedAt != nil { 
+					return *repo.PushedAt 
+				} 
+				return time.Time{} 
+			}(), // Handle nullable field
 			IsTemplate:      repo.IsTemplate,
 			IsArchived:      repo.IsArchived,
 			IsFork:          repo.IsFork,
 			HasIssues:       repo.HasIssues,
 			HasWiki:         repo.HasWiki,
-			HasPages:        repo.HasPages,
+			HasPages:        false, // Repository model doesn't have this field
 		}
 		
 		operations = append(operations, map[string]interface{}(map[string]interface{}{

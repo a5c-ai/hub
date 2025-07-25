@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -629,6 +628,12 @@ func (es *ElasticsearchService) IndexRepository(repo *models.Repository) error {
 		return nil
 	}
 
+	// Handle PushedAt field which might be nil
+	var pushedAt time.Time
+	if repo.PushedAt != nil {
+		pushedAt = *repo.PushedAt
+	}
+
 	doc := RepositoryDocument{
 		ID:              repo.ID.String(),
 		Name:            repo.Name,
@@ -636,23 +641,23 @@ func (es *ElasticsearchService) IndexRepository(repo *models.Repository) error {
 		Description:     repo.Description,
 		OwnerID:         repo.OwnerID.String(),
 		OwnerUsername:   repo.Owner.Username,
-		OwnerType:       repo.OwnerType,
-		Visibility:      repo.Visibility,
-		PrimaryLanguage: repo.PrimaryLanguage,
+		OwnerType:       string(repo.OwnerType),
+		Visibility:      string(repo.Visibility),
+		PrimaryLanguage: "", // Repository model doesn't have this field
 		StarsCount:      repo.StarsCount,
 		ForksCount:      repo.ForksCount,
 		WatchersCount:   repo.WatchersCount,
-		Size:            repo.Size,
+		Size:            int(repo.SizeKB), // Convert int64 to int and use SizeKB field
 		DefaultBranch:   repo.DefaultBranch,
 		CreatedAt:       repo.CreatedAt,
 		UpdatedAt:       repo.UpdatedAt,
-		PushedAt:        repo.PushedAt,
+		PushedAt:        pushedAt,
 		IsTemplate:      repo.IsTemplate,
 		IsArchived:      repo.IsArchived,
 		IsFork:          repo.IsFork,
 		HasIssues:       repo.HasIssues,
 		HasWiki:         repo.HasWiki,
-		HasPages:        repo.HasPages,
+		HasPages:        false, // Repository model doesn't have this field
 	}
 
 	return es.indexDocument(IndexRepositories, repo.ID.String(), doc)
@@ -673,7 +678,7 @@ func (es *ElasticsearchService) IndexIssue(issue *models.Issue) error {
 		Number:       issue.Number,
 		Title:        issue.Title,
 		Body:         issue.Body,
-		State:        issue.State,
+		State:        string(issue.State),
 		RepositoryID: issue.RepositoryID.String(),
 		Repository:   issue.Repository.Name,
 		UserID:       issue.UserID.String(),
@@ -925,29 +930,34 @@ func (es *ElasticsearchService) convertUserDocument(doc UserDocument) models.Use
 func (es *ElasticsearchService) convertRepositoryDocument(doc RepositoryDocument) models.Repository {
 	id, _ := uuid.Parse(doc.ID)
 	ownerID, _ := uuid.Parse(doc.OwnerID)
+	// Handle PushedAt conversion
+	var pushedAt *time.Time
+	if !doc.PushedAt.IsZero() {
+		pushedAt = &doc.PushedAt
+	}
+
 	return models.Repository{
-		ID:              id,
-		Name:            doc.Name,
-		Description:     doc.Description,
-		OwnerID:         ownerID,
-		OwnerType:       doc.OwnerType,
-		Visibility:      doc.Visibility,
-		PrimaryLanguage: doc.PrimaryLanguage,
-		StarsCount:      doc.StarsCount,
-		ForksCount:      doc.ForksCount,
-		WatchersCount:   doc.WatchersCount,
-		Size:            doc.Size,
-		DefaultBranch:   doc.DefaultBranch,
-		CreatedAt:       doc.CreatedAt,
-		UpdatedAt:       doc.UpdatedAt,
-		PushedAt:        doc.PushedAt,
-		IsTemplate:      doc.IsTemplate,
-		IsArchived:      doc.IsArchived,
-		IsFork:          doc.IsFork,
-		HasIssues:       doc.HasIssues,
-		HasWiki:         doc.HasWiki,
-		HasPages:        doc.HasPages,
-		Owner:           models.User{Username: doc.OwnerUsername},
+		ID:            id,
+		Name:          doc.Name,
+		Description:   doc.Description,
+		OwnerID:       ownerID,
+		OwnerType:     models.OwnerType(doc.OwnerType),
+		Visibility:    models.Visibility(doc.Visibility),
+		StarsCount:    doc.StarsCount,
+		ForksCount:    doc.ForksCount,
+		WatchersCount: doc.WatchersCount,
+		SizeKB:        int64(doc.Size), // Convert int to int64 for SizeKB field
+		DefaultBranch: doc.DefaultBranch,
+		CreatedAt:     doc.CreatedAt,
+		UpdatedAt:     doc.UpdatedAt,
+		PushedAt:      pushedAt,
+		IsTemplate:    doc.IsTemplate,
+		IsArchived:    doc.IsArchived,
+		IsFork:        doc.IsFork,
+		HasIssues:     doc.HasIssues,
+		HasWiki:       doc.HasWiki,
+		// HasPages field doesn't exist in Repository model
+		Owner:         nil, // Owner field is *OwnerEntity, not User
 	}
 }
 
@@ -956,20 +966,31 @@ func (es *ElasticsearchService) convertIssueDocument(doc IssueDocument) models.I
 	repoID, _ := uuid.Parse(doc.RepositoryID)
 	userID, _ := uuid.Parse(doc.UserID)
 	
+	// Handle nullable UserID
+	var userIDPtr *uuid.UUID
+	if doc.UserID != "" {
+		userIDPtr = &userID
+	}
+
 	issue := models.Issue{
-		ID:           id,
-		Number:       doc.Number,
-		Title:        doc.Title,
-		Body:         doc.Body,
-		State:        doc.State,
-		RepositoryID: repoID,
-		UserID:       userID,
-		CreatedAt:    doc.CreatedAt,
-		UpdatedAt:    doc.UpdatedAt,
-		ClosedAt:     doc.ClosedAt,
+		ID:            id,
+		Number:        doc.Number,
+		Title:         doc.Title,
+		Body:          doc.Body,
+		State:         models.IssueState(doc.State),
+		RepositoryID:  repoID,
+		UserID:        userIDPtr,
+		CreatedAt:     doc.CreatedAt,
+		UpdatedAt:     doc.UpdatedAt,
+		ClosedAt:      doc.ClosedAt,
 		CommentsCount: doc.CommentsCount,
-		Repository:   models.Repository{Name: doc.Repository},
-		User:         models.User{Username: doc.Username},
+		Repository:    models.Repository{Name: doc.Repository},
+		User:          nil, // User field is *User, will set below if needed
+	}
+
+	// Set User if we have a username
+	if doc.Username != "" {
+		issue.User = &models.User{Username: doc.Username}
 	}
 
 	if doc.AssigneeID != "" {
