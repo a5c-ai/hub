@@ -335,6 +335,7 @@ export default function SettingsPage() {
                         <div>
                           <h4 className="font-medium text-foreground">Issues and Pull Requests</h4>
                           <p className="text-sm text-muted-foreground">Notifications about issues and pull requests you&apos;re involved in</p>
+
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>

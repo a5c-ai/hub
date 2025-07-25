@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -401,4 +403,28 @@ func (s *RunnerService) GetRunnerStats(ctx context.Context, repositoryID *uuid.U
 		"available": stats.Online,
 		"timestamp": time.Now(),
 	}, nil
+}
+
+// CreateRegistrationToken creates a new registration token for runners
+func (s *RunnerService) CreateRegistrationToken(ctx context.Context, repositoryID *uuid.UUID, organizationID *uuid.UUID) (string, error) {
+	// Generate a random token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", fmt.Errorf("failed to generate registration token: %w", err)
+	}
+	
+	token := hex.EncodeToString(tokenBytes)
+	
+	s.logger.WithFields(logrus.Fields{
+		"repository_id":   repositoryID,
+		"organization_id": organizationID,
+	}).Info("Created runner registration token")
+	
+	// In a real implementation, you would:
+	// 1. Store the token in a database with expiration
+	// 2. Associate it with the repository/organization
+	// 3. Validate it when runners register
+	// For now, we'll just return the token
+	
+	return token, nil
 }

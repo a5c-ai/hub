@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
@@ -26,7 +25,12 @@ interface ActivityItem {
       username: string;
     };
   };
-  payload: any;
+  payload: {
+    commits?: Array<{ sha?: string; message: string }>;
+    number?: number;
+    title?: string;
+    target?: { username: string };
+  };
   created_at: string;
 }
 
@@ -42,8 +46,11 @@ export default function ActivityPage() {
         setLoading(true);
         const response = await api.get(`/activity?filter=${filter}`);
         setActivities(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch activity');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch activity'
+        );
       } finally {
         setLoading(false);
       }
@@ -243,7 +250,7 @@ export default function ActivityPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Activity Feed</h1>
-          <p className="text-gray-600 mt-2">Stay up to date with what's happening across your repositories and network</p>
+          <p className="text-gray-600 mt-2">Stay up to date with what&apos;s happening across your repositories and network</p>
         </div>
 
         {/* Filter Tabs */}
@@ -321,7 +328,7 @@ export default function ActivityPage() {
                       {/* Additional payload information */}
                       {activity.payload.title && (
                         <div className="mt-2 text-sm text-gray-700">
-                          "{activity.payload.title}"
+                          &quot;{activity.payload.title}&quot;
                         </div>
                       )}
                       
@@ -331,7 +338,7 @@ export default function ActivityPage() {
                             {activity.payload.commits.length} commit{activity.payload.commits.length !== 1 ? 's' : ''}
                           </div>
                           <div className="space-y-1">
-                            {activity.payload.commits.slice(0, 3).map((commit: any, index: number) => (
+                            {activity.payload.commits.slice(0, 3).map((commit: { sha?: string; message: string }, index: number) => (
                               <div key={index} className="text-xs bg-gray-50 p-2 rounded">
                                 <span className="font-mono text-blue-600">{commit.sha?.substring(0, 7)}</span>
                                 <span className="ml-2">{commit.message}</span>
@@ -363,8 +370,8 @@ export default function ActivityPage() {
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
               <p className="text-gray-600 mb-4">
-                {filter === 'all' && "There's no activity to show yet."}
-                {filter === 'own' && "You haven't performed any activities yet."}
+                {filter === 'all' && "There&apos;s no activity to show yet."}
+                {filter === 'own' && "You haven&apos;t performed any activities yet."}
                 {filter === 'following' && "Follow users to see their activity here."}
               </p>
               {filter === 'following' && (

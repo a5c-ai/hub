@@ -15,13 +15,15 @@ import (
 // ActionsHandlers handles Actions-related HTTP requests
 type ActionsHandlers struct {
 	workflowService *services.WorkflowService
+	runnerService   *services.RunnerService
 	logger          *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
 		workflowService: workflowService,
+		runnerService:   runnerService,
 		logger:          logger,
 	}
 }
@@ -404,6 +406,191 @@ func (h *ActionsHandlers) RerunWorkflowRun(c *gin.Context) {
 func (h *ActionsHandlers) DeleteWorkflowRun(c *gin.Context) {
 	// TODO: Implement workflow run deletion
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "Not implemented yet"})
+}
+
+// Secret Management Endpoints
+
+// ListSecrets handles GET /api/v1/repos/{owner}/{repo}/actions/secrets
+func (h *ActionsHandlers) ListSecrets(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	secrets, err := h.workflowService.ListSecrets(c.Request.Context(), repositoryID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to list secrets")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list secrets"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"secrets": secrets})
+}
+
+// CreateSecret handles POST /api/v1/repos/{owner}/{repo}/actions/secrets
+func (h *ActionsHandlers) CreateSecret(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var req struct {
+		Name        string  `json:"name" binding:"required"`
+		Value       string  `json:"value" binding:"required"`
+		Environment *string `json:"environment,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	secret, err := h.workflowService.CreateSecret(c.Request.Context(), repositoryID, req.Name, req.Value, req.Environment)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create secret")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, secret)
+}
+
+// UpdateSecret handles PUT /api/v1/repos/{owner}/{repo}/actions/secrets/{secret_id}
+func (h *ActionsHandlers) UpdateSecret(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	secretID, err := uuid.Parse(c.Param("secret_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid secret ID"})
+		return
+	}
+
+	var req struct {
+		Value       string  `json:"value" binding:"required"`
+		Environment *string `json:"environment,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	secret, err := h.workflowService.UpdateSecret(c.Request.Context(), repositoryID, secretID, req.Value, req.Environment)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to update secret")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, secret)
+}
+
+// DeleteSecret handles DELETE /api/v1/repos/{owner}/{repo}/actions/secrets/{secret_id}
+func (h *ActionsHandlers) DeleteSecret(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	secretID, err := uuid.Parse(c.Param("secret_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid secret ID"})
+		return
+	}
+
+	if err := h.workflowService.DeleteSecret(c.Request.Context(), repositoryID, secretID); err != nil {
+		h.logger.WithError(err).Error("Failed to delete secret")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete secret"})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
+}
+
+// Runner Management Endpoints
+
+// ListRunners handles GET /api/v1/repos/{owner}/{repo}/actions/runners
+func (h *ActionsHandlers) ListRunners(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	req := services.ListRunnersRequest{
+		RepositoryID: &repositoryID,
+	}
+	runners, _, err := h.runnerService.ListRunners(c.Request.Context(), req)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to list runners")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list runners"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"runners": runners})
+}
+
+// CreateRunnerRegistrationToken handles POST /api/v1/repos/{owner}/{repo}/actions/runners/registration-token
+func (h *ActionsHandlers) CreateRunnerRegistrationToken(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.runnerService.CreateRegistrationToken(c.Request.Context(), &repositoryID, nil)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create registration token")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create registration token"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"token": token})
+}
+
+// DeleteRunner handles DELETE /api/v1/repos/{owner}/{repo}/actions/runners/{runner_id}
+func (h *ActionsHandlers) DeleteRunner(c *gin.Context) {
+	runnerID, err := uuid.Parse(c.Param("runner_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid runner ID"})
+		return
+	}
+
+	if err := h.runnerService.DeleteRunner(c.Request.Context(), runnerID); err != nil {
+		h.logger.WithError(err).Error("Failed to delete runner")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete runner"})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
+}
+
+// Job and Log Endpoints
+
+// GetJobLogs handles GET /api/v1/repos/{owner}/{repo}/actions/jobs/{job_id}/logs
+func (h *ActionsHandlers) GetJobLogs(c *gin.Context) {
+	jobID, err := uuid.Parse(c.Param("job_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	logs, err := h.workflowService.GetJobLogs(c.Request.Context(), jobID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get job logs")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get job logs"})
+		return
+	}
+
+	c.Header("Content-Type", "text/plain")
+	c.String(http.StatusOK, logs)
 }
 
 // Helper methods

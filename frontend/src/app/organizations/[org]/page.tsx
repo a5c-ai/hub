@@ -33,8 +33,11 @@ export default function OrganizationOverviewPage() {
         setOrganization(orgResponse.data);
         setRepositories(reposResponse.data);
         setMembers(membersResponse.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch organization data');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch organization data'
+        );
       } finally {
         setLoading(false);
       }
@@ -301,7 +304,7 @@ export default function OrganizationOverviewPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 7a2 2 0 012-2h10a2 2 0 012 2v2M7 7h10" />
                       </svg>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories yet</h3>
-                      <p className="text-gray-600 mb-4">This organization hasn't created any repositories yet.</p>
+                      <p className="text-gray-600 mb-4">This organization hasn&apos;t created any repositories yet.</p>
                       <Button>Create your first repository</Button>
                     </div>
                   </Card>
