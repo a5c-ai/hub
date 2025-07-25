@@ -28,7 +28,7 @@ export default function EditIssuePage() {
   
   const isMobile = useMobile();
 
-  const handleMobileSubmit = async (data: any) => {
+  const handleMobileSubmit = async (data: {title: string; description: string; assignees?: string[]; labels?: string[]}) => {
     try {
       await updateIssue(owner, repo, issueNumber, {
         title: data.title,

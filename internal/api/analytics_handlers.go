@@ -744,7 +744,7 @@ func (h *AnalyticsHandlers) GetOrganizationTeams(c *gin.Context) {
 		}
 	}
 
-	filters := services.InsightFilters{
+	_ = services.InsightFilters{
 		StartDate: startDate,
 		EndDate:   endDate,
 		Period:    period,
@@ -1239,7 +1239,8 @@ func (h *AnalyticsHandlers) isAdmin(c *gin.Context) bool {
 
 	// For now, assume admin status is stored in a role field or similar
 	// This would need to be adapted based on the actual user model
-	return user.Role == "admin" || user.IsAdmin
+	// Return false for now since Role field doesn't exist
+	return false // user.Role == "admin" || user.IsAdmin
 }
 
 // getRepositoryID resolves repository ID from owner and repository name

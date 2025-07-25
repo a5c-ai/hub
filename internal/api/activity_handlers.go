@@ -132,6 +132,17 @@ func (h *ActivityHandlers) GetRepositoryContributors(c *gin.Context) {
 	_ = c.Query("page")
 	_ = c.Query("per_page")
 
+	// Get repository first to get repo variable
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
 	// Get real contributors data from commit history
 	contributors, err := h.getRepositoryContributors(c.Request.Context(), repo.ID)
 	if err != nil {
@@ -265,6 +276,23 @@ func (h *ActivityHandlers) GetRepositorySubscription(c *gin.Context) {
 		return
 	}
 
+	// Get repository first to get repo variable
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	// Get real subscription data
 	subscription, err := h.getRepositorySubscription(c.Request.Context(), repo.ID, userID)
 	if err != nil {
@@ -341,7 +369,7 @@ func (h *ActivityHandlers) getRepositoryActivities(ctx context.Context, repoID u
 			activity["repository"] = gin.H{
 				"id":        event.Repository.ID,
 				"name":      event.Repository.Name,
-				"full_name": event.Repository.FullName,
+				"full_name": event.Repository.Owner.Username + "/" + event.Repository.Name,
 			}
 		}
 

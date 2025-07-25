@@ -18,7 +18,7 @@ export default function NewIssuePage() {
   const isMobile = useMobile();
   const { createIssue, isCreating, operationError } = useIssueStore();
 
-  const handleMobileSubmit = async (data: any) => {
+  const handleMobileSubmit = async (data: {title: string; description: string; assignees?: string[]; labels?: string[]}) => {
     try {
       const issue = await createIssue(owner, repo, {
         title: data.title,

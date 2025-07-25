@@ -64,6 +64,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize analytics service
 	analyticsService := services.NewAnalyticsService(database.DB, logger)
 
+	// Initialize webhook delivery service
+	webhookDeliveryService := services.NewWebhookDeliveryService(database.DB, logger)
+
+	// Initialize deploy key service
+	deployKeyService := services.NewDeployKeyService(database.DB, logger)
+
 	// Initialize Redis service
 	redisService, err := services.NewRedisService(cfg.Redis, logger)
 	if err != nil {
@@ -131,7 +137,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
-	hooksHandlers := NewHooksHandlers(repositoryService, logger)
+	hooksHandlers := NewHooksHandlers(repositoryService, webhookDeliveryService, deployKeyService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, branchService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
