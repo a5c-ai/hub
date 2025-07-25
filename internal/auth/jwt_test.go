@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
-	"github.com/google/uuid"
 )
 
 func TestJWTManager_GenerateAndValidateToken(t *testing.T) {

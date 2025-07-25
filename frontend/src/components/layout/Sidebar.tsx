@@ -77,6 +77,7 @@ export function Sidebar() {
 
   return (
     <div
+      data-testid="sidebar"
       className={cn(
         'fixed inset-y-0 left-0 z-50 w-64 transform bg-background border-r border-border transition-transform lg:static lg:inset-0 lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'

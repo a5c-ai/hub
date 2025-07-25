@@ -34,6 +34,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
+	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
 
 	// Initialize issue-related services
 	issueService := services.NewIssueService(database.DB, logger)
@@ -50,9 +51,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	teamMembershipService := services.NewTeamMembershipService(database.DB, activityService)
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
+	// Initialize search service
+	searchService := services.NewSearchService(database.DB)
+
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
+	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
+	searchHandlers := NewSearchHandlers(searchService, logger)
 	issueHandlers := NewIssueHandlers(issueService, commentService, labelService, milestoneService, repositoryService, logger)
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
@@ -148,6 +154,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo/milestones", milestoneHandlers.ListMilestones)
 		v1.GET("/repositories/:owner/:repo/milestones/:number", milestoneHandlers.GetMilestone)
 
+		// Public search endpoints (for public content)
+		v1.GET("/search", searchHandlers.GlobalSearch)
+		v1.GET("/search/repositories", searchHandlers.SearchRepositories)
+		v1.GET("/search/issues", searchHandlers.SearchIssues)
+		v1.GET("/search/users", searchHandlers.SearchUsers)
+		v1.GET("/search/commits", searchHandlers.SearchCommits)
+
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
@@ -194,6 +207,23 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Branch operations
 				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
 				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
+
+				// Repository-specific search
+				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
+				
+				// Pull request operations
+				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
+				repos.POST("/:owner/:repo/pulls", prHandlers.CreatePullRequest)
+				repos.GET("/:owner/:repo/pulls/:number", prHandlers.GetPullRequest)
+				repos.PATCH("/:owner/:repo/pulls/:number", prHandlers.UpdatePullRequest)
+				repos.PUT("/:owner/:repo/pulls/:number/merge", prHandlers.MergePullRequest)
+				repos.GET("/:owner/:repo/pulls/:number/files", prHandlers.GetPullRequestFiles)
+				
+				// Review operations
+				repos.POST("/:owner/:repo/pulls/:number/reviews", prHandlers.CreateReview)
+				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
+				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
+				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
 				
 				// Issue operations (require authentication)
 				repos.POST("/:owner/:repo/issues", issueHandlers.CreateIssue)
