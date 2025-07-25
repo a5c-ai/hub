@@ -843,8 +843,17 @@ func (s *gitService) UpdateFile(ctx context.Context, repoPath string, req Update
 		return nil, fmt.Errorf("file %s does not exist", req.Path)
 	}
 
-	// TODO: Verify SHA matches current file SHA for conflict detection
-	// This would require computing the current file's Git SHA
+	// Verify SHA matches current file SHA for conflict detection
+	if req.SHA != "" {
+		currentFile, err := s.GetFile(ctx, repoPath, "HEAD", req.Path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current file for SHA verification: %w", err)
+		}
+		
+		if currentFile.SHA != req.SHA {
+			return nil, fmt.Errorf("file SHA mismatch: expected %s, got %s (file was modified by another process)", req.SHA, currentFile.SHA)
+		}
+	}
 
 	// Decode content if base64
 	content := []byte(req.Content)
@@ -910,7 +919,17 @@ func (s *gitService) DeleteFile(ctx context.Context, repoPath string, req Delete
 		return nil, fmt.Errorf("file %s does not exist", req.Path)
 	}
 
-	// TODO: Verify SHA matches current file SHA for conflict detection
+	// Verify SHA matches current file SHA for conflict detection
+	if req.SHA != "" {
+		currentFile, err := s.GetFile(ctx, repoPath, "HEAD", req.Path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current file for SHA verification: %w", err)
+		}
+		
+		if currentFile.SHA != req.SHA {
+			return nil, fmt.Errorf("file SHA mismatch: expected %s, got %s (file was modified by another process)", req.SHA, currentFile.SHA)
+		}
+	}
 
 	// Remove file from filesystem
 	if err := os.Remove(filePath); err != nil {
@@ -1273,18 +1292,84 @@ func (s *gitService) MergeBranches(repoPath, base, head string, mergeMethod, tit
 		return "", fmt.Errorf("failed to resolve head reference %s: %w", head, err)
 	}
 
-	// For now, return a mock merge commit SHA
-	// In a real implementation, this would create an actual merge commit
-	mergeCommitSHA := fmt.Sprintf("merge_%s_%s", baseHash.String()[:8], headHash.String()[:8])
-	
-	s.logger.WithFields(logrus.Fields{
-		"base":         base,
-		"head":         head,
-		"merge_method": mergeMethod,
-		"title":        title,
-	}).Info("Simulated merge operation")
+	// Get the commit objects
+	baseCommit, err := repo.CommitObject(baseHash)
+	if err != nil {
+		return "", fmt.Errorf("failed to get base commit: %w", err)
+	}
 
-	return mergeCommitSHA, nil
+	headCommit, err := repo.CommitObject(headHash)
+	if err != nil {
+		return "", fmt.Errorf("failed to get head commit: %w", err)
+	}
+
+	// Check if it's a fast-forward merge
+	isAncestor, err := s.isAncestor(repo, baseCommit, headCommit)
+	if err != nil {
+		return "", fmt.Errorf("failed to check ancestry: %w", err)
+	}
+
+	var mergeCommitHash plumbing.Hash
+
+	if isAncestor && mergeMethod != "merge" {
+		// Fast-forward merge
+		mergeCommitHash = headHash
+		s.logger.WithFields(logrus.Fields{
+			"base":         base,
+			"head":         head,
+			"merge_method": "fast-forward",
+		}).Info("Performed fast-forward merge")
+	} else {
+		// Create merge commit
+		headTree, err := headCommit.Tree()
+		if err != nil {
+			return "", fmt.Errorf("failed to get head tree: %w", err)
+		}
+
+		// Create merge commit with both parents
+		mergeCommit := &object.Commit{
+			Author: object.Signature{
+				Name:  "System",
+				Email: "system@hub.local",
+				When:  time.Now(),
+			},
+			Committer: object.Signature{
+				Name:  "System", 
+				Email: "system@hub.local",
+				When:  time.Now(),
+			},
+			Message:      fmt.Sprintf("%s\n\n%s", title, message),
+			TreeHash:     headTree.Hash,
+			ParentHashes: []plumbing.Hash{baseHash, headHash},
+		}
+
+		// Encode and store the commit object
+		obj := repo.Storer.NewEncodedObject()
+		if err := mergeCommit.Encode(obj); err != nil {
+			return "", fmt.Errorf("failed to encode merge commit: %w", err)
+		}
+
+		mergeCommitHash, err = repo.Storer.SetEncodedObject(obj)
+		if err != nil {
+			return "", fmt.Errorf("failed to store merge commit: %w", err)
+		}
+
+		s.logger.WithFields(logrus.Fields{
+			"base":         base,
+			"head":         head, 
+			"merge_method": mergeMethod,
+			"merge_sha":    mergeCommitHash.String(),
+		}).Info("Created merge commit")
+	}
+
+	// Update the base branch reference to point to the merge commit
+	baseRefName := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", base))
+	newRef := plumbing.NewHashReference(baseRefName, mergeCommitHash)
+	if err := repo.Storer.SetReference(newRef); err != nil {
+		return "", fmt.Errorf("failed to update base branch reference: %w", err)
+	}
+
+	return mergeCommitHash.String(), nil
 }
 
 // GetBranchCommit gets the latest commit SHA for a branch
@@ -1297,6 +1382,21 @@ func (s *gitService) GetBranchCommit(repoPath, branch string) (string, error) {
 	hash, err := s.resolveReference(repo, branch)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve branch %s: %w", branch, err)
+	}
+
+	return hash.String(), nil
+}
+
+// ResolveSHA resolves a reference (branch, tag, or SHA) to its full SHA
+func (s *gitService) ResolveSHA(ctx context.Context, repoPath, ref string) (string, error) {
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := s.resolveReference(repo, ref)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve reference %s: %w", ref, err)
 	}
 
 	return hash.String(), nil
@@ -1357,32 +1457,66 @@ func (s *gitService) getCommitsBetween(repo *git.Repository, base, head *object.
 }
 
 func (s *gitService) getFilesDiff(repo *git.Repository, base, head *object.Commit) ([]*DiffFile, int, int, error) {
-	// For now, return mock file changes
-	// In a real implementation, we would use go-git to get actual diffs
-	files := []*DiffFile{
-		{
-			Path:      "example.go",
-			Status:    "modified",
-			Additions: 15,
-			Deletions: 8,
-			Changes:   23,
-			Patch:     "@@ -1,10 +1,12 @@\n package main\n\n import (\n+\t\"fmt\"\n \t\"os\"\n )\n\n func main() {\n+\tfmt.Println(\"Hello World\")\n \tos.Exit(0)\n }",
-		},
-		{
-			Path:      "README.md",
-			Status:    "added",
-			Additions: 25,
-			Deletions: 0,
-			Changes:   25,
-			Patch:     "@@ -0,0 +1,25 @@\n+# Pull Request Example\n+\n+This is an example repository for testing pull requests.\n+\n+## Features\n+\n+- Create pull requests\n+- Review changes\n+- Merge branches\n+\n+## Usage\n+\n+```bash\n+go run main.go\n+```",
-		},
+	// Get trees for both commits
+	baseTree, err := base.Tree()
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to get base tree: %w", err)
 	}
 
+	headTree, err := head.Tree()
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to get head tree: %w", err)
+	}
+
+	// Get changes between trees
+	changes, err := baseTree.Diff(headTree)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to compute diff: %w", err)
+	}
+
+	var files []*DiffFile
 	totalAdditions := 0
 	totalDeletions := 0
-	for _, file := range files {
-		totalAdditions += file.Additions
-		totalDeletions += file.Deletions
+
+	for _, change := range changes {
+		diffFile := &DiffFile{
+			Path:     change.To.Name,
+			PrevPath: change.From.Name,
+		}
+
+		// Determine change status
+		switch {
+		case change.From.Name == "" && change.To.Name != "":
+			diffFile.Status = "added"
+		case change.From.Name != "" && change.To.Name == "":
+			diffFile.Status = "deleted"
+			diffFile.Path = change.From.Name
+		case change.From.Name != change.To.Name:
+			diffFile.Status = "renamed"
+		default:
+			diffFile.Status = "modified"
+		}
+
+		// Get patch for the file
+		patch, err := change.Patch()
+		if err == nil && patch != nil {
+			diffFile.Patch = patch.String()
+			
+			// Parse patch for stats
+			lines := strings.Split(patch.String(), "\n")
+			for _, line := range lines {
+				if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+					diffFile.Additions++
+				} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+					diffFile.Deletions++
+				}
+			}
+			diffFile.Changes = diffFile.Additions + diffFile.Deletions
+		}
+
+		files = append(files, diffFile)
+		totalAdditions += diffFile.Additions
+		totalDeletions += diffFile.Deletions
 	}
 
 	return files, totalAdditions, totalDeletions, nil

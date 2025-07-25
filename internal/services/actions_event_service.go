@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/a5c-ai/hub/internal/actions"
+	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -15,17 +16,21 @@ import (
 
 // ActionsEventService handles workflow triggering based on repository events
 type ActionsEventService struct {
-	db              *gorm.DB
-	workflowService *WorkflowService
-	logger          *logrus.Logger
+	db                *gorm.DB
+	workflowService   *WorkflowService
+	repositoryService RepositoryService
+	gitService        git.GitService
+	logger            *logrus.Logger
 }
 
 // NewActionsEventService creates a new actions event service
-func NewActionsEventService(db *gorm.DB, workflowService *WorkflowService, logger *logrus.Logger) *ActionsEventService {
+func NewActionsEventService(db *gorm.DB, workflowService *WorkflowService, repositoryService RepositoryService, gitService git.GitService, logger *logrus.Logger) *ActionsEventService {
 	return &ActionsEventService{
-		db:              db,
-		workflowService: workflowService,
-		logger:          logger,
+		db:                db,
+		workflowService:   workflowService,
+		repositoryService: repositoryService,
+		gitService:        gitService,
+		logger:            logger,
 	}
 }
 
@@ -248,8 +253,7 @@ func (s *ActionsEventService) HandleIssuesEvent(ctx context.Context, event Issue
 	}
 
 	// For issues events, we use the default branch's HEAD as the SHA
-	defaultBranch := "main" // TODO: Get from repository settings
-	defaultSHA := "HEAD"    // TODO: Resolve actual SHA
+	defaultBranch, defaultSHA := s.getRepositoryDefaultBranchAndSHA(ctx, event.RepositoryID)
 
 	// Trigger each matching workflow
 	for _, workflow := range workflows {
@@ -291,7 +295,7 @@ func (s *ActionsEventService) HandleReleaseEvent(ctx context.Context, event Rele
 
 	// For releases, use the tag as the ref
 	tagRef := event.Release.TagName
-	tagSHA := "HEAD" // TODO: Resolve actual SHA for the tag
+	tagSHA := s.resolveSHAFromRef(ctx, event.RepositoryID, tagRef)
 
 	// Trigger each matching workflow
 	for _, workflow := range workflows {
@@ -320,8 +324,7 @@ func (s *ActionsEventService) HandleScheduledEvent(ctx context.Context, reposito
 	}
 
 	// Use the default branch for scheduled runs
-	defaultBranch := "main" // TODO: Get from repository settings
-	defaultSHA := "HEAD"    // TODO: Resolve actual SHA
+	defaultBranch, defaultSHA := s.getRepositoryDefaultBranchAndSHA(ctx, repositoryID)
 
 	return s.triggerWorkflow(ctx, *workflow, "schedule", defaultSHA, &defaultBranch, map[string]interface{}{
 		"schedule": "cron",
@@ -395,5 +398,56 @@ func (s *ActionsEventService) extractModifiedPaths(commits []Commit) []string {
 	}
 
 	return paths
+}
+
+// resolveSHAFromRef resolves a git reference to its SHA
+func (s *ActionsEventService) resolveSHAFromRef(ctx context.Context, repositoryID uuid.UUID, ref string) string {
+	// Get repository path
+	repoPath, err := s.repositoryService.GetRepositoryPath(ctx, repositoryID)
+	if err != nil {
+		s.logger.WithError(err).WithField("repository_id", repositoryID).Error("Failed to get repository path")
+		return "HEAD" // Return HEAD as fallback
+	}
+
+	// Resolve SHA using git service
+	sha, err := s.gitService.ResolveSHA(ctx, repoPath, ref)
+	if err != nil {
+		s.logger.WithError(err).WithFields(logrus.Fields{
+			"repository_id": repositoryID,
+			"ref":           ref,
+		}).Error("Failed to resolve SHA from ref")
+		return "HEAD" // Return HEAD as fallback
+	}
+
+	return sha
+}
+
+// getRepositoryDefaultBranchAndSHA gets the default branch name and its current SHA
+func (s *ActionsEventService) getRepositoryDefaultBranchAndSHA(ctx context.Context, repositoryID uuid.UUID) (string, string) {
+	// Get repository path
+	repoPath, err := s.repositoryService.GetRepositoryPath(ctx, repositoryID)
+	if err != nil {
+		s.logger.WithError(err).WithField("repository_id", repositoryID).Error("Failed to get repository path")
+		return "main", "HEAD" // Return defaults as fallback
+	}
+
+	// Get repository info to find default branch
+	repoInfo, err := s.gitService.GetRepositoryInfo(ctx, repoPath)
+	if err != nil {
+		s.logger.WithError(err).WithField("repository_id", repositoryID).Error("Failed to get repository info")
+		return "main", "HEAD" // Return defaults as fallback
+	}
+
+	// Get SHA for the default branch
+	sha, err := s.gitService.ResolveSHA(ctx, repoPath, repoInfo.DefaultBranch)
+	if err != nil {
+		s.logger.WithError(err).WithFields(logrus.Fields{
+			"repository_id":    repositoryID,
+			"default_branch":   repoInfo.DefaultBranch,
+		}).Error("Failed to resolve SHA for default branch")
+		return repoInfo.DefaultBranch, "HEAD" // Return branch with HEAD as fallback
+	}
+
+	return repoInfo.DefaultBranch, sha
 }
 

@@ -69,7 +69,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	runnerService := services.NewRunnerService(database.DB, logger)
 	logStreamingService := services.NewLogStreamingService(database.DB, logger)
 	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
-	actionsEventService := services.NewActionsEventService(database.DB, workflowService, logger)
+	actionsEventService := services.NewActionsEventService(database.DB, workflowService, repositoryService, gitService, logger)
 	webhookService := services.NewWebhookService(database.DB, logger, actionsEventService)
 
 	// Initialize secret service with encryption key from config
@@ -88,7 +88,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
-	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logStreamingService, webhookService, logger)
+	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logStreamingService, webhookService, gitService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
