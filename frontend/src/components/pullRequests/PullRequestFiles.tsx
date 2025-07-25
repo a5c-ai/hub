@@ -203,8 +203,7 @@ export function PullRequestFiles({ files, owner, repo, number }: PullRequestFile
                     <div className="p-4 text-center text-gray-500">
                       {file.status === 'added' && 'File added'}
                       {file.status === 'deleted' && 'File deleted'}
-                      {file.status === 'binary' && 'Binary file'}
-                      {!['added', 'deleted', 'binary'].includes(file.status) && 'No changes to display'}
+                      {!['added', 'deleted'].includes(file.status) && 'No changes to display'}
                     </div>
                   )}
                 </div>
