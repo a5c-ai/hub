@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { SSHKeyManagement } from '@/components/settings/SSHKeyManagement';
+import { SessionManagement } from '@/components/auth/SessionManagement';
 import { useAuthStore } from '@/store/auth';
 import api from '@/lib/api';
 
@@ -55,6 +56,7 @@ export default function SettingsPage() {
     { id: 'profile', name: 'Profile', icon: '👤' },
     { id: 'account', name: 'Account', icon: '⚙️' },
     { id: 'security', name: 'Security', icon: '🔒' },
+    { id: 'sessions', name: 'Sessions', icon: '💻' },
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
     { id: 'billing', name: 'Billing', icon: '💳' },
   ];
@@ -325,6 +327,20 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </Card>
+              </div>
+            )}
+
+            {activeTab === 'sessions' && (
+              <div className="space-y-6">
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Session Management</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Manage your active sessions and configure session preferences.
+                    </p>
+                  </div>
+                </Card>
+                <SessionManagement />
               </div>
             )}
 
