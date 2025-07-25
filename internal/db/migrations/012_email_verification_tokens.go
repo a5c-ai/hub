@@ -24,13 +24,13 @@ func (EmailVerificationToken) TableName() string {
 }
 
 func init() {
-	registerMigration("008_email_verification_tokens", migrate008Up, migrate008Down)
+	registerMigration("012_email_verification_tokens", migrate012Up, migrate012Down)
 }
 
-func migrate008Up(db *gorm.DB) error {
+func migrate012Up(db *gorm.DB) error {
 	return db.AutoMigrate(&EmailVerificationToken{})
 }
 
-func migrate008Down(db *gorm.DB) error {
+func migrate012Down(db *gorm.DB) error {
 	return db.Migrator().DropTable(&EmailVerificationToken{})
 }

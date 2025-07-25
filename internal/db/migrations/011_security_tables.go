@@ -43,10 +43,10 @@ func (LoginAttempt) TableName() string {
 }
 
 func init() {
-	registerMigration("007_security_tables", migrate007Up, migrate007Down)
+	registerMigration("011_security_tables", migrate011Up, migrate011Down)
 }
 
-func migrate007Up(db *gorm.DB) error {
+func migrate011Up(db *gorm.DB) error {
 	err := db.AutoMigrate(&SecurityEvent{})
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func migrate007Up(db *gorm.DB) error {
 	return db.AutoMigrate(&LoginAttempt{})
 }
 
-func migrate007Down(db *gorm.DB) error {
+func migrate011Down(db *gorm.DB) error {
 	err := db.Migrator().DropTable(&LoginAttempt{})
 	if err != nil {
 		return err

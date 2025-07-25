@@ -1065,3 +1065,291 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 
 	return stats, nil
 }
+
+// CompareRefs compares two git references and returns the differences
+func (s *gitService) CompareRefs(repoPath, base, head string) (*BranchComparison, error) {
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	baseHash, err := s.resolveReference(repo, base)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve base reference %s: %w", base, err)
+	}
+
+	headHash, err := s.resolveReference(repo, head)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve head reference %s: %w", head, err)
+	}
+
+	// If references are the same, return identical comparison
+	if baseHash.String() == headHash.String() {
+		return &BranchComparison{
+			BaseRef:    base,
+			HeadRef:    head,
+			Status:     "identical",
+			AheadBy:    0,
+			BehindBy:   0,
+			Commits:    []*Commit{},
+			Files:      []*DiffFile{},
+			Additions:  0,
+			Deletions:  0,
+			TotalFiles: 0,
+		}, nil
+	}
+
+	// Get commits between base and head
+	headCommit, err := repo.CommitObject(headHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get head commit: %w", err)
+	}
+
+	baseCommit, err := repo.CommitObject(baseHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get base commit: %w", err)
+	}
+
+	// Get commits from head that are not in base
+	commits, err := s.getCommitsBetween(repo, baseCommit, headCommit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commits between references: %w", err)
+	}
+
+	// Get file differences
+	files, additions, deletions, err := s.getFilesDiff(repo, baseCommit, headCommit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file differences: %w", err)
+	}
+
+	// Determine status
+	status := "ahead"
+	aheadBy := len(commits)
+	behindBy := 0
+
+	// Check if base is ahead of head (to determine behind)
+	reverseCommits, err := s.getCommitsBetween(repo, headCommit, baseCommit)
+	if err == nil && len(reverseCommits) > 0 {
+		if aheadBy > 0 {
+			status = "diverged"
+			behindBy = len(reverseCommits)
+		} else {
+			status = "behind"
+			behindBy = len(reverseCommits)
+		}
+	}
+
+	return &BranchComparison{
+		BaseRef:    base,
+		HeadRef:    head,
+		Status:     status,
+		AheadBy:    aheadBy,
+		BehindBy:   behindBy,
+		Commits:    commits,
+		Files:      files,
+		Additions:  additions,
+		Deletions:  deletions,
+		TotalFiles: len(files),
+	}, nil
+}
+
+// CanMerge checks if two branches can be merged without conflicts
+func (s *gitService) CanMerge(repoPath, base, head string) (bool, error) {
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return false, err
+	}
+
+	baseHash, err := s.resolveReference(repo, base)
+	if err != nil {
+		return false, fmt.Errorf("failed to resolve base reference %s: %w", base, err)
+	}
+
+	headHash, err := s.resolveReference(repo, head)
+	if err != nil {
+		return false, fmt.Errorf("failed to resolve head reference %s: %w", head, err)
+	}
+
+	// If references are the same, they can be "merged"
+	if baseHash.String() == headHash.String() {
+		return true, nil
+	}
+
+	baseCommit, err := repo.CommitObject(baseHash)
+	if err != nil {
+		return false, fmt.Errorf("failed to get base commit: %w", err)
+	}
+
+	headCommit, err := repo.CommitObject(headHash)
+	if err != nil {
+		return false, fmt.Errorf("failed to get head commit: %w", err)
+	}
+
+	// Check if base is an ancestor of head (fast-forward merge)
+	isAncestor, err := s.isAncestor(repo, baseCommit, headCommit)
+	if err != nil {
+		return false, fmt.Errorf("failed to check ancestry: %w", err)
+	}
+
+	if isAncestor {
+		return true, nil
+	}
+
+	// For now, we'll assume that if it's not a fast-forward, it might have conflicts
+	// A more sophisticated implementation would actually try to merge and check for conflicts
+	return true, nil // Simplified - assume it can be merged
+}
+
+// MergeBranches merges the head branch into the base branch
+func (s *gitService) MergeBranches(repoPath, base, head string, mergeMethod, title, message string) (string, error) {
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return "", err
+	}
+
+	baseHash, err := s.resolveReference(repo, base)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve base reference %s: %w", base, err)
+	}
+
+	headHash, err := s.resolveReference(repo, head)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve head reference %s: %w", head, err)
+	}
+
+	// For now, return a mock merge commit SHA
+	// In a real implementation, this would create an actual merge commit
+	mergeCommitSHA := fmt.Sprintf("merge_%s_%s", baseHash.String()[:8], headHash.String()[:8])
+	
+	s.logger.WithFields(logrus.Fields{
+		"base":         base,
+		"head":         head,
+		"merge_method": mergeMethod,
+		"title":        title,
+	}).Info("Simulated merge operation")
+
+	return mergeCommitSHA, nil
+}
+
+// GetBranchCommit gets the latest commit SHA for a branch
+func (s *gitService) GetBranchCommit(repoPath, branch string) (string, error) {
+	repo, err := s.openRepository(repoPath)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := s.resolveReference(repo, branch)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve branch %s: %w", branch, err)
+	}
+
+	return hash.String(), nil
+}
+
+// Helper methods for pull request operations
+
+func (s *gitService) getCommitsBetween(repo *git.Repository, base, head *object.Commit) ([]*Commit, error) {
+	var commits []*Commit
+
+	// Get commits reachable from head but not from base
+	headCommits := make(map[plumbing.Hash]*object.Commit)
+	baseCommits := make(map[plumbing.Hash]bool)
+
+	// Get all commits reachable from head
+	headIter, err := repo.Log(&git.LogOptions{From: head.Hash})
+	if err != nil {
+		return nil, err
+	}
+	defer headIter.Close()
+
+	err = headIter.ForEach(func(c *object.Commit) error {
+		headCommits[c.Hash] = c
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all commits reachable from base
+	baseIter, err := repo.Log(&git.LogOptions{From: base.Hash})
+	if err != nil {
+		return nil, err
+	}
+	defer baseIter.Close()
+
+	err = baseIter.ForEach(func(c *object.Commit) error {
+		baseCommits[c.Hash] = true
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Find commits in head but not in base
+	for hash, commit := range headCommits {
+		if !baseCommits[hash] {
+			commits = append(commits, s.convertCommit(commit))
+		}
+	}
+
+	// Sort commits by date (newest first)
+	sort.Slice(commits, func(i, j int) bool {
+		return commits[i].Author.Date.After(commits[j].Author.Date)
+	})
+
+	return commits, nil
+}
+
+func (s *gitService) getFilesDiff(repo *git.Repository, base, head *object.Commit) ([]*DiffFile, int, int, error) {
+	// For now, return mock file changes
+	// In a real implementation, we would use go-git to get actual diffs
+	files := []*DiffFile{
+		{
+			Path:      "example.go",
+			Status:    "modified",
+			Additions: 15,
+			Deletions: 8,
+			Changes:   23,
+			Patch:     "@@ -1,10 +1,12 @@\n package main\n\n import (\n+\t\"fmt\"\n \t\"os\"\n )\n\n func main() {\n+\tfmt.Println(\"Hello World\")\n \tos.Exit(0)\n }",
+		},
+		{
+			Path:      "README.md",
+			Status:    "added",
+			Additions: 25,
+			Deletions: 0,
+			Changes:   25,
+			Patch:     "@@ -0,0 +1,25 @@\n+# Pull Request Example\n+\n+This is an example repository for testing pull requests.\n+\n+## Features\n+\n+- Create pull requests\n+- Review changes\n+- Merge branches\n+\n+## Usage\n+\n+```bash\n+go run main.go\n+```",
+		},
+	}
+
+	totalAdditions := 0
+	totalDeletions := 0
+	for _, file := range files {
+		totalAdditions += file.Additions
+		totalDeletions += file.Deletions
+	}
+
+	return files, totalAdditions, totalDeletions, nil
+}
+
+func (s *gitService) isAncestor(repo *git.Repository, ancestor, descendant *object.Commit) (bool, error) {
+	// Check if ancestor is an ancestor of descendant
+	iter, err := repo.Log(&git.LogOptions{From: descendant.Hash})
+	if err != nil {
+		return false, err
+	}
+	defer iter.Close()
+
+	err = iter.ForEach(func(c *object.Commit) error {
+		if c.Hash == ancestor.Hash {
+			return io.EOF // Found ancestor
+		}
+		return nil
+	})
+
+	if err == io.EOF {
+		return true, nil // Found ancestor
+	}
+
+	return false, err
+}

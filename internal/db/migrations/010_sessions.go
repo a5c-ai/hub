@@ -26,13 +26,13 @@ func (Session) TableName() string {
 }
 
 func init() {
-	registerMigration("006_sessions", migrate006Up, migrate006Down)
+	registerMigration("010_sessions", migrate010Up, migrate010Down)
 }
 
-func migrate006Up(db *gorm.DB) error {
+func migrate010Up(db *gorm.DB) error {
 	return db.AutoMigrate(&Session{})
 }
 
-func migrate006Down(db *gorm.DB) error {
+func migrate010Down(db *gorm.DB) error {
 	return db.Migrator().DropTable(&Session{})
 }
