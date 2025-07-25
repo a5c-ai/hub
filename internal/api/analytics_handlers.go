@@ -217,7 +217,7 @@ func (h *AnalyticsHandlers) GetUserContributions(c *gin.Context) {
 		return
 	}
 
-	uid, err := parseUserID(userID)
+	_, err := parseUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -235,7 +235,7 @@ func (h *AnalyticsHandlers) GetUserRepositories(c *gin.Context) {
 		return
 	}
 
-	uid, err := parseUserID(userID)
+	_, err := parseUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return

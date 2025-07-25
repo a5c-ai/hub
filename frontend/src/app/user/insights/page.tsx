@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import UserAnalyticsDashboard from '@/components/analytics/UserAnalyticsDashboard';
-import { Card } from '@/components/ui/Card';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 // Mock data for development - replace with actual API calls
 const mockUserAnalytics = {
