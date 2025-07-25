@@ -48,7 +48,7 @@ type RepositoryService interface {
 	GetGitHooks(ctx context.Context, repoID uuid.UUID) ([]*models.GitHook, error)
 	
 	// Repository templates
-	CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateTemplateRequest) (*models.RepositoryTemplate, error)
+	CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateRepositoryTemplateRequest) (*models.RepositoryTemplate, error)
 	GetTemplates(ctx context.Context, filters TemplateFilters) ([]*models.RepositoryTemplate, error)
 	UseTemplate(ctx context.Context, templateID uuid.UUID, req CreateRepositoryRequest) (*models.Repository, error)
 }
@@ -136,8 +136,8 @@ type UpdateGitHookRequest struct {
 	Order     *int    `json:"order,omitempty"`
 }
 
-// CreateTemplateRequest represents a request to create a repository template
-type CreateTemplateRequest struct {
+// CreateRepositoryTemplateRequest represents a request to create a repository template
+type CreateRepositoryTemplateRequest struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Category    string   `json:"category"`
@@ -1249,7 +1249,7 @@ func (s *repositoryService) uninstallGitHook(ctx context.Context, repoID uuid.UU
 // Repository template methods
 
 // CreateTemplate creates a new repository template
-func (s *repositoryService) CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateTemplateRequest) (*models.RepositoryTemplate, error) {
+func (s *repositoryService) CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateRepositoryTemplateRequest) (*models.RepositoryTemplate, error) {
 	s.logger.WithFields(logrus.Fields{
 		"repo_id": repoID,
 		"name":    req.Name,

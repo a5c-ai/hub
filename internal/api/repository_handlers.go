@@ -1600,7 +1600,7 @@ func (h *RepositoryHandlers) CreateTemplate(c *gin.Context) {
 		return
 	}
 
-	var templateReq services.CreateTemplateRequest
+	var templateReq services.CreateRepositoryTemplateRequest
 	if err := c.ShouldBindJSON(&templateReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
 		return
