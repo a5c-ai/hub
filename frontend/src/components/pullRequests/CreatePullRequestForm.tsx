@@ -9,15 +9,15 @@ import { Input } from '../ui/Input'
 import { Card } from '../ui/Card'
 
 interface CreatePullRequestFormProps {
-  owner: string
-  repo: string
+  repositoryOwner: string
+  repositoryName: string
   defaultHead?: string
   defaultBase?: string
 }
 
 export function CreatePullRequestForm({ 
-  owner, 
-  repo, 
+  repositoryOwner, 
+  repositoryName, 
   defaultHead = '', 
   defaultBase = 'main' 
 }: CreatePullRequestFormProps) {
@@ -38,7 +38,7 @@ export function CreatePullRequestForm({
   useEffect(() => {
     // In a real implementation, we would fetch available branches
     setBranches(['main', 'develop', 'feature/example', 'hotfix/urgent'])
-  }, [owner, repo])
+  }, [repositoryOwner, repositoryName])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,10 +67,10 @@ export function CreatePullRequestForm({
       setLoading(true)
       setError(null)
       
-      const pullRequest = await pullRequestApi.createPullRequest(owner, repo, formData)
+      const pullRequest = await pullRequestApi.createPullRequest(repositoryOwner, repositoryName, formData)
       
       // Redirect to the created pull request
-      router.push(`/${owner}/${repo}/pull/${pullRequest.issue.number}`)
+      router.push(`/${repositoryOwner}/${repositoryName}/pull/${pullRequest.issue.number}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create pull request')
     } finally {
@@ -88,7 +88,7 @@ export function CreatePullRequestForm({
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Create a new pull request</h1>
         <p className="text-gray-600 mt-2">
-          Create a pull request to propose changes to {owner}/{repo}
+          Create a pull request to propose changes to {repositoryOwner}/{repositoryName}
         </p>
       </div>
 
