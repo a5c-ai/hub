@@ -63,9 +63,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize analytics service
 	analyticsService := services.NewAnalyticsService(database.DB, logger)
 
+	// Initialize Redis service
+	redisService, err := services.NewRedisService(cfg.Redis, logger)
+	if err != nil {
+		logger.WithError(err).Error("Failed to initialize Redis service")
+		panic(err)
+	}
+
 	// Initialize Actions services
 	workflowService := services.NewWorkflowService(database.DB, logger)
-	jobQueueService := services.NewJobQueueService(database.DB, logger)
+	jobQueueService := services.NewJobQueueService(database.DB, redisService, logger)
 	runnerService := services.NewRunnerService(database.DB, logger)
 	logStreamingService := services.NewLogStreamingService(database.DB, logger)
 	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
