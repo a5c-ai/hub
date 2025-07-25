@@ -16,10 +16,19 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`example.spec.ts`** - Basic application loading tests
 - **`registration.spec.ts`** - User registration and validation tests
 - **`repository.spec.ts`** - Repository management tests
+- **`repository-settings.spec.ts`** - Repository settings and administration tests
+- **`repository-security.spec.ts`** - Repository security, secrets, and access control tests
+- **`repository-integrations.spec.ts`** - Repository webhooks, deploy keys, and integrations tests
 - **`issues.spec.ts`** - Issue management and workflow tests
 - **`activity-feed.spec.ts`** - Activity feed and timeline tests (24 tests)
 - **`notifications.spec.ts`** - Notification center and management tests (40 tests)
 - **`notification-preferences.spec.ts`** - Notification settings and preferences tests (34 tests)
+- **`pull-requests.spec.ts`** - Pull request management and creation tests
+- **`pull-request-review.spec.ts`** - Pull request review and collaboration workflow tests
+- **`pull-request-files.spec.ts`** - Pull request file diff and code review tests
+- **`user-profile.spec.ts`** - User profile management and public profile tests
+- **`user-security.spec.ts`** - Security settings, password, SSH keys, and 2FA tests
+- **`user-preferences.spec.ts`** - Notifications, appearance, accessibility, and privacy tests
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage
@@ -40,6 +49,21 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Navigation to other sections
 - Responsive design on mobile
 - Empty state handling
+
+#### Pull Request Tests
+- List pull requests with different states (open/closed/merged)
+- Filter pull requests by state, author, and labels
+- Create new pull request with form validation
+- Navigate to pull request details
+- Display pull request metadata and statistics
+- Review workflow (approve, request changes, comment)
+- Merge pull request with different merge strategies
+- Close and reopen pull requests
+- Convert draft to ready for review
+- View and navigate changed files with diff display
+- Add inline comments on code lines
+- Resolve and unresolve comment conversations
+- Mobile responsiveness for all PR workflows
 
 #### Navigation Tests
 - Header and sidebar navigation elements
@@ -99,6 +123,62 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Notification preference validation
 - Accessibility features
 - Performance optimization
+#### Repository Settings & Administration Tests
+- General repository settings (name, description, visibility)
+- Default branch configuration
+- Repository archiving and deletion
+- Branch protection rules and policies
+- Access control and collaborator management
+- Actions settings and workflow permissions
+- Security settings and vulnerability alerts
+- Transfer and danger zone operations
+- Mobile repository management
+- Error handling and validation
+
+#### Repository Security & Secrets Management Tests
+- Repository secrets creation and management
+- Environment-specific secrets configuration
+- Secret validation and security checks
+- Deploy keys management (read-only and read-write)
+- SSH key validation and security standards
+- Access control and permission management
+- Security advisory and vulnerability management
+- Error handling and network failure scenarios
+- Mobile security management interface
+
+#### Repository Webhooks & Integrations Tests
+- Webhook creation, configuration, and management
+- Event selection and payload customization
+- Webhook testing (ping functionality)
+- Content type configuration (JSON/form)
+- Secret configuration for webhook security
+- Webhook status management (enable/disable)
+- Integration with repository settings
+- Error handling and webhook validation
+- Mobile webhook management interface
+
+#### User Settings & Profile Tests
+- Profile information editing and saving
+- Avatar management and file uploads
+- Profile visibility and public profile display
+- Account settings and preferences
+- Theme switching and appearance customization
+
+#### Security Tests
+- Password change functionality with validation
+- SSH key management (add, remove, validate)
+- Two-factor authentication setup and management
+- Security audit logs and session management
+- Account security best practices
+
+#### User Preferences Tests
+- Email notification preferences and frequency
+- Web notification enablement and permissions
+- Quiet hours and notification filtering
+- Accessibility features (high contrast, large fonts, reduced motion)
+- Language, timezone, and localization settings
+- Privacy controls and data visibility settings
+- Data export and portability features
 
 ## Configuration
 

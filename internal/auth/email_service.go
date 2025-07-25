@@ -67,19 +67,9 @@ func (s *SMTPEmailService) SendEmailVerification(to, token string) error {
 }
 
 func (s *SMTPEmailService) sendEmail(to, subject, body string) error {
-	// If SMTP is not configured, fall back to mock
+	// If SMTP is not configured, log the email instead of using mock
 	if s.host == "" {
-		fmt.Printf("SMTP not configured, using mock email service\n")
-		mock := &MockEmailService{}
-		if strings.Contains(subject, "Password Reset") {
-			// Extract token from body for mock service
-			token := extractTokenFromURL(body)
-			return mock.SendPasswordResetEmail(to, token)
-		} else {
-			// Extract token from body for mock service
-			token := extractTokenFromURL(body)
-			return mock.SendEmailVerification(to, token)
-		}
+		return s.logEmail(to, subject, body)
 	}
 
 	// Prepare message
@@ -377,4 +367,22 @@ Please save these backup codes in a safe place. You can use them to access your 
 Important: Each backup code can only be used once.
 
 This is an automated message from A5C Hub. Please do not reply to this email.`
+}
+
+// logEmail logs email content when SMTP is not configured
+func (s *SMTPEmailService) logEmail(to, subject, body string) error {
+	// Log the email details to console/logs instead of sending
+	fmt.Printf("=== EMAIL LOG (SMTP not configured) ===\n")
+	fmt.Printf("To: %s\n", to)
+	fmt.Printf("Subject: %s\n", subject)
+	fmt.Printf("Body: %s\n", body)
+	fmt.Printf("=====================================\n")
+	
+	// In production, you might want to:
+	// 1. Log to a proper logging system
+	// 2. Store in database for audit trail
+	// 3. Send to a message queue for later processing
+	// 4. Use a different notification method (SMS, in-app notification)
+	
+	return nil
 }

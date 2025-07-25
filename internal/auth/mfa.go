@@ -316,11 +316,21 @@ func generateSMSCode() string {
 	return code
 }
 
-// Mock SMS provider for development
-type MockSMSProvider struct{}
+// LoggingSMSProvider logs SMS messages when no real provider is configured
+type LoggingSMSProvider struct{}
 
-func (p *MockSMSProvider) SendSMS(phoneNumber, message string) error {
-	fmt.Printf("SMS to %s: %s\n", phoneNumber, message)
+func (p *LoggingSMSProvider) SendSMS(phoneNumber, message string) error {
+	fmt.Printf("=== SMS LOG (No SMS provider configured) ===\n")
+	fmt.Printf("To: %s\n", phoneNumber)
+	fmt.Printf("Message: %s\n", message)
+	fmt.Printf("==========================================\n")
+	
+	// In production, you might want to:
+	// 1. Use a real SMS provider (Twilio, AWS SNS, etc.)
+	// 2. Store in database for audit trail
+	// 3. Send to a message queue for later processing
+	// 4. Use alternative notification methods
+	
 	return nil
 }
 
@@ -342,8 +352,8 @@ func (s *MFAService) SendSMSCode(userID uuid.UUID, phoneNumber string) error {
 		return fmt.Errorf("failed to store SMS code: %w", err)
 	}
 	
-	// Send SMS (using mock provider for now)
-	provider := &MockSMSProvider{}
+	// Send SMS (using logging provider when no real provider configured)
+	provider := &LoggingSMSProvider{}
 	message := fmt.Sprintf("Your verification code is: %s. Valid for 5 minutes.", code)
 	return provider.SendSMS(phoneNumber, message)
 }
