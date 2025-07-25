@@ -9,8 +9,11 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import RepositoryBrowser from '@/components/repository/RepositoryBrowser';
+import { MobileRepositoryBrowser } from '@/components/mobile/MobileRepositoryBrowser';
+import { useMobile } from '@/hooks/useDevice';
 import api from '@/lib/api';
-import { Repository } from '@/types';
+import { Repository, TreeEntry, Tree } from '@/types';
+import { repoApi } from '@/lib/api';
 
 export default function TreePage() {
   const params = useParams();
@@ -21,15 +24,24 @@ export default function TreePage() {
   const currentPath = pathArray ? pathArray.join('/') : '';
   
   const [repository, setRepository] = useState<Repository | null>(null);
+  const [tree, setTree] = useState<Tree | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useMobile();
 
   useEffect(() => {
-    const fetchRepository = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/repositories/${owner}/${repo}`);
-        setRepository(response.data);
+        
+        // Fetch repository and tree data in parallel
+        const [repoResponse, treeResponse] = await Promise.all([
+          api.get(`/repositories/${owner}/${repo}`),
+          repoApi.getTree(owner, repo, currentPath, ref)
+        ]);
+        
+        setRepository(repoResponse.data);
+        setTree(treeResponse.data);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error && 'response' in err && 
           typeof err.response === 'object' && err.response && 
@@ -38,15 +50,15 @@ export default function TreePage() {
           'message' in err.response.data && 
           typeof err.response.data.message === 'string'
           ? err.response.data.message 
-          : 'Failed to fetch repository';
+          : 'Failed to fetch data';
         setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRepository();
-  }, [owner, repo]);
+    fetchData();
+  }, [owner, repo, currentPath, ref]);
 
   if (loading) {
     return (
@@ -138,17 +150,35 @@ export default function TreePage() {
         </div>
 
         {/* Repository Browser */}
-        <Card>
-          <div className="p-6">
-            <RepositoryBrowser
-              owner={owner}
-              repo={repo}
-              repository={repository}
-              currentPath={currentPath}
-              currentRef={ref}
-            />
-          </div>
-        </Card>
+        {isMobile ? (
+          <MobileRepositoryBrowser
+            files={tree?.entries.map((entry: TreeEntry) => ({
+              name: entry.name,
+              type: entry.type === 'tree' ? 'directory' : 'file',
+              size: entry.size?.toString(),
+              lastModified: undefined, // TreeEntry doesn't include commit info
+              url: entry.type === 'tree' 
+                ? `/repositories/${owner}/${repo}/tree/${ref}/${currentPath ? currentPath + '/' : ''}${entry.name}`
+                : `/repositories/${owner}/${repo}/blob/${ref}/${currentPath ? currentPath + '/' : ''}${entry.name}`
+            })) || []}
+            currentPath={currentPath}
+            repositoryUrl={`/repositories/${owner}/${repo}`}
+            onRefresh={() => window.location.reload()}
+            loading={loading}
+          />
+        ) : (
+          <Card>
+            <div className="p-6">
+              <RepositoryBrowser
+                owner={owner}
+                repo={repo}
+                repository={repository}
+                currentPath={currentPath}
+                currentRef={ref}
+              />
+            </div>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );

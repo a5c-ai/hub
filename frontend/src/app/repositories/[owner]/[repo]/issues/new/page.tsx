@@ -4,11 +4,33 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { IssueForm } from '@/components/issues/IssueForm';
+import { MobileIssueForm } from '@/components/mobile/MobileIssueForm';
+import { useMobile } from '@/hooks/useDevice';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useIssueStore } from '@/store/issues';
 
 export default function NewIssuePage() {
   const params = useParams();
+  const router = useRouter();
   const owner = params.owner as string;
   const repo = params.repo as string;
+  const isMobile = useMobile();
+  const { createIssue, isCreating, operationError } = useIssueStore();
+
+  const handleMobileSubmit = async (data: any) => {
+    try {
+      const issue = await createIssue(owner, repo, {
+        title: data.title,
+        body: data.description,
+        assignee_id: data.assignees?.[0],
+        label_ids: data.labels || [],
+      });
+      router.push(`/repositories/${owner}/${repo}/issues/${issue.number}`);
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+    }
+  };
 
   return (
     <AppLayout>
@@ -43,13 +65,24 @@ export default function NewIssuePage() {
         </div>
 
         {/* Issue form */}
-        <div className="bg-card shadow-sm rounded-lg border border-border p-6">
-          <IssueForm
-            repositoryOwner={owner}
-            repositoryName={repo}
-            mode="create"
-          />
-        </div>
+        {isMobile ? (
+          <div className="h-full">
+            <MobileIssueForm
+              onSubmit={handleMobileSubmit}
+              loading={isCreating}
+              availableLabels={[]}
+              availableAssignees={[]}
+            />
+          </div>
+        ) : (
+          <div className="bg-card shadow-sm rounded-lg border border-border p-6">
+            <IssueForm
+              repositoryOwner={owner}
+              repositoryName={repo}
+              mode="create"
+            />
+          </div>
+        )}
       </div>
     </AppLayout>
   );

@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { IssueForm } from '@/components/issues/IssueForm';
+import { MobileIssueForm } from '@/components/mobile/MobileIssueForm';
+import { useMobile } from '@/hooks/useDevice';
 import { useIssueStore } from '@/store/issues';
 import { Button } from '@/components/ui/Button';
 
@@ -20,7 +22,25 @@ export default function EditIssuePage() {
     isLoadingCurrentIssue,
     currentIssueError,
     fetchIssue,
+    updateIssue,
+    isUpdating,
   } = useIssueStore();
+  
+  const isMobile = useMobile();
+
+  const handleMobileSubmit = async (data: any) => {
+    try {
+      await updateIssue(owner, repo, issueNumber, {
+        title: data.title,
+        body: data.description,
+        assignee_id: data.assignees?.[0],
+        label_ids: data.labels || [],
+      });
+      router.push(`/repositories/${owner}/${repo}/issues/${issueNumber}`);
+    } catch (error) {
+      console.error('Failed to update issue:', error);
+    }
+  };
 
   useEffect(() => {
     if (issueNumber) {
@@ -103,19 +123,36 @@ export default function EditIssuePage() {
         </div>
 
         {/* Edit Form */}
-        <IssueForm
-          repositoryOwner={owner}
-          repositoryName={repo}
-          mode="edit"
-          issueNumber={currentIssue.number}
-          initialData={{
-            title: currentIssue.title,
-            body: currentIssue.body || '',
-            assignee_id: currentIssue.assignee?.id,
-            milestone_id: currentIssue.milestone?.id,
-            label_ids: currentIssue.labels?.map(label => label.id) || [],
-          }}
-        />
+        {isMobile ? (
+          <div className="h-full">
+            <MobileIssueForm
+              onSubmit={handleMobileSubmit}
+              loading={isUpdating}
+              initialData={{
+                title: currentIssue.title,
+                description: currentIssue.body || '',
+                assignees: currentIssue.assignee ? [currentIssue.assignee.id] : [],
+                labels: currentIssue.labels?.map(label => label.id) || [],
+              }}
+              availableLabels={[]}
+              availableAssignees={[]}
+            />
+          </div>
+        ) : (
+          <IssueForm
+            repositoryOwner={owner}
+            repositoryName={repo}
+            mode="edit"
+            issueNumber={currentIssue.number}
+            initialData={{
+              title: currentIssue.title,
+              body: currentIssue.body || '',
+              assignee_id: currentIssue.assignee?.id,
+              milestone_id: currentIssue.milestone?.id,
+              label_ids: currentIssue.labels?.map(label => label.id) || [],
+            }}
+          />
+        )}
       </div>
     </AppLayout>
   );

@@ -14,6 +14,8 @@ import { Repository, File } from '@/types';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
+import { MobileCodeViewer } from '@/components/mobile/MobileCodeViewer';
+import { useMobile } from '@/hooks/useDevice';
 
 export default function BlobPage() {
   const params = useParams();
@@ -28,6 +30,7 @@ export default function BlobPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const isMobile = useMobile();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -239,80 +242,104 @@ export default function BlobPage() {
         </div>
 
         {/* File Content */}
-        <Card>
-          <div className="border-b border-border px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-foreground">{file.name}</h2>
-                <span className="text-sm text-muted-foreground">{formatFileSize(file.size)}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Link 
-                  href={`/repositories/${owner}/${repo}/edit/${ref}/${filePath}`}
-                  className="inline-flex"
-                >
-                  <Button size="sm" variant="outline">
+        {isMobile ? (
+          <MobileCodeViewer
+            content={file.encoding === 'base64' ? atob(file.content || '') : file.content || ''}
+            filename={file.name}
+            language={getLanguageFromFileName(file.name)}
+            onCopy={() => {
+              const content = file.encoding === 'base64' 
+                ? atob(file.content || '') 
+                : file.content || '';
+              navigator.clipboard.writeText(content);
+            }}
+            onShare={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: file.name,
+                  text: file.encoding === 'base64' 
+                    ? atob(file.content || '') 
+                    : file.content || '',
+                });
+              }
+            }}
+          />
+        ) : (
+          <Card>
+            <div className="border-b border-border px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <h2 className="text-lg font-semibold text-foreground">{file.name}</h2>
+                  <span className="text-sm text-muted-foreground">{formatFileSize(file.size)}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Link 
+                    href={`/repositories/${owner}/${repo}/edit/${ref}/${filePath}`}
+                    className="inline-flex"
+                  >
+                    <Button size="sm" variant="outline">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </Button>
+                  </Link>
+                  <Button size="sm" variant="outline" onClick={viewRaw}>
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
-                    Edit
+                    Raw
                   </Button>
-                </Link>
-                <Button size="sm" variant="outline" onClick={viewRaw}>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
-                  Raw
-                </Button>
-                <Button size="sm" variant="outline" onClick={downloadFile}>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Download
-                </Button>
+                  <Button size="sm" variant="outline" onClick={downloadFile}>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="p-6">
-            {file.encoding === 'base64' ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                </svg>
-                <h3 className="text-lg font-medium text-foreground mb-2">Binary file cannot be displayed</h3>
-                <p className="text-muted-foreground">Use the download button to save the file</p>
-              </div>
-            ) : file.name.endsWith('.md') ? (
-              <div className="prose dark:prose-invert max-w-none">
-                <ReactMarkdown>{file.content}</ReactMarkdown>
-              </div>
-            ) : (
-              <div className="relative">
-                <SyntaxHighlighter
-                  language={getLanguageFromFileName(file.name)}
-                  style={isDarkMode ? oneDark : oneLight}
-                  showLineNumbers={true}
-                  lineNumberStyle={{
-                    minWidth: '3em',
-                    paddingRight: '1em',
-                    textAlign: 'right',
-                    userSelect: 'none'
-                  }}
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: '0.375rem',
-                    fontSize: '0.875rem',
-                    lineHeight: '1.25rem'
-                  }}
-                  wrapLines={true}
-                  wrapLongLines={true}
-                >
-                  {file.content || ''}
-                </SyntaxHighlighter>
-              </div>
-            )}
-          </div>
-        </Card>
+            <div className="p-6">
+              {file.encoding === 'base64' ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Binary file cannot be displayed</h3>
+                  <p className="text-muted-foreground">Use the download button to save the file</p>
+                </div>
+              ) : file.name.endsWith('.md') ? (
+                <div className="prose dark:prose-invert max-w-none">
+                  <ReactMarkdown>{file.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="relative">
+                  <SyntaxHighlighter
+                    language={getLanguageFromFileName(file.name)}
+                    style={isDarkMode ? oneDark : oneLight}
+                    showLineNumbers={true}
+                    lineNumberStyle={{
+                      minWidth: '3em',
+                      paddingRight: '1em',
+                      textAlign: 'right',
+                      userSelect: 'none'
+                    }}
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      lineHeight: '1.25rem'
+                    }}
+                    wrapLines={true}
+                    wrapLongLines={true}
+                  >
+                    {file.content || ''}
+                  </SyntaxHighlighter>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );
