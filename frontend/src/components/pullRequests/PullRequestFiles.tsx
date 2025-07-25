@@ -136,11 +136,15 @@ export function PullRequestFiles({ files }: PullRequestFilesProps) {
               {/* File Header */}
               <div 
                 className="flex items-center justify-between p-4 bg-muted border-b cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => setExpandedFiles(prev => 
-                  prev.includes(file.filename) 
-                    ? prev.filter(f => f !== file.filename)
-                    : [...prev, file.filename]
-                )}
+                onClick={() => setExpandedFiles(prev => {
+                  const newSet = new Set(prev)
+                  if (newSet.has(file.filename)) {
+                    newSet.delete(file.filename)
+                  } else {
+                    newSet.add(file.filename)
+                  }
+                  return newSet
+                })}
               >
                 <span className="text-sm text-muted-foreground">
                   {file.filename}

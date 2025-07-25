@@ -329,8 +329,8 @@ export const useIssueStore = create<IssueStore>()(
           // Backend returns { comments: Comment[], total: number, page: number, per_page: number }
           // similar to issues format
           set({
-            comments: response.comments || response.data || [],
-            commentsTotal: response.total || 0,
+            comments: (response.data as Comment[]) || [],
+            commentsTotal: response.pagination?.total || 0,
             isLoadingComments: false,
           });
         } catch (error: unknown) {
@@ -349,7 +349,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ isCreating: false });
           
           // Backend returns the comment object directly, not wrapped in a response
-          const comment = response.data || response;
+          const comment = (response.data || response) as Comment;
           
           // Add the new comment to the list
           const state = get();
@@ -384,7 +384,7 @@ export const useIssueStore = create<IssueStore>()(
           set({ isUpdating: false });
           
           // Backend returns the comment object directly, not wrapped in a response
-          const comment = response.data || response;
+          const comment = (response.data || response) as Comment;
           
           // Update comment in list
           const state = get();
