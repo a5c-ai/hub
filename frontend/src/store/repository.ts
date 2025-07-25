@@ -137,8 +137,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const response = await repoApi.createRepository(data);
       console.log('Repository store: API response received:', response);
       
-      // Handle repository response from backend
-      if (response && response.success && response.data) {
+      // Handle direct repository response from backend
+      if (response && response.success && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
         const newRepo = response.data as Repository;
         console.log('Repository store: Created repository:', newRepo);
         set((state) => ({
