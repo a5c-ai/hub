@@ -30,7 +30,7 @@ type OrganizationPolicyService interface {
 }
 
 type OrganizationTemplateService interface {
-	CreateTemplate(ctx context.Context, orgName string, req CreateTemplateRequest) (*models.OrganizationTemplate, error)
+	CreateTemplate(ctx context.Context, orgName string, req CreateOrgTemplateRequest) (*models.OrganizationTemplate, error)
 	GetTemplate(ctx context.Context, orgName string, templateID uuid.UUID) (*models.OrganizationTemplate, error)
 	UpdateTemplate(ctx context.Context, orgName string, templateID uuid.UUID, req UpdateTemplateRequest) (*models.OrganizationTemplate, error)
 	DeleteTemplate(ctx context.Context, orgName string, templateID uuid.UUID) error
@@ -77,7 +77,7 @@ type UpdatePolicyRequest struct {
 	Enforcement   *string                `json:"enforcement,omitempty"`
 }
 
-type CreateTemplateRequest struct {
+type CreateOrgTemplateRequest struct {
 	TemplateType  models.TemplateType    `json:"template_type" binding:"required"`
 	Name          string                 `json:"name" binding:"required,min=1,max=255"`
 	Description   string                 `json:"description,omitempty"`
@@ -98,11 +98,11 @@ type UpdateOrganizationSettingsRequest struct {
 	CustomCSS      *string `json:"custom_css,omitempty"`
 
 	// Security Settings
-	RequireTwoFactor *bool     `json:"require_two_factor,omitempty"`
-	AllowedIPRanges  []string  `json:"allowed_ip_ranges,omitempty"`
-	SSOProvider      *string   `json:"sso_provider,omitempty"`
-	SSOConfiguration *string   `json:"sso_configuration,omitempty"`
-	SessionTimeout   *int      `json:"session_timeout,omitempty"`
+	RequireTwoFactor *bool    `json:"require_two_factor,omitempty"`
+	AllowedIPRanges  []string `json:"allowed_ip_ranges,omitempty"`
+	SSOProvider      *string  `json:"sso_provider,omitempty"`
+	SSOConfiguration *string  `json:"sso_configuration,omitempty"`
+	SessionTimeout   *int     `json:"session_timeout,omitempty"`
 
 	// Repository Settings
 	DefaultVisibility         *string `json:"default_visibility,omitempty"`
