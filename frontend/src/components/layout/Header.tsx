@@ -135,14 +135,14 @@ export function Header() {
 
           <Dropdown
             trigger={
-              <button className="flex items-center space-x-2" data-testid="user-menu">
+              <div className="flex items-center space-x-2" data-testid="user-menu">
                 <Avatar
                   src={user?.avatar_url}
                   name={user?.name || user?.username}
                   size="sm"
                   data-testid="user-avatar"
                 />
-              </button>
+              </div>
             }
             items={userMenuItems.map(item => ({ ...item, ...(item.label === 'Sign out' ? { 'data-testid': 'logout-button' } : {}) }))}
           />

@@ -1,6 +1,22 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+// Simple Slot implementation for asChild functionality
+const Slot = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }>(
+  ({ children, ...props }, ref) => {
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        ...props,
+        ...children.props,
+        className: cn(props.className, children.props.className),
+        ref,
+      } as any);
+    }
+    return null;
+  }
+);
+Slot.displayName = 'Slot';
+
 const buttonVariants = {
   variant: {
     default: 'bg-primary text-primary-foreground hover:bg-primary/90',
@@ -27,15 +43,29 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', loading, disabled, children, ...props }, ref) => {
+  ({ className, variant = 'default', size = 'default', asChild = false, loading, disabled, children, ...props }, ref) => {
+    const buttonClasses = cn(
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+      buttonVariants.variant[variant],
+      buttonVariants.size[size],
+      className
+    );
+
+    if (asChild) {
+      return (
+        <Slot
+          className={buttonClasses}
+          ref={ref as any}
+          {...props}
+        >
+          {children}
+        </Slot>
+      );
+    }
+
     return (
       <button
-        className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          buttonVariants.variant[variant],
-          buttonVariants.size[size],
-          className
-        )}
+        className={buttonClasses}
         ref={ref}
         disabled={disabled || loading}
         {...props}

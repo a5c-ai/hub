@@ -140,11 +140,19 @@ export default function RepositoriesPage() {
           </div>
           <div className="flex space-x-2">
             <Dropdown
-              trigger={<Button variant="outline">{typeFilter}</Button>}
+              trigger={
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-muted hover:text-muted-foreground h-10 px-4 py-2">
+                  {typeFilter}
+                </div>
+              }
               items={filterMenuItems}
             />
             <Dropdown
-              trigger={<Button variant="outline">{sortBy}</Button>}
+              trigger={
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-muted hover:text-muted-foreground h-10 px-4 py-2">
+                  {sortBy}
+                </div>
+              }
               items={sortMenuItems}
             />
           </div>

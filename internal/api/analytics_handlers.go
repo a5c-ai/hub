@@ -727,29 +727,6 @@ func (h *AnalyticsHandlers) GetOrganizationTeams(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
-	period := services.Period(c.DefaultQuery("period", "daily"))
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
-
-	var startDate, endDate *time.Time
-	if startDateStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
-			startDate = &parsed
-		}
-	}
-	if endDateStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
-			endDate = &parsed
-		}
-	}
-
-	filters := services.InsightFilters{
-		StartDate: startDate,
-		EndDate:   endDate,
-		Period:    period,
-	}
-
 	// Get team analytics - for now return placeholder data since team insights aren't in OrganizationInsights
 	var teamStats []gin.H
 	var teams []models.Team
@@ -763,7 +740,7 @@ func (h *AnalyticsHandlers) GetOrganizationTeams(c *gin.Context) {
 		// Get member count for each team
 		var memberCount int64
 		h.db.WithContext(c.Request.Context()).Model(&models.TeamMember{}).Where("team_id = ?", team.ID).Count(&memberCount)
-		
+
 		teamStats = append(teamStats, gin.H{
 			"id":           team.ID,
 			"name":         team.Name,
@@ -814,7 +791,7 @@ func (h *AnalyticsHandlers) GetOrganizationSecurity(c *gin.Context) {
 
 	// Get security events and metrics
 	query := h.db.WithContext(c.Request.Context()).Model(&models.AnalyticsEvent{}).Where("organization_id = ?", orgID)
-	
+
 	if startDate != nil {
 		query = query.Where("created_at >= ?", *startDate)
 	}
@@ -855,11 +832,11 @@ func (h *AnalyticsHandlers) GetOrganizationSecurity(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"security_score":       securityScore,
+		"security_score":        securityScore,
 		"total_security_events": securityEvents,
-		"access_denied_events": accessDeniedEvents,
-		"mfa_enabled_events":   mfaEvents,
-		"security_alerts":      securityAlerts,
+		"access_denied_events":  accessDeniedEvents,
+		"mfa_enabled_events":    mfaEvents,
+		"security_alerts":       securityAlerts,
 		"compliance_status": gin.H{
 			"two_factor_required": true,
 			"sso_enabled":         false,
@@ -956,10 +933,10 @@ func (h *AnalyticsHandlers) GetUsageAnalytics(c *gin.Context) {
 	h.db.WithContext(c.Request.Context()).Model(&models.PerformanceLog{}).Count(&totalPerfLogs)
 
 	usageData := gin.H{
-		"system_insights":      insights,
-		"total_events":         totalEvents,
+		"system_insights":        insights,
+		"total_events":           totalEvents,
 		"total_performance_logs": totalPerfLogs,
-		"period":               period,
+		"period":                 period,
 	}
 
 	c.JSON(http.StatusOK, usageData)
@@ -1051,9 +1028,9 @@ func (h *AnalyticsHandlers) GetCostAnalytics(c *gin.Context) {
 
 	err := query.Select(
 		"COALESCE(SUM(storage_used_mb), 0) as total_storage_mb, " +
-		"COALESCE(SUM(bandwidth_used_mb), 0) as total_bandwidth_mb, " +
-		"COALESCE(SUM(compute_time_minutes), 0) as total_compute_minutes, " +
-		"COALESCE(SUM(estimated_cost), 0) as estimated_cost",
+			"COALESCE(SUM(bandwidth_used_mb), 0) as total_bandwidth_mb, " +
+			"COALESCE(SUM(compute_time_minutes), 0) as total_compute_minutes, " +
+			"COALESCE(SUM(estimated_cost), 0) as estimated_cost",
 	).Scan(&costSummary).Error
 
 	if err != nil {
@@ -1077,10 +1054,10 @@ func (h *AnalyticsHandlers) GetCostAnalytics(c *gin.Context) {
 			"percentage": 25.0,
 		},
 		{
-			"category":   "Compute",
+			"category":      "Compute",
 			"usage_minutes": costSummary.TotalComputeMin,
-			"cost":       float64(costSummary.TotalComputeMin) * 0.01, // $0.01 per minute
-			"percentage": 40.0,
+			"cost":          float64(costSummary.TotalComputeMin) * 0.01, // $0.01 per minute
+			"percentage":    40.0,
 		},
 	}
 
@@ -1231,26 +1208,25 @@ func (h *AnalyticsHandlers) isAdmin(c *gin.Context) bool {
 		return false
 	}
 
-	// Check if user is admin (assuming there's a role field or admin table)
+	// Check if user is admin
 	var user models.User
 	if err := h.db.WithContext(c.Request.Context()).Where("id = ?", uid).First(&user).Error; err != nil {
 		return false
 	}
 
-	// For now, assume admin status is stored in a role field or similar
-	// This would need to be adapted based on the actual user model
-	return user.Role == "admin" || user.IsAdmin
+	// Check admin status using the IsAdmin field
+	return user.IsAdmin
 }
 
 // getRepositoryID resolves repository ID from owner and repository name
 func (h *AnalyticsHandlers) getRepositoryID(ctx context.Context, owner, name string) (uuid.UUID, error) {
 	// This needs to integrate with repository service
 	// For now, we'll do a direct database lookup
-	
+
 	// First, resolve the owner name to owner ID and type
 	var ownerID uuid.UUID
 	var ownerType string
-	
+
 	// Try to find a user with this username
 	var user struct {
 		ID uuid.UUID `json:"id"`
@@ -1283,17 +1259,17 @@ func (h *AnalyticsHandlers) getRepositoryID(ctx context.Context, owner, name str
 	var repo struct {
 		ID uuid.UUID `json:"id"`
 	}
-	
+
 	query := h.db.WithContext(ctx).
 		Model(&models.Repository{}).Select("id").
 		Where("name = ? AND owner_id = ?", name, ownerID)
-		
+
 	if ownerType == "user" {
 		query = query.Where("owner_type = ?", "user")
 	} else {
 		query = query.Where("owner_type = ?", "organization")
 	}
-	
+
 	err = query.First(&repo).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -1332,7 +1308,7 @@ func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uui
 
 	// Get user's commits across all repositories
 	var commitStats struct {
-		TotalCommits int64 `json:"total_commits"`
+		TotalCommits   int64 `json:"total_commits"`
 		TotalAdditions int64 `json:"total_additions"`
 		TotalDeletions int64 `json:"total_deletions"`
 	}
@@ -1383,13 +1359,13 @@ func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uui
 	}
 
 	return gin.H{
-		"total_commits":         commitStats.TotalCommits,
-		"total_additions":       commitStats.TotalAdditions,
-		"total_deletions":       commitStats.TotalDeletions,
-		"total_issues":          issueCount,
-		"total_pull_requests":   prCount,
+		"total_commits":            commitStats.TotalCommits,
+		"total_additions":          commitStats.TotalAdditions,
+		"total_deletions":          commitStats.TotalDeletions,
+		"total_issues":             issueCount,
+		"total_pull_requests":      prCount,
 		"repositories_contributed": repoCount,
-		"monthly_contributions": monthlyContributions,
-		"last_updated":         time.Now().Format(time.RFC3339),
+		"monthly_contributions":    monthlyContributions,
+		"last_updated":             time.Now().Format(time.RFC3339),
 	}, nil
 }

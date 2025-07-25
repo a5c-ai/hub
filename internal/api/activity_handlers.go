@@ -20,8 +20,8 @@ import (
 type ActivityHandlers struct {
 	repositoryService services.RepositoryService
 	activityService   services.ActivityService
-	db               *gorm.DB
-	logger           *logrus.Logger
+	db                *gorm.DB
+	logger            *logrus.Logger
 }
 
 // NewActivityHandlers creates a new activity handlers instance
@@ -29,8 +29,8 @@ func NewActivityHandlers(repositoryService services.RepositoryService, activityS
 	return &ActivityHandlers{
 		repositoryService: repositoryService,
 		activityService:   activityService,
-		db:               db,
-		logger:           logger,
+		db:                db,
+		logger:            logger,
 	}
 }
 
@@ -94,10 +94,10 @@ func (h *ActivityHandlers) GetRepositoryActivity(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"activities": activities,
 		"pagination": gin.H{
-			"page":      page,
-			"per_page":  perPage,
-			"total":     totalCount,
-			"has_more":  hasMore,
+			"page":     page,
+			"per_page": perPage,
+			"total":    totalCount,
+			"has_more": hasMore,
 		},
 		"filters": gin.H{
 			"since":         since,
@@ -118,7 +118,7 @@ func (h *ActivityHandlers) GetRepositoryContributors(c *gin.Context) {
 	}
 
 	// Get repository first
-	_, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
 	if err != nil {
 		if err.Error() == "repository not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
@@ -184,19 +184,19 @@ func (h *ActivityHandlers) WatchRepository(c *gin.Context) {
 	// For now, just return success
 	// In a full implementation, this would create/update a subscription record
 	h.logger.WithFields(logrus.Fields{
-		"user_id":     userID,
-		"repo_id":     repo.ID,
-		"subscribed":  req.Subscribed,
-		"ignored":     req.Ignored,
-		"reason":      req.Reason,
+		"user_id":    userID,
+		"repo_id":    repo.ID,
+		"subscribed": req.Subscribed,
+		"ignored":    req.Ignored,
+		"reason":     req.Reason,
 	}).Info("Repository subscription updated")
 
 	c.JSON(http.StatusOK, gin.H{
-		"subscribed":  req.Subscribed,
-		"ignored":     req.Ignored,
-		"reason":      req.Reason,
-		"created_at":  "2024-01-15T10:30:00Z",
-		"url":         "/api/v1/repositories/" + owner + "/" + repoName + "/subscription",
+		"subscribed":     req.Subscribed,
+		"ignored":        req.Ignored,
+		"reason":         req.Reason,
+		"created_at":     "2024-01-15T10:30:00Z",
+		"url":            "/api/v1/repositories/" + owner + "/" + repoName + "/subscription",
 		"repository_url": "/api/v1/repositories/" + owner + "/" + repoName,
 	})
 }
@@ -248,14 +248,20 @@ func (h *ActivityHandlers) GetRepositorySubscription(c *gin.Context) {
 		return
 	}
 
-	_, exists := c.Get("user_id")
+	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
+	userID, err := parseUserID(userIDInterface)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	// Get repository first
-	_, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
 	if err != nil {
 		if err.Error() == "repository not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
@@ -338,10 +344,15 @@ func (h *ActivityHandlers) getRepositoryActivities(ctx context.Context, repoID u
 
 		// Add repository information
 		if event.Repository != nil {
+			// Construct full_name from owner and repo name
+			fullName := event.Repository.Name // Default fallback
+			if event.Repository.Owner != nil {
+				fullName = event.Repository.Owner.Username + "/" + event.Repository.Name
+			}
 			activity["repository"] = gin.H{
 				"id":        event.Repository.ID,
 				"name":      event.Repository.Name,
-				"full_name": event.Repository.FullName,
+				"full_name": fullName,
 			}
 		}
 
@@ -491,9 +502,9 @@ func (h *ActivityHandlers) buildActivityPayload(event models.AnalyticsEvent) gin
 	case models.EventRepositoryIssue:
 		payload["action"] = "opened" // Could be parsed from metadata
 		payload["issue"] = gin.H{
-			"id":     event.TargetID,
-			"title":  "Issue title", // Would come from metadata
-			"state":  "open",
+			"id":    event.TargetID,
+			"title": "Issue title", // Would come from metadata
+			"state": "open",
 		}
 	case models.EventRepositoryPullRequest:
 		payload["action"] = "opened"

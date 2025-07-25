@@ -202,7 +202,7 @@ export default function NotificationsPage() {
     );
   }
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => n.unread).length : 0;
 
   return (
     <AppLayout>
@@ -331,6 +331,7 @@ export default function NotificationsPage() {
                       checked={selectedNotifications.includes(notification.id)}
                       onChange={() => toggleNotificationSelection(notification.id)}
                       className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                      aria-label={`Select notification: ${notification.subject.title}`}
                     />
                     
                     <div className="flex items-start space-x-3 flex-1">

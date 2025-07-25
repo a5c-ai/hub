@@ -82,7 +82,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 	// Initialize secret service with encryption key from config
 	secretService := services.NewSecretService(database.DB, logger, cfg.Security.EncryptionKey)
-	
+
 	// Initialize artifact storage backend
 	storageConfig := storage.Config{
 		Backend: cfg.Storage.Artifacts.Backend,
@@ -104,15 +104,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			BasePath: cfg.Storage.Artifacts.BasePath,
 		},
 	}
-	
+
 	storageBackend, err := storage.NewBackend(storageConfig)
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to initialize artifact storage backend")
 	}
-	
+
 	// Initialize artifact service
 	artifactService := services.NewArtifactService(database.DB, logger, storageBackend, cfg.Storage.Artifacts.MaxSizeMB, cfg.Storage.Artifacts.RetentionDays)
-	
+
 	// Set job executor and secret service on workflow service to avoid circular dependencies
 	// Set job executor on workflow service to avoid circular dependencies
 	workflowService.SetJobExecutor(jobExecutorService)
@@ -131,7 +131,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
-	hooksHandlers := NewHooksHandlers(repositoryService, logger)
+	// Initialize webhook and deploy key services for hooks handlers
+	webhookDeliveryService := services.NewWebhookDeliveryService(database.DB, logger)
+	deployKeyService := services.NewDeployKeyService(database.DB, logger)
+	hooksHandlers := NewHooksHandlers(repositoryService, webhookDeliveryService, deployKeyService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, branchService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
@@ -462,14 +465,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 				// Actions job operations (require authentication)
 				repos.GET("/:owner/:repo/actions/jobs/:job_id/logs", actionsHandlers.GetJobLogs)
-				
+
 				// Actions artifact operations (require authentication)
 				repos.GET("/:owner/:repo/actions/runs/:run_id/artifacts", actionsHandlers.ListArtifacts)
 				repos.POST("/:owner/:repo/actions/runs/:run_id/artifacts", actionsHandlers.UploadArtifact)
 				repos.GET("/:owner/:repo/actions/runs/:run_id/artifacts/:artifact_id", actionsHandlers.DownloadArtifact)
 				repos.GET("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.GetArtifact)
 				repos.DELETE("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.DeleteArtifact)
-				
+
 				// Repository analytics endpoints (require authentication)
 				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)
 				repos.GET("/:owner/:repo/analytics/code-stats", analyticsHandlers.GetRepositoryCodeStats)
