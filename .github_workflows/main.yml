@@ -98,15 +98,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Setup Go with better caching
+      # Setup Go with better caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
+          check-latest: true  # Ensure latest available version is used
           
       - name: Setup Node.js with better caching
         uses: actions/setup-node@v4
@@ -171,15 +172,16 @@ jobs:
         with:
           name: build-artifacts
           
-      # Setup Go with caching
+      # Setup Go with caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
+          check-latest: true  # Ensure latest available version is used
           
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
@@ -226,15 +228,16 @@ jobs:
         with:
           name: build-artifacts
 
-      # Setup Go with caching
+      # Setup Go with caching and proper version specification
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
+          check-latest: true  # Ensure latest available version is used
 
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
