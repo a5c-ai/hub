@@ -203,7 +203,7 @@ export default function ActionsPage() {
                 </div>
                 
                 <p className="text-sm text-muted-foreground mt-1">
-                  {workflow.description || 'No description available'}
+                  {workflow.path}
                 </p>
               </Card>
             ))}

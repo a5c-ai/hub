@@ -306,10 +306,10 @@ export default function BranchProtectionPage() {
 
         {/* Protection Configuration Modal */}
         <Modal 
-          isOpen={showProtectionModal} 
+          open={showProtectionModal} 
           onClose={() => setShowProtectionModal(false)}
           title={`Branch Protection: ${selectedBranch}`}
-          size="large"
+          size="lg"
         >
           <div className="space-y-6">
             {/* Status Checks */}

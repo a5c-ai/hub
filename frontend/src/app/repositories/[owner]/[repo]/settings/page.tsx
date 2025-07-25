@@ -23,7 +23,8 @@ export default function RepositorySettingsPage() {
     name: '',
     description: '',
     private: false,
-    default_branch: 'main'
+    default_branch: 'main',
+    actions_enabled: true
   });
 
   useEffect(() => {
@@ -36,7 +37,8 @@ export default function RepositorySettingsPage() {
           name: response.data.name,
           description: response.data.description || '',
           private: response.data.private,
-          default_branch: response.data.default_branch
+          default_branch: response.data.default_branch,
+          actions_enabled: response.data.actions_enabled ?? true
         });
       } catch (err) {
         console.error('Failed to fetch repository', err);
