@@ -261,6 +261,7 @@ export default function ActivityPage() {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setFilter('all')}
+              data-testid="filter-all"
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'all'
                   ? 'border-primary text-primary'
@@ -275,6 +276,7 @@ export default function ActivityPage() {
             
             <button
               onClick={() => setFilter('own')}
+              data-testid="filter-own"
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'own'
                   ? 'border-primary text-primary'
@@ -289,6 +291,7 @@ export default function ActivityPage() {
             
             <button
               onClick={() => setFilter('following')}
+              data-testid="filter-following"
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'following'
                   ? 'border-primary text-primary'
@@ -307,7 +310,7 @@ export default function ActivityPage() {
         {activities.length > 0 ? (
           <div className="space-y-4">
             {activities.map((activity) => (
-              <Card key={activity.id}>
+              <Card key={activity.id} data-testid="activity-item">
                 <div className="p-6">
                   <div className="flex items-start space-x-4">
                     <Avatar

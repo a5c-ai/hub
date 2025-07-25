@@ -17,6 +17,9 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`registration.spec.ts`** - User registration and validation tests
 - **`repository.spec.ts`** - Repository management tests
 - **`issues.spec.ts`** - Issue management and workflow tests
+- **`activity-feed.spec.ts`** - Activity feed and timeline tests (24 tests)
+- **`notifications.spec.ts`** - Notification center and management tests (40 tests)
+- **`notification-preferences.spec.ts`** - Notification settings and preferences tests (34 tests)
 - **`helpers/test-utils.ts`** - Shared utilities and helper functions
 
 ### Test Coverage
@@ -45,6 +48,57 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - User menu interactions
 - Keyboard navigation
 - Loading states
+
+#### Activity Feed Tests (24 tests)
+- Display global activity feed with different event types (push, PR, issue, fork, star, follow)
+- Filter activity by type (all, own, following)
+- Activity timeline and event display
+- Personal activity timeline and history
+- Following users and organizations activity
+- Activity feed pagination and infinite scroll
+- Detailed push events with commit information
+- Repository creation activities
+- Follow activities
+- Empty state handling
+- Error handling and recovery
+- Mobile responsiveness
+
+#### Notifications Center Tests (40 tests)
+- Notification inbox with unread indicators
+- Notification categorization (mentions, issues, PRs, security)
+- Mark notifications as read/unread (individual and bulk)
+- Delete notifications
+- Mark all notifications as read
+- Bulk notification actions
+- Issue and pull request notifications
+- Comment and mention notifications
+- Security and vulnerability alerts
+- Repository invitation notifications
+- Notification filtering and search
+- Empty states for different filters
+- Real-time notification updates via WebSocket
+- Notification badge updates
+- Mobile-friendly notification management
+- Responsive notification layout
+- Error handling and offline scenarios
+
+#### Notification Preferences Tests (34 tests)
+- Email notification settings management
+- Notification delivery timing configuration
+- Thread subscription management
+- Browser notification permissions
+- Desktop notification settings
+- Automatic notification cleanup
+- Manual notification cleanup
+- Repository watching and notification settings
+- Organization notification preferences
+- Import/export notification settings
+- Mobile-friendly settings interface
+- Mobile swipe gestures for navigation
+- API error handling
+- Notification preference validation
+- Accessibility features
+- Performance optimization
 
 ## Configuration
 
@@ -161,6 +215,32 @@ Components include `data-testid` attributes for reliable element selection:
 - `mobile-menu-button` - Mobile hamburger menu
 - `user-avatar` - User avatar image
 - `logout-button` - Logout button
+
+### Activity Feed Elements
+- `filter-all` - All activity filter button
+- `filter-own` - Your activity filter button
+- `filter-following` - Following activity filter button
+- `activity-item` - Individual activity items
+
+### Notification Elements
+- `filter-unread` - Unread notifications filter
+- `filter-all` - All notifications filter
+- `filter-participating` - Participating notifications filter
+- `notification-item` - Individual notification items
+- `mark-as-read-{id}` - Mark specific notification as read
+- `delete-notification-{id}` - Delete specific notification
+- `mark-all-as-read` - Mark all notifications as read
+- `mark-selected-as-read` - Mark selected notifications as read
+- `select-all-notifications` - Select all notifications checkbox
+- `notification-icon-{type}` - Notification type icons
+
+### Settings Elements
+- `settings-tab-{id}` - Settings tab navigation buttons
+- `settings-container` - Main settings container
+- `email-issues-prs` - Email notifications for issues/PRs
+- `email-repository-updates` - Email notifications for repository updates
+- `email-security-alerts` - Email notifications for security alerts
+- `enable-browser-notifications` - Enable browser notifications button
 
 ## CI/CD Integration
 
