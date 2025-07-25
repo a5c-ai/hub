@@ -147,10 +147,10 @@ export default function WorkflowRunDetailPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="grid grid-cols-4 gap-6">
-            <div className="h-64 bg-gray-200 rounded"></div>
-            <div className="col-span-3 h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-muted rounded"></div>
+            <div className="col-span-3 h-64 bg-muted rounded"></div>
           </div>
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function WorkflowRunDetailPage() {
             <Card
               key={job.id}
               className={`p-3 cursor-pointer transition-colors ${
-                selectedJob === job.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                selectedJob === job.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-muted'
               }`}
               onClick={() => {
                 setSelectedJob(job.id);

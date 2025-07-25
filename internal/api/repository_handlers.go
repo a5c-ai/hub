@@ -1148,3 +1148,215 @@ func (h *RepositoryHandlers) GetMergeBase(c *gin.Context) {
 
 	c.JSON(http.StatusOK, comparison)
 }
+
+// StarRepository handles PUT /api/v1/repositories/{owner}/{repo}/star
+func (h *RepositoryHandlers) StarRepository(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get authenticated user
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Create star record
+	star := models.Star{
+		UserID:       userID.(uuid.UUID),
+		RepositoryID: repo.ID,
+	}
+
+	if err := h.db.Create(&star).Error; err != nil {
+		// Check if it's a duplicate key error (already starred)
+		if strings.Contains(err.Error(), "unique_user_repository_star") || strings.Contains(err.Error(), "duplicate key") {
+			c.JSON(http.StatusOK, gin.H{"message": "Repository already starred"})
+			return
+		}
+		h.logger.WithError(err).Error("Failed to star repository")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to star repository"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Repository starred successfully"})
+}
+
+// UnstarRepository handles DELETE /api/v1/repositories/{owner}/{repo}/star
+func (h *RepositoryHandlers) UnstarRepository(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get authenticated user
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Delete star record
+	result := h.db.Where("user_id = ? AND repository_id = ?", userID.(uuid.UUID), repo.ID).Delete(&models.Star{})
+	if result.Error != nil {
+		h.logger.WithError(result.Error).Error("Failed to unstar repository")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unstar repository"})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not starred by user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Repository unstarred successfully"})
+}
+
+// CheckStarred handles GET /api/v1/repositories/{owner}/{repo}/star
+func (h *RepositoryHandlers) CheckStarred(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get authenticated user
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Check if user has starred the repository
+	var count int64
+	if err := h.db.Model(&models.Star{}).Where("user_id = ? AND repository_id = ?", userID.(uuid.UUID), repo.ID).Count(&count).Error; err != nil {
+		h.logger.WithError(err).Error("Failed to check star status")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check star status"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"starred": count > 0})
+}
+
+// ForkRepository handles POST /api/v1/repositories/{owner}/{repo}/fork
+func (h *RepositoryHandlers) ForkRepository(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+
+	// Get authenticated user
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Get repository
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+
+	// Parse request body for optional fork parameters
+	var forkReq struct {
+		Name         string `json:"name,omitempty"`
+		Organization string `json:"organization,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&forkReq); err != nil {
+		// Use default values if JSON parsing fails
+	}
+
+	// Use original repository name if no new name provided
+	if forkReq.Name == "" {
+		forkReq.Name = repo.Name
+	}
+
+	// For now, implement a basic fork that creates a new repository record
+	// pointing to the original as parent (actual git forking would need git service integration)
+	fork := models.Repository{
+		OwnerID:       userID.(uuid.UUID),
+		OwnerType:     models.OwnerTypeUser,
+		Name:          forkReq.Name,
+		Description:   repo.Description,
+		DefaultBranch: repo.DefaultBranch,
+		Visibility:    repo.Visibility,
+		IsFork:        true,
+		ParentID:      &repo.ID,
+		HasIssues:     repo.HasIssues,
+		HasProjects:   repo.HasProjects,
+		HasWiki:       repo.HasWiki,
+		HasDownloads:  repo.HasDownloads,
+	}
+
+	if err := h.db.Create(&fork).Error; err != nil {
+		h.logger.WithError(err).Error("Failed to create fork")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create fork"})
+		return
+	}
+
+	// Update forks count on parent repository
+	if err := h.db.Model(&models.Repository{}).Where("id = ?", repo.ID).Update("forks_count", gorm.Expr("forks_count + 1")).Error; err != nil {
+		h.logger.WithError(err).Error("Failed to update forks count")
+		// Don't fail the request for this
+	}
+
+	// Return the created fork
+	response, err := h.convertToRepositoryResponse(&fork)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to convert fork to response")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to format fork response"})
+		return
+	}
+	c.JSON(http.StatusCreated, response)
+}

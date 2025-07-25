@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import RepositoryBrowser from '@/components/repository/RepositoryBrowser';
-import api from '@/lib/api';
+import api, { repoApi } from '@/lib/api';
 import { Repository } from '@/types';
 
 export default function RepositoryDetailsPage() {
@@ -19,6 +19,11 @@ export default function RepositoryDetailsPage() {
   const [repository, setRepository] = useState<Repository | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isStarred, setIsStarred] = useState(false);
+  const [starCount, setStarCount] = useState(0);
+  const [forkCount, setForkCount] = useState(0);
+  const [starLoading, setStarLoading] = useState(false);
+  const [forkLoading, setForkLoading] = useState(false);
 
   useEffect(() => {
     const fetchRepository = async () => {
@@ -26,6 +31,17 @@ export default function RepositoryDetailsPage() {
         setLoading(true);
         const response = await api.get(`/repositories/${owner}/${repo}`);
         setRepository(response.data);
+        setStarCount(response.data.stargazers_count || 0);
+        setForkCount(response.data.forks_count || 0);
+        
+        // Check if user has starred this repository
+        try {
+          const starResponse = await repoApi.checkStarred(owner, repo);
+          setIsStarred((starResponse.data as { starred: boolean }).starred);
+        } catch (starErr) {
+          // If user is not authenticated, star check will fail - that's okay
+          console.debug('Could not check star status:', starErr);
+        }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error && 'response' in err && 
           typeof err.response === 'object' && err.response && 
@@ -43,6 +59,44 @@ export default function RepositoryDetailsPage() {
 
     fetchRepository();
   }, [owner, repo]);
+
+  const handleStarToggle = async () => {
+    if (starLoading) return;
+    
+    try {
+      setStarLoading(true);
+      if (isStarred) {
+        await repoApi.unstarRepository(owner, repo);
+        setIsStarred(false);
+        setStarCount(prev => Math.max(0, prev - 1));
+      } else {
+        await repoApi.starRepository(owner, repo);
+        setIsStarred(true);
+        setStarCount(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error('Failed to toggle star:', err);
+      // You might want to show a toast notification here
+    } finally {
+      setStarLoading(false);
+    }
+  };
+
+  const handleFork = async () => {
+    if (forkLoading) return;
+    
+    try {
+      setForkLoading(true);
+      await repoApi.forkRepository(owner, repo);
+      setForkCount(prev => prev + 1);
+      // You might want to show a success message or redirect to the forked repository
+    } catch (err) {
+      console.error('Failed to fork repository:', err);
+      // You might want to show an error message here
+    } finally {
+      setForkLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -144,23 +198,28 @@ export default function RepositoryDetailsPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Button 
+              variant={isStarred ? "default" : "outline"} 
+              size="sm" 
+              onClick={handleStarToggle} 
+              disabled={starLoading}
+            >
+              <svg className="w-4 h-4 mr-2" fill={isStarred ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
-              Star
+              {starLoading ? 'Loading...' : isStarred ? 'Starred' : 'Star'}
               <Badge variant="outline" className="ml-2">
-                {repository.stargazers_count}
+                {starCount}
               </Badge>
             </Button>
             
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleFork} disabled={forkLoading}>
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
               </svg>
-              Fork
+              {forkLoading ? 'Forking...' : 'Fork'}
               <Badge variant="outline" className="ml-2">
-                {repository.forks_count}
+                {forkCount}
               </Badge>
             </Button>
 
@@ -227,32 +286,6 @@ export default function RepositoryDetailsPage() {
             {/* Repository Content */}
             <Card>
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <select 
-                      className="text-sm border border-input rounded-md px-3 py-1 bg-background text-foreground"
-                      title="Select branch"
-                      aria-label="Select branch"
-                    >
-                      <option>{repository.default_branch}</option>
-                    </select>
-                    <span className="text-sm text-muted-foreground">
-                      Latest commit on {new Date(repository.pushed_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="outline">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Code
-                    </Button>
-                    <Button size="sm">
-                      Clone
-                    </Button>
-                  </div>
-                </div>
-                
                 <RepositoryBrowser
                   owner={owner}
                   repo={repo}

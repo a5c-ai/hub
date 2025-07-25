@@ -326,6 +326,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.PUT("/:owner/:repo/subscription", activityHandlers.WatchRepository)
 				repos.DELETE("/:owner/:repo/subscription", activityHandlers.UnwatchRepository)
 
+				// Repository starring
+				repos.GET("/:owner/:repo/star", repoHandlers.CheckStarred)
+				repos.PUT("/:owner/:repo/star", repoHandlers.StarRepository)
+				repos.DELETE("/:owner/:repo/star", repoHandlers.UnstarRepository)
+
+				// Repository forking
+				repos.POST("/:owner/:repo/fork", repoHandlers.ForkRepository)
+
 				// Repository-specific search
 				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
 

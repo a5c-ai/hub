@@ -379,3 +379,11 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
 }
+
+// Backend API Response Types
+export interface IssuesListResponse {
+  issues: Issue[];
+  total: number;
+  page: number;
+  per_page: number;
+}

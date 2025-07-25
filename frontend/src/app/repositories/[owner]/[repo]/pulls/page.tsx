@@ -34,14 +34,14 @@ export default function PullRequestsPage() {
             {owner}/{repo}
           </Link>
           <span className="text-gray-400">/</span>
-          <span className="text-gray-900 font-semibold">Pull requests</span>
+          <span className="text-foreground font-semibold">Pull requests</span>
         </nav>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pull requests</h1>
-            <p className="text-gray-600 mt-2 text-lg">Propose changes to the repository</p>
+                    <h1 className="text-3xl font-bold text-foreground">Pull requests</h1>
+        <p className="text-muted-foreground mt-2 text-lg">Propose changes to the repository</p>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -65,8 +65,8 @@ export default function PullRequestsPage() {
                   onClick={() => setActiveTab('open')}
                   className={`flex items-center text-sm font-medium pb-3 transition-colors ${
                     activeTab === 'open'
-                      ? 'text-gray-900 border-b-2 border-blue-500'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-foreground border-b-2 border-blue-500'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,8 +80,8 @@ export default function PullRequestsPage() {
                   onClick={() => setActiveTab('closed')}
                   className={`flex items-center text-sm font-medium pb-3 transition-colors ${
                     activeTab === 'closed'
-                      ? 'text-gray-900 border-b-2 border-blue-500'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-foreground border-b-2 border-blue-500'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +96,7 @@ export default function PullRequestsPage() {
                 {/* Filters */}
                 <div className="flex items-center space-x-3">
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Filter by author"
                   >
                     <option value="">Author</option>
@@ -104,7 +104,7 @@ export default function PullRequestsPage() {
                   </select>
                   
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Filter by label"
                   >
                     <option value="">Label</option>
@@ -113,28 +113,28 @@ export default function PullRequestsPage() {
                   </select>
                   
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Filter by projects"
                   >
                     <option value="">Projects</option>
                   </select>
                   
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Filter by milestones"
                   >
                     <option value="">Milestones</option>
                   </select>
                   
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Filter by assignee"
                   >
                     <option value="">Assignee</option>
                   </select>
                   
                   <select 
-                    className="text-sm bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="text-sm bg-muted border border-input rounded-md px-3 py-2 text-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                     title="Sort pull requests"
                   >
                     <option value="">Sort</option>
@@ -158,7 +158,7 @@ export default function PullRequestsPage() {
                 <input
                   type="text"
                   placeholder="Search pull requests..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full pl-10 pr-4 py-3 border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-ring text-foreground bg-background"
                 />
               </div>
             </div>
@@ -166,9 +166,9 @@ export default function PullRequestsPage() {
             {/* Pull Request List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Pull Requests <span className="text-gray-500">(0 total)</span>
-                </h3>
+                          <h3 className="text-lg font-semibold text-foreground">
+            Pull Requests <span className="text-muted-foreground">(0 total)</span>
+          </h3>
               </div>
               
               <PullRequestList 

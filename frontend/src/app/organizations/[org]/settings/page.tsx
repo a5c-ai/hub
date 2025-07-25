@@ -121,7 +121,7 @@ export default function OrganizationSettingsPage() {
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab.id
                       ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   <span className="mr-3">{tab.icon}</span>
@@ -252,10 +252,10 @@ export default function OrganizationSettingsPage() {
                     </div>
                     
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Member Permissions</h4>
-                          <p className="text-sm text-gray-600">Control what organization members can do</p>
+                          <h4 className="font-medium text-foreground">Member Permissions</h4>
+                          <p className="text-sm text-muted-foreground">Control what organization members can do</p>
                         </div>
                         <Button size="sm" variant="outline">Configure</Button>
                       </div>
@@ -306,26 +306,26 @@ export default function OrganizationSettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
-                          <p className="text-sm text-gray-600">Require 2FA for all organization members</p>
+                          <h4 className="font-medium text-foreground">Two-Factor Authentication</h4>
+                          <p className="text-sm text-muted-foreground">Require 2FA for all organization members</p>
                         </div>
                         <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                       </div>
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">IP Allow List</h4>
-                          <p className="text-sm text-gray-600">Restrict access to specific IP addresses</p>
+                          <h4 className="font-medium text-foreground">IP Allow List</h4>
+                          <p className="text-sm text-muted-foreground">Restrict access to specific IP addresses</p>
                         </div>
                         <Button size="sm" variant="outline">Configure</Button>
                       </div>
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Audit Log</h4>
-                          <p className="text-sm text-gray-600">Track organization activity and security events</p>
+                          <h4 className="font-medium text-foreground">Security Policies</h4>
+                          <p className="text-sm text-muted-foreground">Enforce security policies across the organization</p>
                         </div>
                         <Button size="sm" variant="outline">View Logs</Button>
                       </div>
@@ -341,7 +341,7 @@ export default function OrganizationSettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Information</h3>
                     <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-gray-900">Current Plan</h4>
                           <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">

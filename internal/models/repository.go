@@ -72,6 +72,7 @@ type Repository struct {
 	Collaborators         []RepositoryCollaborator `json:"collaborators,omitempty" gorm:"foreignKey:RepositoryID"`
 	Branches              []Branch                 `json:"branches,omitempty" gorm:"foreignKey:RepositoryID"`
 	BranchProtectionRules []BranchProtectionRule   `json:"branch_protection_rules,omitempty" gorm:"foreignKey:RepositoryID"`
+	Stars                 []Star                   `json:"stars,omitempty" gorm:"foreignKey:RepositoryID"`
 	Releases              []Release                `json:"releases,omitempty" gorm:"foreignKey:RepositoryID"`
 	Issues                []Issue                  `json:"issues,omitempty" gorm:"foreignKey:RepositoryID"`
 }
@@ -107,6 +108,25 @@ type RepositoryCollaborator struct {
 
 func (rc *RepositoryCollaborator) TableName() string {
 	return "repository_collaborators"
+}
+
+// Star represents a user starring a repository
+type Star struct {
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
+
+	// Relationships
+	User       User       `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Repository Repository `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
+}
+
+func (s *Star) TableName() string {
+	return "stars"
 }
 
 type Branch struct {

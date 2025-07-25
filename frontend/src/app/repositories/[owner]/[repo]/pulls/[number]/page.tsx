@@ -45,15 +45,15 @@ export default function PullRequestDetailPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+            <div className="h-4 bg-muted rounded w-1/4 mb-6"></div>
+            <div className="h-8 bg-muted rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-muted rounded w-1/2 mb-8"></div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <div className="h-96 bg-gray-200 rounded"></div>
+                <div className="h-96 bg-muted rounded"></div>
               </div>
               <div>
-                <div className="h-64 bg-gray-200 rounded"></div>
+                <div className="h-64 bg-muted rounded"></div>
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function PullRequestDetailPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="text-gray-500 text-lg">Pull request not found</div>
+            <div className="text-muted-foreground text-lg">Pull request not found</div>
           </div>
         </div>
       </AppLayout>
@@ -121,26 +121,26 @@ export default function PullRequestDetailPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href="/repositories" className="hover:text-gray-700 transition-colors">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link href="/repositories" className="hover:text-foreground transition-colors">
             Repositories
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}/pulls`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Pull requests
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">#{number}</span>
+          <span className="text-foreground font-medium">#{number}</span>
         </nav>
 
         {/* Header */}
@@ -153,11 +153,11 @@ export default function PullRequestDetailPage() {
               </span>
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {pullRequest.issue.title}
-                <span className="text-gray-500 font-normal ml-2">#{pullRequest.issue.number}</span>
-              </h1>
-              <div className="flex items-center text-sm text-gray-600 space-x-4">
+                          <h1 className="text-2xl font-bold text-foreground mb-2">
+              {pullRequest.issue.title}
+              <span className="text-muted-foreground font-normal ml-2">#{pullRequest.issue.number}</span>
+            </h1>
+            <div className="flex items-center text-sm text-muted-foreground space-x-4">
                 <div className="flex items-center">
                   <Avatar
                     src={pullRequest.issue.user?.avatar_url}
@@ -239,10 +239,10 @@ export default function PullRequestDetailPage() {
             {/* Reviewers */}
             <Card>
               <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Reviewers</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Reviewers</h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">No reviewers yet</span>
+                    <span className="text-sm text-muted-foreground">No reviewers yet</span>
                     <Button size="sm" variant="outline">
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -257,7 +257,7 @@ export default function PullRequestDetailPage() {
             {/* Assignees */}
             <Card>
               <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Assignees</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Assignees</h3>
                 <div className="space-y-2">
                   {pullRequest.issue.assignees && pullRequest.issue.assignees.length > 0 ? (
                     pullRequest.issue.assignees.map((assignee) => (
@@ -268,12 +268,12 @@ export default function PullRequestDetailPage() {
                           size="sm"
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-900">{assignee.username}</span>
+                        <span className="text-sm text-foreground">{assignee.username}</span>
                       </div>
                     ))
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">No one assigned</span>
+                      <span className="text-sm text-muted-foreground">No one assigned</span>
                       <Button size="sm" variant="outline">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -289,7 +289,7 @@ export default function PullRequestDetailPage() {
             {/* Labels */}
             <Card>
               <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Labels</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Labels</h3>
                 <div className="space-y-2">
                   {pullRequest.issue.labels && pullRequest.issue.labels.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -305,7 +305,7 @@ export default function PullRequestDetailPage() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">None yet</span>
+                      <span className="text-sm text-muted-foreground">None yet</span>
                       <Button size="sm" variant="outline">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -321,18 +321,18 @@ export default function PullRequestDetailPage() {
             {/* Milestone */}
             <Card>
               <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Milestone</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Milestone</h3>
                 <div className="space-y-2">
                   {pullRequest.issue.milestone ? (
                     <div className="flex items-center">
                       <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      <span className="text-sm text-gray-900">{pullRequest.issue.milestone.title}</span>
+                      <span className="text-sm text-foreground">{pullRequest.issue.milestone.title}</span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">No milestone</span>
+                      <span className="text-sm text-muted-foreground">No milestone</span>
                       <Button size="sm" variant="outline">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -348,10 +348,10 @@ export default function PullRequestDetailPage() {
             {/* Changes Summary */}
             <Card>
               <div className="p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Changes</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">Changes</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Files changed</span>
+                    <span className="text-muted-foreground">Files changed</span>
                     <span className="font-medium">{pullRequest.changed_files}</span>
                   </div>
                   <div className="flex justify-between">

@@ -105,25 +105,27 @@ export default function RepositorySettingsPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href="/repositories" className="hover:text-gray-700 transition-colors">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link href="/repositories" className="hover:text-foreground transition-colors">
             Repositories
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Settings</span>
+          <span className="text-foreground font-medium">Settings</span>
         </nav>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Repository Settings</h1>
-          <p className="text-gray-600 mt-2">Manage repository configuration and access</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Repository Settings</h1>
+            <p className="text-muted-foreground mt-2">Manage repository configuration and access</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -137,7 +139,7 @@ export default function RepositorySettingsPage() {
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab.id
                       ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   <span className="mr-3">{tab.icon}</span>
@@ -220,10 +222,10 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Repository Access</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Public Access</h4>
-                          <p className="text-sm text-gray-600">Anyone can view this repository</p>
+                          <h4 className="font-medium text-foreground">Public Access</h4>
+                          <p className="text-sm text-muted-foreground">Anyone can view this repository</p>
                         </div>
                         <Badge variant={!formData.private ? 'default' : 'secondary'}>
                           {!formData.private ? 'Enabled' : 'Disabled'}
@@ -249,10 +251,10 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Branch Protection</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Default Branch: {formData.default_branch}</h4>
-                          <p className="text-sm text-gray-600">Configure protection rules for your default branch</p>
+                          <h4 className="font-medium text-foreground">Default Branch: {formData.default_branch}</h4>
+                          <p className="text-sm text-muted-foreground">Configure protection rules for your default branch</p>
                         </div>
                         <Button size="sm" variant="outline">Configure</Button>
                       </div>
@@ -356,18 +358,18 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Vulnerability Alerts</h4>
-                          <p className="text-sm text-gray-600">Get notified about security vulnerabilities</p>
+                          <h4 className="font-medium text-foreground">Vulnerability Alerts</h4>
+                          <p className="text-sm text-muted-foreground">Get notified about security vulnerabilities</p>
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                       </div>
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Dependency Graph</h4>
-                          <p className="text-sm text-gray-600">Understand your dependencies</p>
+                          <h4 className="font-medium text-foreground">Dependency Graph</h4>
+                          <p className="text-sm text-muted-foreground">Understand your dependencies</p>
                         </div>
                         <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                       </div>

@@ -72,7 +72,6 @@ export default function RepositoryBrowser({
           }
         }
         
-        console.log('Tree response:', response.data); // Debug log
         setTree(response.data);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error && 'response' in err && 
@@ -84,7 +83,6 @@ export default function RepositoryBrowser({
           ? err.response.data.message 
           : 'Failed to load repository content';
         setError(errorMessage);
-        console.error('Tree fetch error:', err); // Debug log
       } finally {
         setLoading(false);
       }
@@ -167,9 +165,7 @@ export default function RepositoryBrowser({
     );
   }
 
-  // Debug logging
-  console.log('Tree state:', { tree, hasEntries: tree?.entries?.length, entriesCount: tree?.entries?.length });
-  console.log('Branches state:', { availableBranches, count: availableBranches.length, ref, defaultBranch: repository.default_branch });
+
 
   if (!tree || !tree.entries || tree.entries.length === 0) {
     return (
@@ -178,7 +174,6 @@ export default function RepositoryBrowser({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
         <p>This directory is empty</p>
-        <p className="text-xs mt-2">Debug: tree={JSON.stringify(!!tree)}, entries={JSON.stringify(tree?.entries?.length || 0)}</p>
       </div>
     );
   }
@@ -188,27 +183,38 @@ export default function RepositoryBrowser({
   return (
     <div>
       {/* Breadcrumb navigation */}
-      {currentPath && (
-        <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4 p-3 bg-gray-50 rounded-md">
-          <Link 
-            href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
-          >
-            {repo}
-          </Link>
-          {breadcrumbs.map((crumb, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <span>/</span>
-              <Link 
-                href={`/repositories/${owner}/${repo}/tree/${ref}/${crumb.path}`}
-                className="hover:text-gray-700 transition-colors"
-              >
-                {crumb.name}
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+        <Link 
+          href={`/repositories/${owner}/${repo}`}
+          className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+        >
+          {owner}/{repo}
+        </Link>
+        {currentPath && (
+          <>
+            <span>/</span>
+            <span className="text-gray-700 dark:text-gray-300">tree</span>
+            <span>/</span>
+            <Link 
+              href={`/repositories/${owner}/${repo}`}
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              {ref}
+            </Link>
+          </>
+        )}
+        {breadcrumbs.map((crumb, index) => (
+          <div key={index} className="flex items-center space-x-2">
+            <span>/</span>
+            <Link 
+              href={`/repositories/${owner}/${repo}/tree/${ref}/${crumb.path}`}
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              {crumb.name}
+            </Link>
+          </div>
+        ))}
+      </div>
 
       {/* File listing */}
               <div className="border border-border rounded-md overflow-hidden">
@@ -220,8 +226,12 @@ export default function RepositoryBrowser({
                  value={ref}
                  aria-label="Select branch or ref"
                  onChange={(e) => {
-                   // For now, just reload the page - later we can implement proper routing
-                   window.location.href = `/repositories/${owner}/${repo}?ref=${e.target.value}`;
+                   const newRef = e.target.value;
+                   if (currentPath) {
+                     window.location.href = `/repositories/${owner}/${repo}/tree/${newRef}/${currentPath}`;
+                   } else {
+                     window.location.href = `/repositories/${owner}/${repo}?ref=${newRef}`;
+                   }
                  }}
                >
                  {availableBranches.length > 0 ? 
@@ -231,9 +241,6 @@ export default function RepositoryBrowser({
                    <option value={repository.default_branch}>{repository.default_branch}</option>
                  }
                </select>
-               <span className="text-xs text-gray-400 ml-2">
-                 Debug: {availableBranches.length} branches
-               </span>
               <span className="text-sm text-gray-500">
                 {tree.entries.length} {tree.entries.length === 1 ? 'item' : 'items'}
               </span>
@@ -254,7 +261,11 @@ export default function RepositoryBrowser({
           {currentPath && (
             <div className="px-4 py-3 hover:bg-gray-50 transition-colors">
               <Link 
-                href={`/repositories/${owner}/${repo}/tree/${ref}/${currentPath.split('/').slice(0, -1).join('/')}`}
+                href={
+                  currentPath.split('/').slice(0, -1).length > 0
+                    ? `/repositories/${owner}/${repo}/tree/${ref}/${currentPath.split('/').slice(0, -1).join('/')}`
+                    : `/repositories/${owner}/${repo}`
+                }
                 className="flex items-center space-x-3 text-sm"
               >
                 <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">

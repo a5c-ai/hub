@@ -61,15 +61,15 @@ export default function ProfileEditPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Profile</h1>
-          <p className="text-gray-600 mt-2">Update your personal information and profile details</p>
+                  <h1 className="text-3xl font-bold text-foreground">Edit Profile</h1>
+        <p className="text-muted-foreground mt-2">Update your personal information and profile details</p>
         </div>
 
         <Card>
           <div className="p-6">
             {/* Avatar Section */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Profile Picture</h3>
               <div className="flex items-center space-x-6">
                 <Avatar
                   src={formData.avatar_url || user?.avatar_url}
@@ -83,16 +83,16 @@ export default function ProfileEditPage() {
                   <Button variant="outline" size="sm">
                     Remove Picture
                   </Button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Recommended: Square image, at least 400x400px
-                  </p>
+                              <p className="text-sm text-muted-foreground mt-2">
+              Recommended: Square image, at least 400x400px
+            </p>
                 </div>
               </div>
             </div>
 
             {/* Basic Information */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -242,38 +242,38 @@ export default function ProfileEditPage() {
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy Settings</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div>
-                    <h4 className="font-medium text-gray-900">Public Profile</h4>
-                    <p className="text-sm text-gray-600">Make your profile visible to everyone</p>
+                    <h4 className="font-medium text-foreground">Public Profile</h4>
+                    <p className="text-sm text-muted-foreground">Make your profile visible to everyone</p>
                   </div>
                   <input 
                     type="checkbox" 
                     defaultChecked 
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div>
-                    <h4 className="font-medium text-gray-900">Show Email</h4>
-                    <p className="text-sm text-gray-600">Display your email address on your profile</p>
+                    <h4 className="font-medium text-foreground">Show Email</h4>
+                    <p className="text-sm text-muted-foreground">Display your email address on your profile</p>
                   </div>
                   <input 
                     type="checkbox" 
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                   />
                 </div>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div>
-                    <h4 className="font-medium text-gray-900">Activity Visibility</h4>
-                    <p className="text-sm text-gray-600">Show your contributions and activity to others</p>
+                    <h4 className="font-medium text-foreground">Activity Visibility</h4>
+                    <p className="text-sm text-muted-foreground">Show your contributions and activity to others</p>
                   </div>
                   <input 
                     type="checkbox" 
                     defaultChecked 
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                   />
                 </div>
               </div>

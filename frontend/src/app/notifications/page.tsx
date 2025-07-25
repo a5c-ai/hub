@@ -175,10 +175,10 @@ export default function NotificationsPage() {
       <AppLayout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-8"></div>
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                <div key={i} className="h-20 bg-muted rounded"></div>
               ))}
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Notifications
               {unreadCount > 0 && (
                 <Badge variant="default" className="ml-3">
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
                 </Badge>
               )}
             </h1>
-            <p className="text-gray-600 mt-2">Stay updated on activity that matters to you</p>
+            <p className="text-muted-foreground mt-2">Stay updated on activity that matters to you</p>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -243,7 +243,7 @@ export default function NotificationsPage() {
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'unread'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +262,7 @@ export default function NotificationsPage() {
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'all'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,7 +279,7 @@ export default function NotificationsPage() {
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'participating'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,14 +301,14 @@ export default function NotificationsPage() {
                   onChange={selectAllNotifications}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-700">
+                <span className="ml-2 text-sm text-foreground">
                   Select all {notifications.length} notifications
                 </span>
               </label>
             </div>
             
             {selectedNotifications.length > 0 && (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 {selectedNotifications.length} selected
               </div>
             )}
@@ -352,7 +352,7 @@ export default function NotificationsPage() {
                           {notification.repository && (
                             <Link 
                               href={`/repositories/${notification.repository.full_name}`}
-                              className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                              className="text-sm font-medium text-foreground hover:text-blue-600"
                             >
                               {notification.repository.full_name}
                             </Link>
@@ -362,7 +362,7 @@ export default function NotificationsPage() {
                           </Badge>
                         </div>
                         
-                        <div className="text-sm text-gray-900 mb-1">
+                        <div className="text-sm text-foreground mb-1">
                           {notification.subject.url ? (
                             <Link href={notification.subject.url} className="hover:text-blue-600">
                               {notification.subject.title}
@@ -372,7 +372,7 @@ export default function NotificationsPage() {
                           )}
                         </div>
                         
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {new Date(notification.updated_at).toLocaleString()}
                         </div>
                       </div>
@@ -410,8 +410,8 @@ export default function NotificationsPage() {
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5c-1.5-1.5-3.5-3.5-5-5z" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
-              <p className="text-gray-600 mb-4">
+                        <h3 className="text-lg font-medium text-foreground mb-2">All caught up!</h3>
+          <p className="text-muted-foreground mb-4">
                 {filter === 'unread' && "You have no unread notifications."}
                 {filter === 'all' && "You have no notifications."}
                 {filter === 'participating' && "You have no participating notifications."}

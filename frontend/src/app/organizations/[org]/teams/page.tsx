@@ -52,10 +52,10 @@ export default function OrganizationTeamsPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded"></div>
+                <div key={i} className="h-48 bg-muted rounded"></div>
               ))}
             </div>
           </div>
@@ -83,19 +83,19 @@ export default function OrganizationTeamsPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href={`/organizations/${org}`} className="hover:text-gray-700 transition-colors">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link href={`/organizations/${org}`} className="hover:text-foreground transition-colors">
             {org}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Teams</span>
+          <span className="text-foreground font-medium">Teams</span>
         </nav>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Teams</h1>
-            <p className="text-gray-600 mt-2">Organize members into teams with specific permissions</p>
+                      <h1 className="text-3xl font-bold text-foreground">Teams</h1>
+          <p className="text-muted-foreground mt-2">Organize members into teams with specific permissions</p>
           </div>
           
           <div className="flex items-center space-x-3">

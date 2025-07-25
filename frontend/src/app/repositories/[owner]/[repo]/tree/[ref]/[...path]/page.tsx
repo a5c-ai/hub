@@ -1,0 +1,155 @@
+'use client';
+
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
+import RepositoryBrowser from '@/components/repository/RepositoryBrowser';
+import api from '@/lib/api';
+import { Repository } from '@/types';
+
+export default function TreePage() {
+  const params = useParams();
+  const owner = params.owner as string;
+  const repo = params.repo as string;
+  const ref = params.ref as string;
+  const pathArray = params.path as string[];
+  const currentPath = pathArray ? pathArray.join('/') : '';
+  
+  const [repository, setRepository] = useState<Repository | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRepository = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/repositories/${owner}/${repo}`);
+        setRepository(response.data);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error && 'response' in err && 
+          typeof err.response === 'object' && err.response && 
+          'data' in err.response && 
+          typeof err.response.data === 'object' && err.response.data &&
+          'message' in err.response.data && 
+          typeof err.response.data.message === 'string'
+          ? err.response.data.message 
+          : 'Failed to fetch repository';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRepository();
+  }, [owner, repo]);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 mb-8"></div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="text-red-600 text-lg mb-4">Error: {error}</div>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!repository) {
+    return (
+      <AppLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="text-muted-foreground text-lg">Repository not found</div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+          <Link 
+            href="/repositories" 
+            className="hover:text-gray-700 transition-colors"
+          >
+            Repositories
+          </Link>
+          <span>/</span>
+          <Link 
+            href={`/repositories/${owner}/${repo}`}
+            className="hover:text-gray-700 transition-colors"
+          >
+            {owner}/{repo}
+          </Link>
+          <span>/</span>
+          <span className="text-gray-900 font-medium">tree</span>
+          <span>/</span>
+          <span className="text-gray-900 font-medium">{ref}</span>
+          {currentPath && (
+            <>
+              <span>/</span>
+              <span className="text-gray-900 font-medium">{currentPath}</span>
+            </>
+          )}
+        </nav>
+
+        {/* Repository Header */}
+        <div className="flex items-center space-x-4 mb-6">
+          <Avatar
+            src={repository.owner?.avatar_url}
+            alt={repository.owner?.username || 'Repository owner'}
+            size="md"
+          />
+          <div>
+                          <h1 className="text-2xl font-bold text-foreground">
+              {repository.owner?.username || owner}/{repository.name}
+            </h1>
+            <div className="flex items-center space-x-2">
+              <Badge variant={repository.private ? 'secondary' : 'default'}>
+                {repository.private ? 'Private' : 'Public'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Repository Browser */}
+        <Card>
+          <div className="p-6">
+            <RepositoryBrowser
+              owner={owner}
+              repo={repo}
+              repository={repository}
+              currentPath={currentPath}
+              currentRef={ref}
+            />
+          </div>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+} 

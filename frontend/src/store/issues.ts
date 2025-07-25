@@ -140,13 +140,15 @@ export const useIssueStore = create<IssueStore>()(
         
         try {
           const finalFilters = { ...get().filters, ...filters };
-          const response = await issueApi.getIssues(owner, repo, finalFilters) as PaginatedResponse<Issue>;
+          const response = await issueApi.getIssues(owner, repo, finalFilters);
           
+          // Backend returns { issues: Issue[], total: number, page: number, per_page: number }
+          // not the expected PaginatedResponse format
           set({
-            issues: response.data,
-            issuesTotal: response.pagination.total,
-            currentPage: response.pagination.page,
-            totalPages: response.pagination.total_pages,
+            issues: response.issues || response.data || [],
+            issuesTotal: response.total || 0,
+            currentPage: response.page || 1,
+            totalPages: Math.ceil((response.total || 0) / (response.per_page || 30)),
             filters: finalFilters,
             isLoadingIssues: false,
           });
@@ -163,13 +165,14 @@ export const useIssueStore = create<IssueStore>()(
         
         try {
           const finalFilters = { ...get().filters, ...filters };
-          const response = await issueApi.searchIssues(owner, repo, query, finalFilters) as PaginatedResponse<Issue>;
+          const response = await issueApi.searchIssues(owner, repo, query, finalFilters);
           
+          // Backend returns { issues: Issue[], total: number, page: number, per_page: number }
           set({
-            issues: response.data,
-            issuesTotal: response.pagination.total,
-            currentPage: response.pagination.page,
-            totalPages: response.pagination.total_pages,
+            issues: response.issues || response.data || [],
+            issuesTotal: response.total || 0,
+            currentPage: response.page || 1,
+            totalPages: Math.ceil((response.total || 0) / (response.per_page || 30)),
             filters: finalFilters,
             isLoadingIssues: false,
           });
@@ -185,9 +188,13 @@ export const useIssueStore = create<IssueStore>()(
         set({ isLoadingCurrentIssue: true, currentIssueError: null });
         
         try {
-          const response = await issueApi.getIssue(owner, repo, number) as { data: Issue };
+          const response = await issueApi.getIssue(owner, repo, number);
+          
+          // Backend returns the issue object directly, not wrapped in a response
+          const issue = response.data || response;
+          
           set({
-            currentIssue: response.data,
+            currentIssue: issue,
             isLoadingCurrentIssue: false,
           });
         } catch (error: unknown) {
@@ -202,16 +209,19 @@ export const useIssueStore = create<IssueStore>()(
         set({ isCreating: true, operationError: null });
         
         try {
-          const response = await issueApi.createIssue(owner, repo, data) as { data: Issue };
+          const response = await issueApi.createIssue(owner, repo, data);
           set({ isCreating: false });
+          
+          // Backend returns the issue object directly, not wrapped in a response
+          const issue = response.data || response;
           
           // Add the new issue to the list if it matches current filters
           const state = get();
           if (state.filters.state === 'open' || !state.filters.state) {
-            set({ issues: [response.data, ...state.issues] });
+            set({ issues: [issue, ...state.issues] });
           }
           
-          return response.data;
+          return issue;
         } catch (error: unknown) {
           set({
             operationError: getErrorMessage(error) || 'Failed to create issue',
@@ -225,18 +235,21 @@ export const useIssueStore = create<IssueStore>()(
         set({ isUpdating: true, operationError: null });
         
         try {
-          const response = await issueApi.updateIssue(owner, repo, number, data) as { data: Issue };
+          const response = await issueApi.updateIssue(owner, repo, number, data);
           set({ isUpdating: false });
+          
+          // Backend returns the issue object directly, not wrapped in a response
+          const issue = response.data || response;
           
           // Update current issue if it's loaded
           const state = get();
           if (state.currentIssue && state.currentIssue.number === number) {
-            set({ currentIssue: response.data });
+            set({ currentIssue: issue });
           }
           
           // Update in issues list
-          const updatedIssues = state.issues.map(issue => 
-            issue.number === number ? response.data : issue
+          const updatedIssues = state.issues.map(existingIssue => 
+            existingIssue.number === number ? issue : existingIssue
           );
           set({ issues: updatedIssues });
         } catch (error: unknown) {

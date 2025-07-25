@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { apiClient } from '@/lib/api';
 
 interface Runner {
   id: string;
@@ -37,13 +38,8 @@ export default function RunnersPage() {
 
   const fetchRunners = async () => {
     try {
-      const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runners`);
-      if (response.ok) {
-        const data = await response.json();
-        setRunners(data.runners || []);
-      } else {
-        throw new Error('Failed to fetch runners');
-      }
+      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/runners`);
+      setRunners(data.runners || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -53,16 +49,9 @@ export default function RunnersPage() {
 
   const generateRegistrationToken = async () => {
     try {
-      const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runners/registration-token`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setRegistrationToken(data.token);
-        setShowAddModal(true);
-      } else {
-        throw new Error('Failed to generate registration token');
-      }
+      const data = await apiClient.post(`/repositories/${owner}/${repo}/actions/runners/registration-token`);
+      setRegistrationToken(data.token);
+      setShowAddModal(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -70,16 +59,9 @@ export default function RunnersPage() {
 
   const handleDeleteRunner = async (runnerId: string) => {
     try {
-      const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runners/${runnerId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        await fetchRunners();
-        setShowDeleteModal(null);
-      } else {
-        throw new Error('Failed to delete runner');
-      }
+      await apiClient.delete(`/repositories/${owner}/${repo}/actions/runners/${runnerId}`);
+      await fetchRunners();
+      setShowDeleteModal(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -122,10 +104,10 @@ export default function RunnersPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+              <div key={i} className="h-20 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -258,7 +240,7 @@ export default function RunnersPage() {
 
       {/* Add Runner Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setRegistrationToken('');
@@ -311,7 +293,7 @@ export default function RunnersPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Remove runner"
       >

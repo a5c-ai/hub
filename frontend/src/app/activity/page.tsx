@@ -217,10 +217,10 @@ export default function ActivityPage() {
       <AppLayout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-8"></div>
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                <div key={i} className="h-20 bg-muted rounded"></div>
               ))}
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function ActivityPage() {
                           </div>
                           <div className="space-y-1">
                             {activity.payload.commits.slice(0, 3).map((commit: { sha?: string; message: string }, index: number) => (
-                              <div key={index} className="text-xs bg-gray-50 p-2 rounded">
+                              <div key={index} className="text-xs bg-muted p-2 rounded">
                                 <span className="font-mono text-blue-600">{commit.sha?.substring(0, 7)}</span>
                                 <span className="ml-2">{commit.message}</span>
                               </div>

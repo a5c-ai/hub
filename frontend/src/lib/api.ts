@@ -172,25 +172,35 @@ export const repoApi = {
   deleteRepository: (owner: string, repo: string) =>
     apiClient.delete(`/repositories/${owner}/${repo}`),
 
-  forkRepository: (owner: string, repo: string, organization?: string) =>
-    apiClient.post(`/repositories/${owner}/${repo}/forks`, { organization }),
+  forkRepository: (owner: string, repo: string, data?: { name?: string; organization?: string }) =>
+    apiClient.post(`/repositories/${owner}/${repo}/fork`, data),
+
+  // Repository starring
+  starRepository: (owner: string, repo: string) =>
+    apiClient.put(`/repositories/${owner}/${repo}/star`),
+
+  unstarRepository: (owner: string, repo: string) =>
+    apiClient.delete(`/repositories/${owner}/${repo}/star`),
+
+  checkStarred: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/star`),
 
   // Repository content methods
   getTree: (owner: string, repo: string, path: string = '', ref?: string) => {
     const params = ref ? { ref } : {};
-    return apiClient.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
+    return api.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
   },
 
   getFile: (owner: string, repo: string, path: string, ref?: string) => {
     const params = ref ? { ref } : {};
-    return apiClient.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
+    return api.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
   },
 
   getRepositoryInfo: (owner: string, repo: string) =>
     apiClient.get(`/repositories/${owner}/${repo}/info`),
 
-  getBranches: (owner: string, repo: string) =>
-    apiClient.get(`/repositories/${owner}/${repo}/branches`),
+  getBranches: (owner: string, repo: string) => 
+    api.get(`/repositories/${owner}/${repo}/branches`),
 
   getCommits: (owner: string, repo: string, ref?: string, path?: string) => {
     const params: Record<string, string> = {};
