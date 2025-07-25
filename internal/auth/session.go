@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +25,10 @@ type Session struct {
 	UserAgent    string    `json:"user_agent" gorm:"size:255"`
 	IsActive     bool      `json:"is_active" gorm:"default:true"`
 	LastUsedAt   time.Time `json:"last_used_at"`
+	DeviceName   string    `json:"device_name" gorm:"size:255"`
+	LocationInfo string    `json:"location_info" gorm:"size:255"`
+	IsRemembered bool      `json:"is_remembered" gorm:"default:false"`
+	SecurityFlags int      `json:"security_flags" gorm:"default:0"`
 }
 
 func (Session) TableName() string {
@@ -31,22 +36,63 @@ func (Session) TableName() string {
 }
 
 type SessionService struct {
-	db *gorm.DB
+	db     *gorm.DB
+	config *SessionConfig
+}
+
+type SessionConfig struct {
+	MaxSessions           int           `json:"max_sessions"`
+	DefaultExpiration     time.Duration `json:"default_expiration"`
+	RememberMeExpiration  time.Duration `json:"remember_me_expiration"`
+	IdleTimeout           time.Duration `json:"idle_timeout"`
+	RequireSecureHeaders  bool          `json:"require_secure_headers"`
+	EnableGeoTracking     bool          `json:"enable_geo_tracking"`
+	EnableDeviceTracking  bool          `json:"enable_device_tracking"`
+	AutoCleanupInterval   time.Duration `json:"auto_cleanup_interval"`
 }
 
 func NewSessionService(db *gorm.DB) *SessionService {
-	return &SessionService{db: db}
+	defaultConfig := &SessionConfig{
+		MaxSessions:           5,
+		DefaultExpiration:     30 * 24 * time.Hour, // 30 days
+		RememberMeExpiration:  90 * 24 * time.Hour, // 90 days
+		IdleTimeout:           24 * time.Hour,      // 24 hours
+		RequireSecureHeaders:  true,
+		EnableGeoTracking:     false,
+		EnableDeviceTracking:  true,
+		AutoCleanupInterval:   1 * time.Hour,
+	}
+	
+	return &SessionService{
+		db:     db,
+		config: defaultConfig,
+	}
 }
 
-func (s *SessionService) CreateSession(userID uuid.UUID, ipAddress, userAgent string) (*Session, error) {
+func NewSessionServiceWithConfig(db *gorm.DB, config *SessionConfig) *SessionService {
+	return &SessionService{
+		db:     db,
+		config: config,
+	}
+}
+
+func (s *SessionService) CreateSession(userID uuid.UUID, ipAddress, userAgent string, rememberMe bool) (*Session, error) {
 	// Generate secure refresh token
 	refreshToken, err := s.generateSecureToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
-	// Set expiration time (30 days from now)
-	expiresAt := time.Now().Add(30 * 24 * time.Hour)
+	// Set expiration time based on remember me preference
+	var expiresAt time.Time
+	if rememberMe {
+		expiresAt = time.Now().Add(s.config.RememberMeExpiration)
+	} else {
+		expiresAt = time.Now().Add(s.config.DefaultExpiration)
+	}
+
+	// Extract device name from user agent
+	deviceName := s.extractDeviceName(userAgent)
 
 	// Create session
 	session := &Session{
@@ -55,12 +101,25 @@ func (s *SessionService) CreateSession(userID uuid.UUID, ipAddress, userAgent st
 		ExpiresAt:    expiresAt,
 		IPAddress:    ipAddress,
 		UserAgent:    userAgent,
+		DeviceName:   deviceName,
 		IsActive:     true,
+		IsRemembered: rememberMe,
 		LastUsedAt:   time.Now(),
+	}
+
+	// Get location info if enabled
+	if s.config.EnableGeoTracking {
+		session.LocationInfo = s.getLocationInfo(ipAddress)
 	}
 
 	if err := s.db.Create(session).Error; err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	// Limit concurrent sessions for user
+	if err := s.LimitUserSessions(userID, s.config.MaxSessions); err != nil {
+		// Log error but don't fail session creation
+		fmt.Printf("Failed to limit user sessions: %v\n", err)
 	}
 
 	return session, nil
@@ -189,4 +248,147 @@ func (s *SessionService) GetSessionStats() (*SessionStats, error) {
 		ActiveSessions: active,
 		LastCleanup:    time.Now(),
 	}, nil
+}
+
+// Enhanced session validation with idle timeout
+func (s *SessionService) ValidateSessionWithIdleCheck(refreshToken string) (*Session, error) {
+	session, err := s.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check idle timeout
+	if time.Since(session.LastUsedAt) > s.config.IdleTimeout {
+		// Session is idle, revoke it
+		s.RevokeSession(refreshToken)
+		return nil, errors.New("session expired due to inactivity")
+	}
+
+	return session, nil
+}
+
+// Detect suspicious activity
+func (s *SessionService) DetectSuspiciousActivity(userID uuid.UUID, ipAddress string) (bool, error) {
+	// Get recent sessions for user
+	var sessions []Session
+	err := s.db.Where("user_id = ? AND is_active = true AND created_at > ?", 
+		userID, time.Now().Add(-24*time.Hour)).Find(&sessions).Error
+	if err != nil {
+		return false, err
+	}
+
+	// Check for multiple different IP addresses in short time
+	ipMap := make(map[string]bool)
+	for _, session := range sessions {
+		ipMap[session.IPAddress] = true
+	}
+
+	// If more than 3 different IPs in 24 hours, flag as suspicious
+	if len(ipMap) > 3 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// Force logout from all devices
+func (s *SessionService) ForceLogoutAllDevices(userID uuid.UUID) error {
+	return s.RevokeUserSessions(userID)
+}
+
+// Get detailed session information for security dashboard
+func (s *SessionService) GetDetailedUserSessions(userID uuid.UUID) ([]Session, error) {
+	var sessions []Session
+	err := s.db.Where("user_id = ? AND is_active = true AND expires_at > ?", 
+		userID, time.Now()).
+		Order("last_used_at desc").
+		Find(&sessions).Error
+	return sessions, err
+}
+
+// Update session activity (called on each API request)
+func (s *SessionService) UpdateSessionActivity(refreshToken, ipAddress string) error {
+	return s.db.Model(&Session{}).
+		Where("refresh_token = ? AND is_active = true", refreshToken).
+		Updates(map[string]interface{}{
+			"last_used_at": time.Now(),
+			"ip_address":   ipAddress,
+		}).Error
+}
+
+// Helper methods
+func (s *SessionService) extractDeviceName(userAgent string) string {
+	// Simple device detection based on user agent
+	userAgent = strings.ToLower(userAgent)
+	
+	if strings.Contains(userAgent, "mobile") || strings.Contains(userAgent, "android") {
+		return "Mobile Device"
+	}
+	if strings.Contains(userAgent, "iphone") || strings.Contains(userAgent, "ipad") {
+		return "iOS Device"
+	}
+	if strings.Contains(userAgent, "windows") {
+		return "Windows Computer"
+	}
+	if strings.Contains(userAgent, "macintosh") || strings.Contains(userAgent, "mac os") {
+		return "Mac Computer"
+	}
+	if strings.Contains(userAgent, "linux") {
+		return "Linux Computer"
+	}
+	
+	return "Unknown Device"
+}
+
+func (s *SessionService) getLocationInfo(ipAddress string) string {
+	// In production, you would use a GeoIP service
+	// For now, return a placeholder
+	if ipAddress == "127.0.0.1" || ipAddress == "::1" {
+		return "Local"
+	}
+	
+	// This is where you'd integrate with a GeoIP service like MaxMind
+	return "Unknown Location"
+}
+
+// Automatic session cleanup (should be run periodically)
+func (s *SessionService) RunPeriodicCleanup() error {
+	// Clean up expired sessions
+	if err := s.CleanupExpiredSessions(); err != nil {
+		return fmt.Errorf("failed to cleanup expired sessions: %w", err)
+	}
+
+	// Clean up idle sessions
+	idleCutoff := time.Now().Add(-s.config.IdleTimeout)
+	err := s.db.Model(&Session{}).
+		Where("last_used_at < ? AND is_active = true", idleCutoff).
+		Update("is_active", false).Error
+	
+	if err != nil {
+		return fmt.Errorf("failed to cleanup idle sessions: %w", err)
+	}
+
+	return nil
+}
+
+// Session security flags
+const (
+	SessionFlagNormal          = 0
+	SessionFlagSuspicious      = 1 << 0
+	SessionFlagCompromised     = 1 << 1
+	SessionFlagLocationChange  = 1 << 2
+	SessionFlagDeviceChange    = 1 << 3
+)
+
+func (s *SessionService) FlagSession(sessionID uuid.UUID, flag int) error {
+	return s.db.Model(&Session{}).
+		Where("id = ?", sessionID).
+		Update("security_flags", gorm.Expr("security_flags | ?", flag)).Error
+}
+
+func (s *SessionService) GetFlaggedSessions(userID uuid.UUID) ([]Session, error) {
+	var sessions []Session
+	err := s.db.Where("user_id = ? AND security_flags > 0 AND is_active = true", userID).
+		Find(&sessions).Error
+	return sessions, err
 }

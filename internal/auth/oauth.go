@@ -85,6 +85,15 @@ func NewOAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, au
 		}
 	}
 
+	// Initialize GitLab provider if configured
+	if cfg.OAuth.GitLab.ClientID != "" && cfg.OAuth.GitLab.ClientSecret != "" {
+		providers["gitlab"] = &GitLabProvider{
+			ClientID:     cfg.OAuth.GitLab.ClientID,
+			ClientSecret: cfg.OAuth.GitLab.ClientSecret,
+			BaseURL:      cfg.OAuth.GitLab.BaseURL,
+		}
+	}
+
 	return &OAuthService{
 		db:         db,
 		providers:  providers,
@@ -630,4 +639,240 @@ func (p *MicrosoftProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, erro
 		Name:     msUser.DisplayName,
 		Avatar:   "", // Microsoft Graph doesn't provide avatar URL in basic profile
 	}, nil
+}
+
+// GitLab OAuth Provider
+type GitLabProvider struct {
+	ClientID     string
+	ClientSecret string
+	BaseURL      string // For self-hosted GitLab instances
+}
+
+func (p *GitLabProvider) GetProviderName() string {
+	return "gitlab"
+}
+
+func (p *GitLabProvider) GetAuthURL(state, redirectURI string) string {
+	baseURL := p.BaseURL
+	if baseURL == "" {
+		baseURL = "https://gitlab.com"
+	}
+
+	params := url.Values{}
+	params.Add("client_id", p.ClientID)
+	params.Add("redirect_uri", redirectURI)
+	params.Add("response_type", "code")
+	params.Add("scope", "read_user")
+	params.Add("state", state)
+	
+	return baseURL + "/oauth/authorize?" + params.Encode()
+}
+
+func (p *GitLabProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, error) {
+	baseURL := p.BaseURL
+	if baseURL == "" {
+		baseURL = "https://gitlab.com"
+	}
+
+	data := url.Values{}
+	data.Set("client_id", p.ClientID)
+	data.Set("client_secret", p.ClientSecret)
+	data.Set("code", code)
+	data.Set("grant_type", "authorization_code")
+	data.Set("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", baseURL+"/oauth/token", strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthCodeExchange
+	}
+
+	var token OAuthToken
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+
+	return &token, nil
+}
+
+func (p *GitLabProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) {
+	baseURL := p.BaseURL
+	if baseURL == "" {
+		baseURL = "https://gitlab.com"
+	}
+
+	req, err := http.NewRequest("GET", baseURL+"/api/v4/user", nil)
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrOAuthUserInfo
+	}
+
+	var gitlabUser struct {
+		ID        int    `json:"id"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Name      string `json:"name"`
+		AvatarURL string `json:"avatar_url"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&gitlabUser); err != nil {
+		return nil, err
+	}
+
+	return &OAuthUserInfo{
+		ID:       fmt.Sprintf("%d", gitlabUser.ID),
+		Username: gitlabUser.Username,
+		Email:    gitlabUser.Email,
+		Name:     gitlabUser.Name,
+		Avatar:   gitlabUser.AvatarURL,
+	}, nil
+}
+
+// Enhanced OAuth service with account linking
+type OAuthAccount struct {
+	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	Provider     string    `json:"provider" gorm:"not null;size:50"`
+	ProviderID   string    `json:"provider_id" gorm:"not null;size:255"`
+	Email        string    `json:"email" gorm:"size:255"`
+	Username     string    `json:"username" gorm:"size:255"`
+	AccessToken  string    `json:"-" gorm:"type:text"`
+	RefreshToken string    `json:"-" gorm:"type:text"`
+	ExpiresAt    *time.Time `json:"expires_at"`
+
+	// Relationships
+	User models.User `json:"user,omitempty" gorm:"foreignKey:UserID"`
+}
+
+func (o *OAuthAccount) TableName() string {
+	return "oauth_accounts"
+}
+
+// OAuth account linking methods
+func (s *OAuthService) LinkAccount(userID uuid.UUID, provider string, userInfo *OAuthUserInfo, token *OAuthToken) error {
+	// Check if account is already linked
+	var existingAccount OAuthAccount
+	err := s.db.Where("user_id = ? AND provider = ?", userID, provider).First(&existingAccount).Error
+	if err == nil {
+		// Update existing account
+		existingAccount.ProviderID = userInfo.ID
+		existingAccount.Email = userInfo.Email
+		existingAccount.Username = userInfo.Username
+		existingAccount.AccessToken = token.AccessToken
+		existingAccount.RefreshToken = token.RefreshToken
+		if token.ExpiresIn > 0 {
+			expiresAt := time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
+			existingAccount.ExpiresAt = &expiresAt
+		}
+		return s.db.Save(&existingAccount).Error
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// Create new account link
+	oauthAccount := OAuthAccount{
+		UserID:       userID,
+		Provider:     provider,
+		ProviderID:   userInfo.ID,
+		Email:        userInfo.Email,
+		Username:     userInfo.Username,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+	}
+
+	if token.ExpiresIn > 0 {
+		expiresAt := time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
+		oauthAccount.ExpiresAt = &expiresAt
+	}
+
+	return s.db.Create(&oauthAccount).Error
+}
+
+func (s *OAuthService) UnlinkAccount(userID uuid.UUID, provider string) error {
+	return s.db.Where("user_id = ? AND provider = ?", userID, provider).Delete(&OAuthAccount{}).Error
+}
+
+func (s *OAuthService) GetLinkedAccounts(userID uuid.UUID) ([]OAuthAccount, error) {
+	var accounts []OAuthAccount
+	err := s.db.Where("user_id = ?", userID).Find(&accounts).Error
+	return accounts, err
+}
+
+// OAuth state management for security
+type OAuthState struct {
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	State     string    `json:"state" gorm:"not null;uniqueIndex;size:255"`
+	Provider  string    `json:"provider" gorm:"not null;size:50"`
+	ExpiresAt time.Time `json:"expires_at" gorm:"not null"`
+	Used      bool      `json:"used" gorm:"default:false"`
+}
+
+func (o *OAuthState) TableName() string {
+	return "oauth_states"
+}
+
+func (s *OAuthService) StoreState(state, provider string) error {
+	oauthState := OAuthState{
+		State:     state,
+		Provider:  provider,
+		ExpiresAt: time.Now().Add(10 * time.Minute), // 10 minute expiry
+		Used:      false,
+	}
+	return s.db.Create(&oauthState).Error
+}
+
+func (s *OAuthService) ValidateState(state, provider string) error {
+	var oauthState OAuthState
+	err := s.db.Where("state = ? AND provider = ? AND used = false AND expires_at > ?", 
+		state, provider, time.Now()).First(&oauthState).Error
+	
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrInvalidOAuthState
+		}
+		return err
+	}
+
+	// Mark state as used
+	oauthState.Used = true
+	return s.db.Save(&oauthState).Error
+}
+
+func (s *OAuthService) CleanupExpiredStates() error {
+	return s.db.Where("expires_at < ?", time.Now()).Delete(&OAuthState{}).Error
 }

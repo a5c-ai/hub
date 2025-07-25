@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -57,12 +59,110 @@ func (LoginAttempt) TableName() string {
 	return "login_attempts"
 }
 
+// Rate Limiting
+type RateLimiter struct {
+	requests map[string][]time.Time
+	mutex    sync.RWMutex
+	limit    int
+	window   time.Duration
+}
+
+func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
+	return &RateLimiter{
+		requests: make(map[string][]time.Time),
+		limit:    limit,
+		window:   window,
+	}
+}
+
+func (rl *RateLimiter) IsAllowed(key string) bool {
+	rl.mutex.Lock()
+	defer rl.mutex.Unlock()
+
+	now := time.Now()
+	
+	// Get existing requests for this key
+	requests := rl.requests[key]
+	
+	// Remove old requests outside the time window
+	validRequests := make([]time.Time, 0)
+	for _, reqTime := range requests {
+		if now.Sub(reqTime) < rl.window {
+			validRequests = append(validRequests, reqTime)
+		}
+	}
+	
+	// Check if limit exceeded
+	if len(validRequests) >= rl.limit {
+		return false
+	}
+	
+	// Add current request
+	validRequests = append(validRequests, now)
+	rl.requests[key] = validRequests
+	
+	return true
+}
+
+func (rl *RateLimiter) Cleanup() {
+	rl.mutex.Lock()
+	defer rl.mutex.Unlock()
+	
+	now := time.Now()
+	
+	for key, requests := range rl.requests {
+		validRequests := make([]time.Time, 0)
+		for _, reqTime := range requests {
+			if now.Sub(reqTime) < rl.window {
+				validRequests = append(validRequests, reqTime)
+			}
+		}
+		
+		if len(validRequests) == 0 {
+			delete(rl.requests, key)
+		} else {
+			rl.requests[key] = validRequests
+		}
+	}
+}
+
+// Account lockout functionality
+type AccountLockout struct {
+	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	IPAddress    string    `json:"ip_address" gorm:"size:45;index"`
+	Reason       string    `json:"reason" gorm:"size:255"`
+	FailedAttempts int     `json:"failed_attempts" gorm:"default:0"`
+	LockedUntil  *time.Time `json:"locked_until"`
+	IsActive     bool      `json:"is_active" gorm:"default:true"`
+}
+
+func (AccountLockout) TableName() string {
+	return "account_lockouts"
+}
+
 type SecurityService struct {
-	db *gorm.DB
+	db                   *gorm.DB
+	loginLimiter        *RateLimiter
+	registrationLimiter *RateLimiter
+	passwordResetLimiter *RateLimiter
+	mfaLimiter          *RateLimiter
+	generalLimiter      *RateLimiter
 }
 
 func NewSecurityService(db *gorm.DB) *SecurityService {
-	return &SecurityService{db: db}
+	return &SecurityService{
+		db:                   db,
+		loginLimiter:        NewRateLimiter(5, 15*time.Minute),   // 5 login attempts per 15 minutes
+		registrationLimiter: NewRateLimiter(3, time.Hour),       // 3 registrations per hour
+		passwordResetLimiter: NewRateLimiter(3, time.Hour),      // 3 password resets per hour
+		mfaLimiter:          NewRateLimiter(10, 5*time.Minute),  // 10 MFA attempts per 5 minutes
+		generalLimiter:      NewRateLimiter(100, time.Minute),   // 100 requests per minute
+	}
 }
 
 // Rate limiting configuration
@@ -279,4 +379,269 @@ func (s *SecurityService) ValidatePasswordStrength(password string) []string {
 	}
 	
 	return issues
+}
+
+// Enhanced rate limiting methods
+func (s *SecurityService) CheckLoginRateLimit(ipAddress string) bool {
+	return s.loginLimiter.IsAllowed(ipAddress)
+}
+
+func (s *SecurityService) CheckRegistrationRateLimit(ipAddress string) bool {
+	return s.registrationLimiter.IsAllowed(ipAddress)
+}
+
+func (s *SecurityService) CheckPasswordResetRateLimit(ipAddress string) bool {
+	return s.passwordResetLimiter.IsAllowed(ipAddress)
+}
+
+func (s *SecurityService) CheckMFARateLimit(ipAddress string) bool {
+	return s.mfaLimiter.IsAllowed(ipAddress)
+}
+
+func (s *SecurityService) CheckGeneralRateLimit(ipAddress string) bool {
+	return s.generalLimiter.IsAllowed(ipAddress)
+}
+
+// Enhanced audit logging
+type AuditEvent string
+
+const (
+	AuditEventLogin              AuditEvent = "login"
+	AuditEventLoginFailed        AuditEvent = "login_failed"
+	AuditEventLogout             AuditEvent = "logout"
+	AuditEventRegister           AuditEvent = "register"
+	AuditEventPasswordChange     AuditEvent = "password_change"
+	AuditEventPasswordReset      AuditEvent = "password_reset"
+	AuditEventMFASetup           AuditEvent = "mfa_setup"
+	AuditEventMFADisable         AuditEvent = "mfa_disable"
+	AuditEventMFAFailed          AuditEvent = "mfa_failed"
+	AuditEventOAuthLink          AuditEvent = "oauth_link"
+	AuditEventOAuthUnlink        AuditEvent = "oauth_unlink"
+	AuditEventSessionRevoked     AuditEvent = "session_revoked"
+	AuditEventSuspiciousActivity AuditEvent = "suspicious_activity"
+	AuditEventAccountLocked      AuditEvent = "account_locked"
+	AuditEventAccountUnlocked    AuditEvent = "account_unlocked"
+	AuditEventEmailVerified      AuditEvent = "email_verified"
+	AuditEventProfileUpdated     AuditEvent = "profile_updated"
+)
+
+type AuditLog struct {
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	UserID      *uuid.UUID `json:"user_id" gorm:"type:uuid;index"`
+	Event       string     `json:"event" gorm:"not null;size:50;index"`
+	IPAddress   string     `json:"ip_address" gorm:"size:45;index"`
+	UserAgent   string     `json:"user_agent" gorm:"size:255"`
+	Details     string     `json:"details" gorm:"type:text"`
+	Success     bool       `json:"success" gorm:"index"`
+	RiskLevel   string     `json:"risk_level" gorm:"size:20;index"`
+	SessionID   *uuid.UUID `json:"session_id" gorm:"type:uuid;index"`
+	Location    string     `json:"location" gorm:"size:255"`
+	DeviceInfo  string     `json:"device_info" gorm:"size:255"`
+}
+
+func (AuditLog) TableName() string {
+	return "audit_logs"
+}
+
+type AuditService struct {
+	db *gorm.DB
+}
+
+func NewAuditService(db *gorm.DB) *AuditService {
+	return &AuditService{db: db}
+}
+
+func (a *AuditService) LogEvent(userID *uuid.UUID, event AuditEvent, ipAddress, userAgent, details string, success bool) error {
+	riskLevel := a.calculateRiskLevel(event, success)
+	
+	auditLog := AuditLog{
+		UserID:    userID,
+		Event:     string(event),
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Details:   details,
+		Success:   success,
+		RiskLevel: riskLevel,
+		Location:  a.getLocationFromIP(ipAddress),
+		DeviceInfo: a.extractDeviceInfo(userAgent),
+	}
+	
+	return a.db.Create(&auditLog).Error
+}
+
+func (a *AuditService) LogEventWithSession(userID *uuid.UUID, sessionID *uuid.UUID, event AuditEvent, ipAddress, userAgent, details string, success bool) error {
+	riskLevel := a.calculateRiskLevel(event, success)
+	
+	auditLog := AuditLog{
+		UserID:    userID,
+		SessionID: sessionID,
+		Event:     string(event),
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Details:   details,
+		Success:   success,
+		RiskLevel: riskLevel,
+		Location:  a.getLocationFromIP(ipAddress),
+		DeviceInfo: a.extractDeviceInfo(userAgent),
+	}
+	
+	return a.db.Create(&auditLog).Error
+}
+
+func (a *AuditService) GetUserAuditLogs(userID uuid.UUID, limit int, offset int) ([]AuditLog, error) {
+	var logs []AuditLog
+	err := a.db.Where("user_id = ?", userID).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&logs).Error
+	return logs, err
+}
+
+func (a *AuditService) GetSecurityEventsAudit(userID uuid.UUID, limit int) ([]AuditLog, error) {
+	securityEvents := []string{
+		string(AuditEventLoginFailed),
+		string(AuditEventMFAFailed),
+		string(AuditEventSuspiciousActivity),
+		string(AuditEventAccountLocked),
+		string(AuditEventSessionRevoked),
+	}
+	
+	var logs []AuditLog
+	err := a.db.Where("user_id = ? AND event IN ?", userID, securityEvents).
+		Order("created_at desc").
+		Limit(limit).
+		Find(&logs).Error
+	return logs, err
+}
+
+func (a *AuditService) GetHighRiskEvents(limit int) ([]AuditLog, error) {
+	var logs []AuditLog
+	err := a.db.Where("risk_level = ?", "high").
+		Order("created_at desc").
+		Limit(limit).
+		Find(&logs).Error
+	return logs, err
+}
+
+func (a *AuditService) calculateRiskLevel(event AuditEvent, success bool) string {
+	if !success {
+		switch event {
+		case AuditEventLoginFailed, AuditEventMFAFailed:
+			return "medium"
+		case AuditEventSuspiciousActivity, AuditEventAccountLocked:
+			return "high"
+		}
+	}
+	
+	switch event {
+	case AuditEventLogin, AuditEventLogout, AuditEventEmailVerified:
+		return "low"
+	case AuditEventPasswordChange, AuditEventMFASetup, AuditEventMFADisable:
+		return "medium"
+	case AuditEventPasswordReset, AuditEventOAuthLink, AuditEventSessionRevoked:
+		return "medium"
+	case AuditEventSuspiciousActivity, AuditEventAccountLocked:
+		return "high"
+	default:
+		return "low"
+	}
+}
+
+func (a *AuditService) getLocationFromIP(ipAddress string) string {
+	// In production, use a GeoIP service
+	if ipAddress == "127.0.0.1" || ipAddress == "::1" {
+		return "Local"
+	}
+	
+	// Check if it's a private IP
+	ip := net.ParseIP(ipAddress)
+	if ip != nil && ip.IsPrivate() {
+		return "Private Network"
+	}
+	
+	return "Unknown"
+}
+
+func (a *AuditService) extractDeviceInfo(userAgent string) string {
+	// Simple device/browser detection
+	userAgent = strings.ToLower(userAgent)
+	
+	browser := "Unknown"
+	if strings.Contains(userAgent, "chrome") {
+		browser = "Chrome"
+	} else if strings.Contains(userAgent, "firefox") {
+		browser = "Firefox"
+	} else if strings.Contains(userAgent, "safari") {
+		browser = "Safari"
+	} else if strings.Contains(userAgent, "edge") {
+		browser = "Edge"
+	}
+	
+	os := "Unknown"
+	if strings.Contains(userAgent, "windows") {
+		os = "Windows"
+	} else if strings.Contains(userAgent, "macintosh") || strings.Contains(userAgent, "mac os") {
+		os = "macOS"
+	} else if strings.Contains(userAgent, "linux") {
+		os = "Linux"
+	} else if strings.Contains(userAgent, "android") {
+		os = "Android"
+	} else if strings.Contains(userAgent, "iphone") || strings.Contains(userAgent, "ipad") {
+		os = "iOS"
+	}
+	
+	return fmt.Sprintf("%s on %s", browser, os)
+}
+
+// Cleanup expired audit logs (should be run periodically)
+func (a *AuditService) CleanupOldAuditLogs(retentionDays int) error {
+	cutoff := time.Now().AddDate(0, 0, -retentionDays)
+	result := a.db.Where("created_at < ?", cutoff).Delete(&AuditLog{})
+	return result.Error
+}
+
+// Security metrics
+type SecurityMetrics struct {
+	FailedLogins24h      int64 `json:"failed_logins_24h"`
+	SuspiciousActivity24h int64 `json:"suspicious_activity_24h"`
+	AccountLockouts24h   int64 `json:"account_lockouts_24h"`
+	ActiveSessions       int64 `json:"active_sessions"`
+	UnusualLocations24h  int64 `json:"unusual_locations_24h"`
+}
+
+func (a *AuditService) GetSecurityMetrics() (*SecurityMetrics, error) {
+	metrics := &SecurityMetrics{}
+	yesterday := time.Now().Add(-24 * time.Hour)
+	
+	// Failed logins in last 24h
+	a.db.Model(&AuditLog{}).
+		Where("event = ? AND success = false AND created_at > ?", AuditEventLoginFailed, yesterday).
+		Count(&metrics.FailedLogins24h)
+	
+	// Suspicious activity in last 24h
+	a.db.Model(&AuditLog{}).
+		Where("event = ? AND created_at > ?", AuditEventSuspiciousActivity, yesterday).
+		Count(&metrics.SuspiciousActivity24h)
+	
+	// Account lockouts in last 24h
+	a.db.Model(&AuditLog{}).
+		Where("event = ? AND created_at > ?", AuditEventAccountLocked, yesterday).
+		Count(&metrics.AccountLockouts24h)
+	
+	return metrics, nil
+}
+
+// Periodic cleanup function for security service
+func (s *SecurityService) RunPeriodicCleanup() {
+	// Cleanup rate limiters
+	s.loginLimiter.Cleanup()
+	s.registrationLimiter.Cleanup()
+	s.passwordResetLimiter.Cleanup()
+	s.mfaLimiter.Cleanup()
+	s.generalLimiter.Cleanup()
 }

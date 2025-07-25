@@ -24,6 +24,8 @@ type User struct {
 	Company          string     `json:"company" gorm:"size:255"`
 	EmailVerified    bool       `json:"email_verified" gorm:"default:false"`
 	TwoFactorEnabled bool       `json:"two_factor_enabled" gorm:"default:false"`
+	TwoFactorSecret  string     `json:"-" gorm:"size:255"`
+	PhoneNumber      string     `json:"phone_number" gorm:"size:20"`
 	IsActive         bool       `json:"is_active" gorm:"default:true"`
 	IsAdmin          bool       `json:"is_admin" gorm:"default:false"`
 	LastLoginAt      *time.Time `json:"last_login_at"`

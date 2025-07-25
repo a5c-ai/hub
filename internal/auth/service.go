@@ -117,8 +117,16 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 		if req.MFACode == "" {
 			return nil, errors.New("MFA code required")
 		}
-		// TODO: Implement MFA verification
-		// For now, just check if code is provided
+		
+		// Verify MFA code using MFA service
+		mfaService := NewMFAService(s.db)
+		valid, err := mfaService.VerifyMFACode(user.ID, req.MFACode)
+		if err != nil {
+			return nil, fmt.Errorf("MFA verification failed: %w", err)
+		}
+		if !valid {
+			return nil, errors.New("invalid MFA code")
+		}
 	}
 
 	// Generate tokens
@@ -183,7 +191,7 @@ func (s *authService) Register(ctx context.Context, req RegisterRequest) (*model
 	}
 
 	// Send verification email
-	emailService := &MockEmailService{}
+	emailService := NewSMTPEmailService(s.config)
 	verificationService := NewEmailVerificationService(s.db, emailService)
 	if err := verificationService.SendVerificationEmail(user.ID); err != nil {
 		// Log the error but don't fail registration
@@ -262,7 +270,7 @@ func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordRese
 
 	// Initialize password reset service
 	passwordResetService := NewPasswordResetService(s.db)
-	emailService := &MockEmailService{}
+	emailService := NewSMTPEmailService(s.config)
 
 	// Generate reset token
 	resetToken, err := passwordResetService.CreateResetToken(user.ID)
@@ -292,13 +300,13 @@ func (s *authService) ResetPassword(ctx context.Context, req PasswordResetConfir
 }
 
 func (s *authService) VerifyEmail(ctx context.Context, token string) error {
-	emailService := &MockEmailService{}
+	emailService := NewSMTPEmailService(s.config)
 	verificationService := NewEmailVerificationService(s.db, emailService)
 	return verificationService.VerifyEmail(token)
 }
 
 func (s *authService) ResendVerificationEmail(ctx context.Context, userID uuid.UUID) error {
-	emailService := &MockEmailService{}
+	emailService := NewSMTPEmailService(s.config)
 	verificationService := NewEmailVerificationService(s.db, emailService)
 	return verificationService.SendVerificationEmail(userID)
 }
@@ -434,7 +442,7 @@ func (s *authService) sendPasswordResetEmail(user *models.User, token string) er
 	return nil
 }
 
-func generateSecureToken() string {
+func generateAuthSecureToken() string {
 	bytes := make([]byte, 32)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)

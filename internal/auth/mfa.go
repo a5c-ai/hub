@@ -2,6 +2,8 @@ package auth
 
 import (
 	"crypto/rand"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -45,8 +47,49 @@ type BackupCode struct {
 	User models.User `json:"user,omitempty" gorm:"foreignKey:UserID"`
 }
 
+type WebAuthnCredential struct {
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	CredentialID string    `json:"credential_id" gorm:"not null;uniqueIndex;size:255"`
+	PublicKey    []byte    `json:"public_key" gorm:"not null"`
+	Name         string    `json:"name" gorm:"not null;size:255"`
+	SignCount    uint32    `json:"sign_count" gorm:"default:0"`
+	LastUsedAt   *time.Time `json:"last_used_at"`
+
+	// Relationships
+	User models.User `json:"user,omitempty" gorm:"foreignKey:UserID"`
+}
+
+type SMSVerificationCode struct {
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	
+	UserID    uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
+	Code      string     `json:"code" gorm:"not null;size:10"`
+	ExpiresAt time.Time  `json:"expires_at" gorm:"not null"`
+	Used      bool       `json:"used" gorm:"default:false"`
+	UsedAt    *time.Time `json:"used_at"`
+
+	// Relationships
+	User models.User `json:"user,omitempty" gorm:"foreignKey:UserID"`
+}
+
 func (b *BackupCode) TableName() string {
 	return "backup_codes"
+}
+
+func (w *WebAuthnCredential) TableName() string {
+	return "webauthn_credentials"
+}
+
+func (s *SMSVerificationCode) TableName() string {
+	return "sms_verification_codes"
 }
 
 func NewMFAService(db *gorm.DB) *MFAService {
@@ -99,15 +142,47 @@ func (s *MFAService) VerifyTOTP(userID uuid.UUID, secret, code string) (bool, er
 		return s.useBackupCode(userID, code)
 	}
 
-	// If TOTP is valid, enable MFA for user
+	// If TOTP is valid, enable MFA for user and store the secret
 	if valid {
-		err := s.db.Model(&models.User{}).Where("id = ?", userID).Update("two_factor_enabled", true).Error
+		err := s.db.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+			"two_factor_enabled": true,
+			"two_factor_secret":  secret,
+		}).Error
 		if err != nil {
 			return false, fmt.Errorf("failed to enable MFA: %w", err)
 		}
 	}
 
 	return valid, nil
+}
+
+// VerifyMFACode verifies any type of MFA code for login
+func (s *MFAService) VerifyMFACode(userID uuid.UUID, code string) (bool, error) {
+	// Get user with MFA settings
+	var user models.User
+	err := s.db.Where("id = ?", userID).First(&user).Error
+	if err != nil {
+		return false, fmt.Errorf("user not found: %w", err)
+	}
+
+	if !user.TwoFactorEnabled {
+		return false, errors.New("MFA not enabled for user")
+	}
+
+	// Try TOTP first if secret is available
+	if user.TwoFactorSecret != "" {
+		if s.verifyTOTPCode(user.TwoFactorSecret, code) {
+			return true, nil
+		}
+	}
+
+	// Try SMS verification code
+	if s.verifySMSCode(userID, code) {
+		return true, nil
+	}
+
+	// Try backup code as last resort
+	return s.useBackupCode(userID, code)
 }
 
 func (s *MFAService) DisableMFA(userID uuid.UUID) error {
@@ -231,7 +306,14 @@ func generateSMSCode() string {
 	for _, b := range bytes {
 		code += fmt.Sprintf("%02d", int(b)%100)
 	}
-	return code[:6] // Ensure 6 digits
+	if len(code) > 6 {
+		return code[:6] // Ensure 6 digits
+	}
+	// Pad with zeros if needed
+	for len(code) < 6 {
+		code = "0" + code
+	}
+	return code
 }
 
 // Mock SMS provider for development
@@ -240,4 +322,140 @@ type MockSMSProvider struct{}
 func (p *MockSMSProvider) SendSMS(phoneNumber, message string) error {
 	fmt.Printf("SMS to %s: %s\n", phoneNumber, message)
 	return nil
+}
+
+// SMS MFA methods
+func (s *MFAService) SendSMSCode(userID uuid.UUID, phoneNumber string) error {
+	// Generate 6-digit code
+	code := generateSMSCode()
+	
+	// Store code in database with expiration
+	expiresAt := time.Now().Add(5 * time.Minute)
+	smsCode := SMSVerificationCode{
+		UserID:    userID,
+		Code:      code,
+		ExpiresAt: expiresAt,
+		Used:      false,
+	}
+	
+	if err := s.db.Create(&smsCode).Error; err != nil {
+		return fmt.Errorf("failed to store SMS code: %w", err)
+	}
+	
+	// Send SMS (using mock provider for now)
+	provider := &MockSMSProvider{}
+	message := fmt.Sprintf("Your verification code is: %s. Valid for 5 minutes.", code)
+	return provider.SendSMS(phoneNumber, message)
+}
+
+func (s *MFAService) verifySMSCode(userID uuid.UUID, code string) bool {
+	var smsCode SMSVerificationCode
+	err := s.db.Where("user_id = ? AND code = ? AND used = false AND expires_at > ?", 
+		userID, code, time.Now()).First(&smsCode).Error
+	
+	if err != nil {
+		return false
+	}
+	
+	// Mark code as used
+	now := time.Now()
+	smsCode.Used = true
+	smsCode.UsedAt = &now
+	s.db.Save(&smsCode)
+	
+	return true
+}
+
+// WebAuthn methods (basic implementation)
+type WebAuthnRegistrationRequest struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+}
+
+type WebAuthnRegistrationResponse struct {
+	Options string `json:"options"` // JSON string of WebAuthn creation options
+}
+
+type WebAuthnLoginRequest struct {
+	UserID uuid.UUID `json:"user_id"`
+}
+
+type WebAuthnLoginResponse struct {
+	Options string `json:"options"` // JSON string of WebAuthn assertion options
+}
+
+func (s *MFAService) InitiateWebAuthnRegistration(userID uuid.UUID, credentialName string) (*WebAuthnRegistrationResponse, error) {
+	// This is a simplified implementation
+	// In production, you would use a proper WebAuthn library like github.com/go-webauthn/webauthn
+	
+	// For now, return mock options
+	options := map[string]interface{}{
+		"challenge": generateMFASecureToken(),
+		"rp": map[string]interface{}{
+			"name": "A5C Hub",
+			"id":   "localhost",
+		},
+		"user": map[string]interface{}{
+			"id":          userID.String(),
+			"name":        credentialName,
+			"displayName": credentialName,
+		},
+		"pubKeyCredParams": []map[string]interface{}{
+			{"alg": -7, "type": "public-key"},
+			{"alg": -257, "type": "public-key"},
+		},
+		"authenticatorSelection": map[string]interface{}{
+			"authenticatorAttachment": "platform",
+			"userVerification":        "required",
+		},
+		"timeout": 60000,
+	}
+	
+	optionsJSON, err := json.Marshal(options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal options: %w", err)
+	}
+	
+	return &WebAuthnRegistrationResponse{
+		Options: string(optionsJSON),
+	}, nil
+}
+
+func (s *MFAService) CompleteWebAuthnRegistration(userID uuid.UUID, credentialName string, publicKeyBytes []byte, credentialID string) error {
+	// Store the WebAuthn credential
+	credential := WebAuthnCredential{
+		UserID:       userID,
+		CredentialID: credentialID,
+		PublicKey:    publicKeyBytes,
+		Name:         credentialName,
+		SignCount:    0,
+	}
+	
+	if err := s.db.Create(&credential).Error; err != nil {
+		return fmt.Errorf("failed to store WebAuthn credential: %w", err)
+	}
+	
+	// Enable MFA for user if not already enabled
+	err := s.db.Model(&models.User{}).Where("id = ?", userID).Update("two_factor_enabled", true).Error
+	if err != nil {
+		return fmt.Errorf("failed to enable MFA: %w", err)
+	}
+	
+	return nil
+}
+
+func (s *MFAService) GetWebAuthnCredentials(userID uuid.UUID) ([]WebAuthnCredential, error) {
+	var credentials []WebAuthnCredential
+	err := s.db.Where("user_id = ?", userID).Find(&credentials).Error
+	return credentials, err
+}
+
+func (s *MFAService) DeleteWebAuthnCredential(userID uuid.UUID, credentialID string) error {
+	return s.db.Where("user_id = ? AND credential_id = ?", userID, credentialID).Delete(&WebAuthnCredential{}).Error
+}
+
+func generateMFASecureToken() string {
+	bytes := make([]byte, 32)
+	rand.Read(bytes)
+	return fmt.Sprintf("%x", bytes)
 }
