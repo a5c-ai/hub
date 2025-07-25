@@ -36,7 +36,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
                   {getStateText(pullRequest.issue.state, pullRequest.merged)}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  #{pullRequest.issue.number} opened {formatDistanceToNow(new Date(pullRequest.issue.created_at), { addSuffix: true })} by {pullRequest.issue.user.username}
+                  #{pullRequest.issue.number} opened {formatDistanceToNow(new Date(pullRequest.issue.created_at), { addSuffix: true })} by {pullRequest.issue.user?.username || 'Unknown'}
                 </span>
               </div>
               
@@ -46,7 +46,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
               
               <div className="text-sm text-muted-foreground mb-4">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {pullRequest.state === 'open' ? 'Open' : pullRequest.state === 'merged' ? 'Merged' : 'Closed'}
+                  {pullRequest.merged ? 'Merged' : pullRequest.issue.state === 'open' ? 'Open' : 'Closed'}
                 </span>
               </div>
 

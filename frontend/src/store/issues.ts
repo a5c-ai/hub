@@ -328,9 +328,10 @@ export const useIssueStore = create<IssueStore>()(
           
           // Backend returns { comments: Comment[], total: number, page: number, per_page: number }
           // similar to issues format
+          const responseData = response as unknown as { comments?: Comment[], data?: Comment[], total?: number };
           set({
-            comments: response.comments || response.data || [],
-            commentsTotal: response.total || 0,
+            comments: responseData.comments || responseData.data || [],
+            commentsTotal: responseData.total || 0,
             isLoadingComments: false,
           });
         } catch (error: unknown) {
@@ -354,7 +355,7 @@ export const useIssueStore = create<IssueStore>()(
           // Add the new comment to the list
           const state = get();
           set({ 
-            comments: [...state.comments, comment],
+            comments: [...state.comments, comment as Comment],
             commentsTotal: state.commentsTotal + 1,
           });
           
@@ -389,7 +390,7 @@ export const useIssueStore = create<IssueStore>()(
           // Update comment in list
           const state = get();
           const updatedComments = state.comments.map(existingComment =>
-            existingComment.id === commentId ? comment : existingComment
+            existingComment.id === commentId ? comment as Comment : existingComment
           );
           set({ comments: updatedComments });
         } catch (error: unknown) {
