@@ -91,7 +91,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logStreamingService, webhookService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
-	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
+	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
 	hooksHandlers := NewHooksHandlers(repositoryService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)

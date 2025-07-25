@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { apiClient } from '@/lib/api';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { formatDistanceToNow } from 'date-fns';
+import RunnerHealthMonitor from '@/components/actions/RunnerHealthMonitor';
 
 interface Runner {
   id: string;
@@ -33,6 +34,7 @@ export default function RunnersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [registrationToken, setRegistrationToken] = useState<string>('');
+  const [selectedRunner, setSelectedRunner] = useState<string | null>(null);
 
   const fetchRunners = useCallback(async () => {
     try {
@@ -167,78 +169,106 @@ export default function RunnersPage() {
       </div>
 
       {/* Runners List */}
-      {runners.length === 0 ? (
-        <Card className="p-8 text-center">
-          <h3 className="text-lg font-medium mb-2">No runners yet</h3>
-          <p className="text-gray-600 mb-4">
-            Set up a self-hosted runner to run workflows on your own infrastructure.
-          </p>
-          <Button onClick={generateRegistrationToken}>
-            Add your first runner
-          </Button>
-        </Card>
-      ) : (
-        <Card>
-          <div className="divide-y">
-            {runners.map((runner) => (
-              <div key={runner.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">
-                      {getStatusIcon(runner.status)}
-                    </span>
-                    
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{runner.name}</h3>
-                        <Badge variant={getStatusColor(runner.status) as 'default' | 'secondary' | 'outline' | 'destructive'}>
-                          {runner.status}
-                        </Badge>
-                        <Badge variant="outline">
-                          {runner.type}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        {runner.os && (
-                          <span>{runner.os} {runner.architecture}</span>
-                        )}
-                        {runner.version && (
-                          <span>v{runner.version}</span>
-                        )}
-                        <span>Last seen: {formatLastSeen(runner.last_seen_at)}</span>
-                      </div>
-                      
-                      {runner.labels.length > 0 && (
-                        <div className="flex gap-1 mt-2">
-                          {runner.labels.map((label, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {label}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {runners.length === 0 ? (
+            <Card className="p-8 text-center">
+              <h3 className="text-lg font-medium mb-2">No runners yet</h3>
+              <p className="text-gray-600 mb-4">
+                Set up a self-hosted runner to run workflows on your own infrastructure.
+              </p>
+              <Button onClick={generateRegistrationToken}>
+                Add your first runner
+              </Button>
+            </Card>
+          ) : (
+            <Card>
+              <div className="divide-y">
+                {runners.map((runner) => (
+                  <div key={runner.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl">
+                          {getStatusIcon(runner.status)}
+                        </span>
+                        
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{runner.name}</h3>
+                            <Badge variant={getStatusColor(runner.status) as 'default' | 'secondary' | 'outline' | 'destructive'}>
+                              {runner.status}
                             </Badge>
-                          ))}
+                            <Badge variant="outline">
+                              {runner.type}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            {runner.os && (
+                              <span>{runner.os} {runner.architecture}</span>
+                            )}
+                            {runner.version && (
+                              <span>v{runner.version}</span>
+                            )}
+                            <span>Last seen: {formatLastSeen(runner.last_seen_at)}</span>
+                          </div>
+                          
+                          {runner.labels.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {runner.labels.map((label, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {label}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedRunner(runner.id)}
+                        >
+                          Monitor
+                        </Button>
+                        {runner.type === 'self-hosted' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowDeleteModal(runner.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    {runner.type === 'self-hosted' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setShowDeleteModal(runner.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+            </Card>
+          )}
+        </div>
+
+        {/* Runner Health Monitor */}
+        <div>
+          {selectedRunner ? (
+            <RunnerHealthMonitor 
+              runnerId={selectedRunner}
+              onError={(error) => setError(error)}
+            />
+          ) : (
+            <Card className="p-8 text-center">
+              <h4 className="font-medium mb-2">Runner Health</h4>
+              <p className="text-sm text-muted-foreground">
+                Select a runner to view health metrics
+              </p>
+            </Card>
+          )}
+        </div>
+      </div>
 
       {/* Add Runner Modal */}
       <Modal
