@@ -199,7 +199,7 @@ export default function SecretsPage() {
 
       {/* Add/Update Secret Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setSecretName('');
@@ -290,7 +290,7 @@ export default function SecretsPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Delete secret"
       >

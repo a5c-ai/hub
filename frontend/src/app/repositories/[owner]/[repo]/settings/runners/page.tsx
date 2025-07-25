@@ -207,7 +207,7 @@ export default function RunnersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{runner.name}</h3>
-                        <Badge variant={getStatusColor(runner.status) as any}>
+                        <Badge variant={getStatusColor(runner.status) as 'default' | 'secondary' | 'destructive' | 'outline'}>
                           {runner.status}
                         </Badge>
                         <Badge variant="outline">
@@ -258,7 +258,7 @@ export default function RunnersPage() {
 
       {/* Add Runner Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setRegistrationToken('');
@@ -311,7 +311,7 @@ export default function RunnersPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Remove runner"
       >

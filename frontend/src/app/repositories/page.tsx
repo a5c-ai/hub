@@ -45,7 +45,7 @@ export default function RepositoriesPage() {
     const matchesSearch = searchQuery.trim() === '' || 
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repo.owner.username.toLowerCase().includes(searchQuery.toLowerCase());
+      repo.owner?.username?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
     
     const matchesType = typeFilter === 'All' ||
       (typeFilter === 'Public' && !repo.private) ||

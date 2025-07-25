@@ -223,7 +223,7 @@ export default function ActionsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                    <Badge variant={getStatusColor(run.status, run.conclusion) as 'default' | 'secondary' | 'destructive' | 'outline'}>
                       {run.conclusion || run.status}
                     </Badge>
                     <p className="text-sm text-gray-500 mt-1">

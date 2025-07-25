@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +32,6 @@ interface WorkflowRun {
 
 export default function WorkflowRunsPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const { owner, repo } = params;
   
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
@@ -246,7 +245,7 @@ export default function WorkflowRunsPage() {
                 </div>
                 
                 <div className="text-right">
-                  <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                  <Badge variant={getStatusColor(run.status, run.conclusion) as 'default' | 'secondary' | 'destructive' | 'outline'}>
                     {run.conclusion || run.status}
                   </Badge>
                   
