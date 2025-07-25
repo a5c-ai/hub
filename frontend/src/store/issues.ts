@@ -324,10 +324,13 @@ export const useIssueStore = create<IssueStore>()(
         set({ isLoadingComments: true, commentsError: null });
         
         try {
-          const response = await commentApi.getComments(owner, repo, issueNumber) as PaginatedResponse<Comment>;
+          const response = await commentApi.getComments(owner, repo, issueNumber);
+          
+          // Backend returns { comments: Comment[], total: number, page: number, per_page: number }
+          // similar to issues format
           set({
-            comments: response.data,
-            commentsTotal: response.pagination.total,
+            comments: response.comments || response.data || [],
+            commentsTotal: response.total || 0,
             isLoadingComments: false,
           });
         } catch (error: unknown) {
@@ -342,13 +345,16 @@ export const useIssueStore = create<IssueStore>()(
         set({ isCreating: true, operationError: null });
         
         try {
-          const response = await commentApi.createComment(owner, repo, issueNumber, body) as { data: Comment };
+          const response = await commentApi.createComment(owner, repo, issueNumber, body);
           set({ isCreating: false });
+          
+          // Backend returns the comment object directly, not wrapped in a response
+          const comment = response.data || response;
           
           // Add the new comment to the list
           const state = get();
           set({ 
-            comments: [...state.comments, response.data],
+            comments: [...state.comments, comment],
             commentsTotal: state.commentsTotal + 1,
           });
           
@@ -374,13 +380,16 @@ export const useIssueStore = create<IssueStore>()(
         set({ isUpdating: true, operationError: null });
         
         try {
-          const response = await commentApi.updateComment(owner, repo, issueNumber, commentId, body) as { data: Comment };
+          const response = await commentApi.updateComment(owner, repo, issueNumber, commentId, body);
           set({ isUpdating: false });
+          
+          // Backend returns the comment object directly, not wrapped in a response
+          const comment = response.data || response;
           
           // Update comment in list
           const state = get();
-          const updatedComments = state.comments.map(comment =>
-            comment.id === commentId ? response.data : comment
+          const updatedComments = state.comments.map(existingComment =>
+            existingComment.id === commentId ? comment : existingComment
           );
           set({ comments: updatedComments });
         } catch (error: unknown) {

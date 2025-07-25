@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { PullRequest } from '../../types'
 import { Badge } from '../ui/Badge'
 import { Card } from '../ui/Card'
+import { formatDistanceToNow } from 'date-fns'
 
 interface PullRequestDetailProps {
   pullRequest: PullRequest
@@ -34,33 +35,24 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
                 <Badge className={getStateColor(pullRequest.issue.state, pullRequest.merged)}>
                   {getStateText(pullRequest.issue.state, pullRequest.merged)}
                 </Badge>
-                <span className="text-sm text-gray-600">
-                  #{pullRequest.issue.number} opened on {new Date(pullRequest.created_at).toLocaleDateString()}
+                <span className="text-sm text-muted-foreground">
+                  #{pullRequest.issue.number} opened {formatDistanceToNow(new Date(pullRequest.issue.created_at), { addSuffix: true })} by {pullRequest.issue.user.username}
                 </span>
               </div>
               
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 {pullRequest.issue.title}
               </h2>
               
-              <div className="text-sm text-gray-600 mb-4">
-                <span className="font-medium">{pullRequest.issue.user?.username}</span> wants to merge{' '}
-                <Badge variant="outline" className="mx-1">
-                  {pullRequest.changed_files} {pullRequest.changed_files === 1 ? 'file' : 'files'}
-                </Badge>
-                into{' '}
-                <Badge variant="outline" className="mx-1">
-                  {pullRequest.base_ref}
-                </Badge>
-                from{' '}
-                <Badge variant="outline" className="mx-1">
-                  {pullRequest.head_ref}
-                </Badge>
+              <div className="text-sm text-muted-foreground mb-4">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {pullRequest.state === 'open' ? 'Open' : pullRequest.state === 'merged' ? 'Merged' : 'Closed'}
+                </span>
               </div>
 
               {pullRequest.issue.body && (
                 <div className="prose max-w-none">
-                  <p className="text-gray-700">{pullRequest.issue.body}</p>
+                  <p className="text-foreground">{pullRequest.issue.body}</p>
                 </div>
               )}
             </div>
@@ -75,8 +67,8 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
             onClick={() => setActiveTab('conversation')}
             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'conversation'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             }`}
           >
             <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,8 +84,8 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
             onClick={() => setActiveTab('files')}
             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'files'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             }`}
           >
             <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,8 +101,8 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
             onClick={() => setActiveTab('commits')}
             className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'commits'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
             }`}
           >
             <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +118,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
         {activeTab === 'conversation' && (
           <Card>
             <div className="p-6">
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
@@ -140,7 +132,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
         {activeTab === 'files' && (
           <Card>
             <div className="p-6">
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -163,7 +155,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
         {activeTab === 'commits' && (
           <Card>
             <div className="p-6">
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>

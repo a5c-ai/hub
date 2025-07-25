@@ -127,7 +127,7 @@ export default function SecretsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Secrets</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Secrets are encrypted environment variables that can be used in your workflows.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function SecretsPage() {
       {secrets.length === 0 ? (
         <Card className="p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No secrets yet</h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             Secrets are environment variables that are encrypted and only exposed to selected actions.
           </p>
           <Button onClick={() => setShowAddModal(true)}>
@@ -161,7 +161,7 @@ export default function SecretsPage() {
               <div key={secret.id} className="p-4 flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">{secret.name}</h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Updated {new Date(secret.updated_at).toLocaleDateString()}
                     {secret.environment && (
                       <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
@@ -211,18 +211,19 @@ export default function SecretsPage() {
         <form onSubmit={handleAddSecret}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Name
               </label>
               <Input
                 type="text"
                 value={secretName}
                 onChange={(e) => setSecretName(e.target.value.toUpperCase())}
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
                 placeholder="SECRET_NAME"
                 required
                 disabled={!!secretName} // Disable when updating
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Must be uppercase letters, numbers, and underscores only
               </p>
               {secretName && !validateSecretName(secretName) && (
@@ -233,33 +234,34 @@ export default function SecretsPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Value
               </label>
               <textarea
                 value={secretValue}
                 onChange={(e) => setSecretValue(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
                 rows={4}
                 placeholder="Enter secret value..."
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 The secret value will be encrypted and stored securely
               </p>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Environment (optional)
               </label>
               <Input
                 type="text"
                 value={secretEnvironment}
                 onChange={(e) => setSecretEnvironment(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground"
                 placeholder="production"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Restrict this secret to a specific environment
               </p>
             </div>
@@ -295,7 +297,7 @@ export default function SecretsPage() {
         title="Delete secret"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
+          <p className="text-foreground">
             Are you sure you want to delete this secret? This action cannot be undone.
           </p>
           

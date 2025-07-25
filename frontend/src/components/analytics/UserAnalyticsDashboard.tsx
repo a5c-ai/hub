@@ -99,22 +99,20 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
       <div className="space-y-6">
         <div className="animate-pulse">
           <div className="flex items-center space-x-4 mb-6">
-            <div className="h-16 w-16 bg-gray-200 rounded-full"></div>
-            <div>
-              <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-32"></div>
+            <div className="h-16 w-16 bg-muted rounded-full"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-6 bg-muted rounded w-48 mb-2"></div>
+              <div className="h-4 bg-muted rounded w-32"></div>
             </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </Card>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-muted rounded w-1/2"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -126,8 +124,8 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
       <Card className="p-6">
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load analytics</h3>
-          <p className="text-gray-500">{error}</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Failed to load analytics</h3>
+          <p className="text-muted-foreground">{error}</p>
         </div>
       </Card>
     );
@@ -137,9 +135,9 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
     return (
       <Card className="p-6">
         <div className="text-center">
-          <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No analytics available</h3>
-          <p className="text-gray-500">User analytics will appear here once there&apos;s activity.</p>
+          <ChartBarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No analytics available</h3>
+          <p className="text-muted-foreground">User analytics will appear here once there&apos;s activity.</p>
         </div>
       </Card>
     );
@@ -163,11 +161,11 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
             size="lg"
           />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-foreground">
               {data.user.fullName || data.user.username}
             </h1>
-            <p className="text-gray-600">@{data.user.username}</p>
-            <p className="text-sm text-gray-500 flex items-center mt-1">
+            <p className="text-muted-foreground">@{data.user.username}</p>
+            <p className="text-sm text-muted-foreground flex items-center mt-1">
               <CalendarIcon className="h-4 w-4 mr-1" />
               Joined {formatDate(data.user.joinedAt)}
             </p>
@@ -243,27 +241,25 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Activity Summary</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Sessions</span>
-                  <span className="font-medium">{formatNumber(data.activityStats.totalSessions)}</span>
+              <h3 className="text-lg font-medium text-foreground mb-4">Activity Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{data.activityStats.totalSessions}</div>
+                  <span className="text-sm text-muted-foreground">Total Sessions</span>
                 </div>
-                {data.activityStats.avgSessionTime && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg Session Time</span>
-                    <span className="font-medium">{formatDuration(data.activityStats.avgSessionTime)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Page Views</span>
-                  <span className="font-medium">{formatNumber(data.activityStats.totalPageViews)}</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{data.activityStats.avgSessionTime}</div>
+                  <span className="text-sm text-muted-foreground">Avg Session Time</span>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{data.activityStats.totalPageViews}</div>
+                  <span className="text-sm text-muted-foreground">Page Views</span>
                 </div>
               </div>
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Contribution Summary</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Contribution Summary</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Pull Requests</span>

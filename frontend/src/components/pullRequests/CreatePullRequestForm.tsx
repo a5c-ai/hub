@@ -86,9 +86,9 @@ export function CreatePullRequestForm({
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Create a new pull request</h1>
-        <p className="text-gray-600 mt-2">
-          Create a pull request to propose changes to {repositoryOwner}/{repositoryName}
+        <h1 className="text-2xl font-bold text-foreground">Create a new pull request</h1>
+        <p className="text-muted-foreground mt-2">
+          Create a pull request to propose and collaborate on changes to a repository.
         </p>
       </div>
 
@@ -105,14 +105,14 @@ export function CreatePullRequestForm({
           
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <label htmlFor="base" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="base" className="block text-sm font-medium text-foreground mb-2">
                 Base branch
               </label>
               <select
                 id="base"
                 value={formData.base}
                 onChange={(e) => handleInputChange('base', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 disabled={loading}
               >
                 {branches.map(branch => (
@@ -121,19 +121,21 @@ export function CreatePullRequestForm({
               </select>
             </div>
             
-            <div className="flex items-center text-gray-500">
-              ←
+            <div className="flex items-center text-muted-foreground">
+              <svg className="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </div>
             
             <div className="flex-1">
-              <label htmlFor="head" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="head" className="block text-sm font-medium text-foreground mb-2">
                 Compare branch
               </label>
               <select
                 id="head"
                 value={formData.head}
                 onChange={(e) => handleInputChange('head', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 disabled={loading}
               >
                 <option value="">Select a branch</option>
@@ -144,8 +146,8 @@ export function CreatePullRequestForm({
             </div>
           </div>
           
-          <p className="text-sm text-gray-600 mt-2">
-            Choose two branches to see what&apos;s changed or to start a new pull request.
+          <p className="text-sm text-muted-foreground mt-2">
+            Choose a branch that contains your changes
           </p>
         </Card>
 
@@ -153,7 +155,7 @@ export function CreatePullRequestForm({
         <Card className="p-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
               <Input
@@ -161,27 +163,27 @@ export function CreatePullRequestForm({
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter pull request title"
+                placeholder="Brief description of your changes"
                 disabled={loading}
                 className="w-full"
               />
             </div>
 
             <div>
-              <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="body" className="block text-sm font-medium text-foreground mb-2 mt-4">
                 Description
               </label>
               <textarea
                 id="body"
                 value={formData.body}
                 onChange={(e) => handleInputChange('body', e.target.value)}
-                placeholder="Describe your changes (optional)"
-                rows={8}
+                placeholder="Provide a detailed description of your changes..."
+                rows={6}
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-vertical bg-background text-foreground placeholder:text-muted-foreground"
               />
-              <p className="text-sm text-gray-500 mt-2">
-                You can use Markdown to format your description.
+              <p className="text-sm text-muted-foreground mt-2">
+                You can use markdown to format your description
               </p>
             </div>
           </div>
@@ -198,15 +200,15 @@ export function CreatePullRequestForm({
                 checked={formData.draft}
                 onChange={(e) => handleInputChange('draft', e.target.checked)}
                 disabled={loading}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="rounded border-border text-primary shadow-sm focus:border-ring focus:ring focus:ring-ring/20"
               />
-              <span className="ml-2 text-sm text-gray-700">
-                Create as draft pull request
+              <span className="ml-2 text-sm text-foreground">
+                Create as draft
               </span>
+              <p className="text-sm text-muted-foreground ml-6">
+                Draft pull requests cannot be merged and do not request reviews
+              </p>
             </label>
-            <p className="text-sm text-gray-500 ml-6">
-              Draft pull requests cannot be merged until they are marked as ready for review.
-            </p>
 
             <label className="flex items-center">
               <input
@@ -214,15 +216,15 @@ export function CreatePullRequestForm({
                 checked={formData.maintainer_can_modify}
                 onChange={(e) => handleInputChange('maintainer_can_modify', e.target.checked)}
                 disabled={loading}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="rounded border-border text-primary shadow-sm focus:border-ring focus:ring focus:ring-ring/20"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-foreground">
                 Allow edits by maintainers
               </span>
+              <p className="text-sm text-muted-foreground ml-6">
+                Maintainers can edit and update your pull request
+              </p>
             </label>
-            <p className="text-sm text-gray-500 ml-6">
-              Maintainers will be able to edit your pull request and push commits to your branch.
-            </p>
           </div>
         </Card>
 

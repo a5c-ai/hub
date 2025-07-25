@@ -81,8 +81,8 @@ export function ReviewSection({
         )
       default:
         return (
-          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
             </svg>
           </div>
@@ -110,7 +110,7 @@ export function ReviewSection({
       case 'request_changes':
         return <Badge className="bg-red-100 text-red-800">Changes requested</Badge>
       default:
-        return <Badge className="bg-gray-100 text-gray-800">Comment</Badge>
+        return <Badge className="bg-muted text-foreground">Comment</Badge>
     }
   }
 
@@ -124,20 +124,20 @@ export function ReviewSection({
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3 mb-2">
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-foreground">
                   {review.user?.username || 'Unknown'}
                 </span>
-                <span className="text-gray-500 text-sm">
+                <span className="text-muted-foreground text-sm">
                   {getReviewStateText(review.state)}
                 </span>
                 {getReviewStateBadge(review.state)}
-                <span className="text-gray-500 text-sm">
+                <span className="text-muted-foreground text-sm">
                   {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
               
               {review.body && (
-                <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                   {review.body}
                 </div>
               )}
@@ -145,19 +145,19 @@ export function ReviewSection({
               {/* Review Comments */}
               {review.review_comments.length > 0 && (
                 <div className="mt-4 space-y-3">
-                  <h4 className="text-sm font-medium text-gray-900">
+                  <h4 className="text-sm font-medium text-foreground">
                     File comments ({review.review_comments.length})
                   </h4>
                   {review.review_comments.map((comment) => (
-                    <div key={comment.id} className="bg-gray-50 rounded-md p-3">
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                    <div key={comment.id} className="bg-muted rounded-md p-3">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
                         <span className="font-medium">{comment.user?.username || 'Unknown'}</span>
                         <span>commented on</span>
-                        <code className="bg-gray-200 px-1 rounded text-xs">
+                        <code className="bg-muted-foreground/20 px-1 rounded text-xs">
                           {comment.path}
                         </code>
                       </div>
-                      <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                      <div className="text-sm text-foreground whitespace-pre-wrap">
                         {comment.body}
                       </div>
                     </div>
@@ -181,21 +181,21 @@ export function ReviewSection({
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3 mb-2">
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-foreground">
                   {comment.user?.username || 'Unknown'}
                 </span>
-                <span className="text-gray-500 text-sm">
+                <span className="text-muted-foreground text-sm">
                   commented on
                 </span>
-                <code className="bg-gray-200 px-1 rounded text-xs">
+                <code className="bg-muted-foreground/20 px-1 rounded text-xs">
                   {comment.path}
                 </code>
-                <span className="text-gray-500 text-sm">
+                <span className="text-muted-foreground text-sm">
                   {new Date(comment.created_at).toLocaleDateString()}
                 </span>
               </div>
               
-              <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
+              <div className="prose max-w-none text-foreground whitespace-pre-wrap">
                 {comment.body}
               </div>
             </div>
@@ -215,17 +215,16 @@ export function ReviewSection({
           <form onSubmit={handleSubmitReview}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="reviewText" className="block text-sm font-medium text-gray-700 mb-2">
-                  Review comment
+                <label htmlFor="reviewText" className="block text-sm font-medium text-foreground mb-2">
+                  Leave a review
                 </label>
                 <textarea
                   id="reviewText"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-vertical bg-background text-foreground placeholder:text-muted-foreground"
+                  placeholder="Leave a comment..."
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Leave a comment"
-                  rows={6}
-                  disabled={submitting}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                 />
               </div>
 
@@ -244,7 +243,7 @@ export function ReviewSection({
                       onChange={(e) => setReviewEvent(e.target.value as 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES')}
                       className="form-radio text-blue-600"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Comment</span>
+                    <span className="ml-2 text-sm text-foreground">Comment</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -255,7 +254,7 @@ export function ReviewSection({
                       onChange={(e) => setReviewEvent(e.target.value as 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES')}
                       className="form-radio text-green-600"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Approve</span>
+                    <span className="ml-2 text-sm text-foreground">Approve</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -266,7 +265,7 @@ export function ReviewSection({
                       onChange={(e) => setReviewEvent(e.target.value as 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES')}
                       className="form-radio text-red-600"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Request changes</span>
+                    <span className="ml-2 text-sm text-foreground">Request changes</span>
                   </label>
                 </div>
 

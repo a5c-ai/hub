@@ -60,21 +60,19 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <div className="flex space-x-2">
-            {['daily', 'weekly', 'monthly', 'yearly'].map((range) => (
-              <div key={range} className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+            {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((range) => (
+              <div key={range} className="h-8 w-16 bg-muted rounded animate-pulse"></div>
             ))}
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-                <div className="h-16 bg-gray-200 rounded"></div>
-              </div>
-            </Card>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-4">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-muted rounded w-1/2 mb-4"></div>
+              <div className="h-16 bg-muted rounded"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -220,7 +218,7 @@ interface SimpleChartProps {
 
 const SimpleChart: React.FC<SimpleChartProps> = ({ data, color, height }) => {
   if (!data || data.length === 0) {
-    return <div style={{ height }} className="bg-gray-100 rounded"></div>;
+    return <div style={{ height }} className="bg-muted rounded"></div>;
   }
 
   const maxValue = Math.max(...data.map(d => d.value));

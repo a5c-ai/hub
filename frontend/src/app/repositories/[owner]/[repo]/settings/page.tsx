@@ -220,7 +220,7 @@ export default function RepositorySettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Repository Access</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Repository Access</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
@@ -233,9 +233,9 @@ export default function RepositorySettingsPage() {
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Collaborators</h4>
+                        <h4 className="font-medium text-foreground mb-3">Collaborators</h4>
                         <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-600">Manage who can access this repository</p>
+                          <p className="text-sm text-muted-foreground">Manage who can access this repository</p>
                           <Button size="sm">Add Collaborator</Button>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ export default function RepositorySettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Branch Protection</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Branch Protection</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
@@ -260,8 +260,8 @@ export default function RepositorySettingsPage() {
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Branch Protection Rules</h4>
-                        <p className="text-sm text-gray-600 mb-4">Protect branches by requiring status checks, reviews, or restrictions</p>
+                        <h4 className="font-medium text-foreground mb-3">Branch Protection Rules</h4>
+                        <p className="text-sm text-muted-foreground mb-4">Protect branches by requiring status checks, reviews, or restrictions</p>
                         <Button size="sm">Add Rule</Button>
                       </div>
                     </div>
@@ -275,13 +275,13 @@ export default function RepositorySettingsPage() {
                 <Card>
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Webhooks</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Webhooks</h3>
                       <Button size="sm">Add Webhook</Button>
                     </div>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Webhooks allow external services to be notified when certain events happen
                     </p>
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                       </svg>
@@ -296,7 +296,7 @@ export default function RepositorySettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Settings</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Actions Settings</h3>
                     <div className="space-y-4">
                       <div className="p-3 border border-border rounded-lg bg-card">
                         <div className="flex items-center">
@@ -307,7 +307,7 @@ export default function RepositorySettingsPage() {
                             title="Enable GitHub Actions"
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
-                          <label htmlFor="actions-enabled" className="ml-3 block text-sm font-medium text-gray-900">
+                          <label htmlFor="actions-enabled" className="ml-3 block text-sm font-medium text-foreground">
                             Enable GitHub Actions for this repository
                           </label>
                         </div>
@@ -356,7 +356,7 @@ export default function RepositorySettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Security Settings</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
