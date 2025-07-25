@@ -20,6 +20,11 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`repository-security.spec.ts`** - Repository security, secrets, and access control tests
 - **`repository-integrations.spec.ts`** - Repository webhooks, deploy keys, and integrations tests
 - **`issues.spec.ts`** - Issue management and workflow tests
+- **`actions-workflows.spec.ts`** - GitHub Actions workflow management tests
+- **`actions-logs.spec.ts`** - Workflow run details and log viewing tests
+- **`actions-runners.spec.ts`** - Self-hosted runner management tests
+- **`actions-integration.spec.ts`** - Actions integration features (status checks, deployments)
+- **`actions-performance.spec.ts`** - Performance and stress testing for Actions features
 - **`activity-feed.spec.ts`** - Activity feed and timeline tests (24 tests)
 - **`notifications.spec.ts`** - Notification center and management tests (40 tests)
 - **`notification-preferences.spec.ts`** - Notification settings and preferences tests (34 tests)
@@ -73,6 +78,13 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Keyboard navigation
 - Loading states
 
+#### GitHub Actions Tests
+- **Workflow Management**: View workflows, run status, filtering, real-time updates
+- **Workflow Run Details**: Job steps, status indicators, run metadata, timing information
+- **Log Viewing**: Real-time log streaming, syntax highlighting, search, artifact downloads
+- **Runner Management**: Self-hosted runners, health monitoring, runner groups, permissions
+- **Integration Features**: Status checks on PRs, deployment workflows, matrix builds, conditional execution
+- **Performance Testing**: Large log handling, concurrent runs, memory management, API throttling
 #### Activity Feed Tests (24 tests)
 - Display global activity feed with different event types (push, PR, issue, fork, star, follow)
 - Filter activity by type (all, own, following)
@@ -233,8 +245,19 @@ npx playwright test auth.spec.ts
 # Run only dashboard tests
 npx playwright test dashboard.spec.ts
 
+# Run all GitHub Actions tests
+npx playwright test actions-*.spec.ts
+
+# Run specific Actions test suites
+npx playwright test actions-workflows.spec.ts
+npx playwright test actions-logs.spec.ts
+npx playwright test actions-runners.spec.ts
+npx playwright test actions-integration.spec.ts
+npx playwright test actions-performance.spec.ts
+
 # Run tests matching a pattern
 npx playwright test --grep "login"
+npx playwright test --grep "workflow"
 ```
 
 ### Browser-Specific Testing
@@ -277,6 +300,18 @@ The `helpers/test-utils.ts` file provides common utilities:
 - **`expectDashboardPage()`** - Verify user is on dashboard
 - **`waitForLoadingToComplete()`** - Wait for loading states
 - **`takeScreenshot()`** - Capture screenshots for debugging
+
+#### Actions-Specific Utilities
+- **`navigateToActions()`** - Navigate to repository Actions page
+- **`navigateToWorkflowRun()`** - Navigate to specific workflow run
+- **`navigateToRunners()`** - Navigate to runners management page
+- **`waitForWorkflowCompletion()`** - Wait for workflow run to complete
+- **`expectWorkflowStatus()`** - Verify workflow run status
+- **`mockWorkflowData()`** - Mock API responses for testing
+- **`simulateLogUpdates()`** - Simulate real-time log streaming
+- **`checkMobileActions()`** - Verify mobile responsiveness
+- **`checkActionsPerformance()`** - Test page load performance
+- **`checkActionsAccessibility()`** - Verify accessibility standards
 
 ## Data Test IDs
 
