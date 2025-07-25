@@ -922,8 +922,146 @@ func (s *repositoryService) Unarchive(ctx context.Context, id uuid.UUID) error {
 }
 
 func (s *repositoryService) SyncCommits(ctx context.Context, repoID uuid.UUID) error {
-	// TODO: Implement commit synchronization from Git to database
-	return fmt.Errorf("SyncCommits not yet implemented")
+	s.logger.WithField("repo_id", repoID).Info("Starting commit synchronization")
+
+	// Get repository path
+	repoPath, err := s.GetRepositoryPath(ctx, repoID)
+	if err != nil {
+		return fmt.Errorf("failed to get repository path: %w", err)
+	}
+
+	// Get commits from Git
+	commitOptions := git.CommitOptions{
+		PerPage: 1000, // Sync in batches of 1000 commits
+	}
+
+	allCommits, err := s.gitService.GetCommits(ctx, repoPath, commitOptions)
+	if err != nil {
+		return fmt.Errorf("failed to get commits from Git: %w", err)
+	}
+
+	s.logger.WithFields(logrus.Fields{
+		"repo_id":      repoID,
+		"commit_count": len(allCommits),
+	}).Info("Retrieved commits from Git repository")
+
+	// Process commits in batches to avoid overwhelming the database
+	batchSize := 100
+	for i := 0; i < len(allCommits); i += batchSize {
+		end := i + batchSize
+		if end > len(allCommits) {
+			end = len(allCommits)
+		}
+
+		batch := allCommits[i:end]
+		if err := s.syncCommitBatch(ctx, repoID, batch); err != nil {
+			s.logger.WithError(err).WithFields(logrus.Fields{
+				"repo_id":    repoID,
+				"batch_start": i,
+				"batch_end":   end,
+			}).Error("Failed to sync commit batch")
+			return fmt.Errorf("failed to sync commit batch [%d-%d]: %w", i, end, err)
+		}
+
+		s.logger.WithFields(logrus.Fields{
+			"repo_id":    repoID,
+			"batch_start": i,
+			"batch_end":   end,
+		}).Debug("Successfully synced commit batch")
+	}
+
+	// Update repository's pushed_at timestamp
+	if len(allCommits) > 0 {
+		latestCommit := allCommits[0] // Commits are ordered by date (newest first)
+		if err := s.db.Model(&models.Repository{}).Where("id = ?", repoID).Update("pushed_at", latestCommit.Author.Date).Error; err != nil {
+			s.logger.WithError(err).Warn("Failed to update repository pushed_at timestamp")
+		}
+	}
+
+	s.logger.WithField("repo_id", repoID).Info("Commit synchronization completed successfully")
+	return nil
+}
+
+// syncCommitBatch synchronizes a batch of commits to the database
+func (s *repositoryService) syncCommitBatch(ctx context.Context, repoID uuid.UUID, commits []*git.Commit) error {
+	if len(commits) == 0 {
+		return nil
+	}
+
+	// Extract commit SHAs for bulk checking
+	commitSHAs := make([]string, len(commits))
+	for i, commit := range commits {
+		commitSHAs[i] = commit.SHA
+	}
+
+	// Check which commits already exist in the database
+	var existingCommits []models.Commit
+	if err := s.db.Where("repository_id = ? AND sha IN ?", repoID, commitSHAs).Find(&existingCommits).Error; err != nil {
+		return fmt.Errorf("failed to check existing commits: %w", err)
+	}
+
+	// Create a map of existing commit SHAs for quick lookup
+	existingSHAs := make(map[string]bool)
+	for _, existingCommit := range existingCommits {
+		existingSHAs[existingCommit.SHA] = true
+	}
+
+	// Prepare new commits for insertion
+	var newCommits []models.Commit
+	for _, gitCommit := range commits {
+		if existingSHAs[gitCommit.SHA] {
+			continue // Skip existing commits
+		}
+
+		// Get parent SHA (use first parent for merge commits)
+		var parentSHA string
+		if len(gitCommit.Parents) > 0 {
+			parentSHA = gitCommit.Parents[0]
+		}
+
+		// Calculate commit statistics if available
+		additions := 0
+		deletions := 0
+		changes := 0
+		if gitCommit.Stats != nil {
+			additions = gitCommit.Stats.Additions
+			deletions = gitCommit.Stats.Deletions
+			changes = gitCommit.Stats.Total
+		}
+
+		newCommit := models.Commit{
+			RepositoryID:   repoID,
+			SHA:            gitCommit.SHA,
+			Message:        gitCommit.Message,
+			AuthorName:     gitCommit.Author.Name,
+			AuthorEmail:    gitCommit.Author.Email,
+			AuthorDate:     gitCommit.Author.Date,
+			CommitterName:  gitCommit.Committer.Name,
+			CommitterEmail: gitCommit.Committer.Email,
+			CommitterDate:  gitCommit.Committer.Date,
+			TreeSHA:        gitCommit.Tree,
+			ParentSHA:      parentSHA,
+			Additions:      additions,
+			Deletions:      deletions,
+			Changes:        changes,
+		}
+
+		newCommits = append(newCommits, newCommit)
+	}
+
+	// Bulk insert new commits
+	if len(newCommits) > 0 {
+		if err := s.db.CreateInBatches(newCommits, 50).Error; err != nil {
+			return fmt.Errorf("failed to insert commits: %w", err)
+		}
+
+		s.logger.WithFields(logrus.Fields{
+			"repo_id":     repoID,
+			"new_commits": len(newCommits),
+		}).Debug("Inserted new commits to database")
+	}
+
+	return nil
 }
 
 // UpdateRepositoryStats updates repository statistics including language detection

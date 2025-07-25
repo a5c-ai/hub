@@ -1011,7 +1011,13 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 		Languages: make(map[string]LanguageStats),
 	}
 
-	// Count commits
+	// Create language detector
+	langDetector := NewLanguageDetector()
+	contributors := make(map[string]bool)
+	languageBytes := make(map[string]int64)
+	totalBytes := int64(0)
+
+	// Count commits and contributors
 	if head, err := repo.Head(); err == nil {
 		commitIter, err := repo.Log(&git.LogOptions{From: head.Hash()})
 		if err == nil {
@@ -1020,6 +1026,10 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 				if c.Author.When.After(stats.LastActivity) {
 					stats.LastActivity = c.Author.When
 				}
+				
+				// Track unique contributors by email
+				contributors[c.Author.Email] = true
+				
 				return nil
 			})
 			commitIter.Close()
@@ -1046,6 +1056,41 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 		tagRefs.Close()
 	}
 
+	// Analyze files for language detection
+	if head, err := repo.Head(); err == nil {
+		commit, err := repo.CommitObject(head.Hash())
+		if err == nil {
+			tree, err := commit.Tree()
+			if err == nil {
+				// Walk through all files in the repository
+				err = tree.Files().ForEach(func(file *object.File) error {
+					// Get file size
+					fileSize := file.Size
+					totalBytes += fileSize
+					
+					// Detect language
+					var content []byte
+					if fileSize < 1024*1024 { // Only read content for files smaller than 1MB
+						if reader, err := file.Reader(); err == nil {
+							content, _ = io.ReadAll(reader)
+							reader.Close()
+						}
+					}
+					
+					language := langDetector.DetectLanguage(file.Name, content)
+					if language != "Unknown" {
+						languageBytes[language] += fileSize
+					}
+					
+					return nil
+				})
+				if err != nil {
+					s.logger.WithError(err).Warn("Failed to analyze repository files")
+				}
+			}
+		}
+	}
+
 	// Calculate repository size (simplified)
 	if stat, err := os.Stat(repoPath); err == nil {
 		if stat.IsDir() {
@@ -1059,9 +1104,20 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 		}
 	}
 
-	// TODO: Implement language detection and contributor counting
-	// This would require analyzing file extensions and commit authors
-	stats.Contributors = 1 // Placeholder
+	// Set contributor count
+	stats.Contributors = len(contributors)
+
+	// Calculate language percentages
+	for language, bytes := range languageBytes {
+		percentage := float64(0)
+		if totalBytes > 0 {
+			percentage = float64(bytes) / float64(totalBytes) * 100
+		}
+		stats.Languages[language] = LanguageStats{
+			Bytes:      bytes,
+			Percentage: percentage,
+		}
+	}
 
 	return stats, nil
 }
