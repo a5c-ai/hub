@@ -96,6 +96,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, branchService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
+	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -264,9 +265,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			admin := protected.Group("/admin")
 			admin.Use(middleware.AdminMiddleware())
 			{
-				admin.GET("/users", func(c *gin.Context) {
-					c.JSON(http.StatusNotImplemented, gin.H{"message": "Admin users endpoint - to be implemented"})
-				})
+				// Admin user management endpoints
+				admin.GET("/users", adminHandlers.ListUsers)
+				admin.POST("/users", adminHandlers.CreateUser)
+				admin.GET("/users/stats", adminHandlers.GetUserStats)
+				admin.GET("/users/:id", adminHandlers.GetUser)
+				admin.PATCH("/users/:id", adminHandlers.UpdateUser)
+				admin.DELETE("/users/:id", adminHandlers.DeleteUser)
+				admin.POST("/users/:id/enable", adminHandlers.EnableUser)
+				admin.POST("/users/:id/disable", adminHandlers.DisableUser)
+				admin.PATCH("/users/:id/role", adminHandlers.SetUserRole)
 
 				// Admin analytics endpoints
 				admin.GET("/analytics/platform", analyticsHandlers.GetPlatformAnalytics)
