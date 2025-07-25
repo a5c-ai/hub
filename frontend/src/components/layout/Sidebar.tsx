@@ -35,30 +35,6 @@ const navigation = [
     icon: FolderIcon,
     iconSolid: FolderIconSolid,
   },
-  {
-    name: 'Issues',
-    href: '/issues',
-    icon: DocumentTextIcon,
-    iconSolid: DocumentTextIconSolid,
-  },
-  {
-    name: 'Pull Requests',
-    href: '/pulls',
-    icon: DocumentTextIcon,
-    iconSolid: DocumentTextIconSolid,
-  },
-  {
-    name: 'Organizations',
-    href: '/organizations',
-    icon: UsersIcon,
-    iconSolid: UsersIconSolid,
-  },
-  {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: ChartBarIcon,
-    iconSolid: ChartBarIconSolid,
-  },
 ];
 
 const bottomNavigation = [

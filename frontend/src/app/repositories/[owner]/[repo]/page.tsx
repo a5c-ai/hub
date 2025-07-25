@@ -26,10 +26,15 @@ export default function RepositoryDetailsPage() {
         const response = await api.get(`/repositories/${owner}/${repo}`);
         setRepository(response.data);
       } catch (err: unknown) {
-        setError(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Failed to fetch repository'
-        );
+        const errorMessage = err instanceof Error && 'response' in err && 
+          typeof err.response === 'object' && err.response && 
+          'data' in err.response && 
+          typeof err.response.data === 'object' && err.response.data &&
+          'message' in err.response.data && 
+          typeof err.response.data.message === 'string'
+          ? err.response.data.message 
+          : 'Failed to fetch repository';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -86,6 +91,16 @@ export default function RepositoryDetailsPage() {
     );
   }
 
+  // Generate fallback URLs if they're not provided by the backend
+  const cloneUrl = repository.clone_url || `https://github.com/${owner}/${repo}.git`;
+  const sshUrl = repository.ssh_url || `git@github.com:${owner}/${repo}.git`;
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).catch(err => {
+      console.error('Failed to copy text: ', err);
+    });
+  };
+
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -105,14 +120,14 @@ export default function RepositoryDetailsPage() {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-8">
           <div className="flex items-start space-x-4 mb-4 lg:mb-0">
             <Avatar
-              src={repository.owner.avatar_url}
-              alt={repository.owner.username}
+              src={repository.owner?.avatar_url}
+              alt={repository.owner?.username || 'Repository owner'}
               size="lg"
             />
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {repository.owner.username}/{repository.name}
+                  {repository.owner?.username || owner}/{repository.name}
                 </h1>
                 <Badge variant={repository.private ? 'secondary' : 'default'}>
                   {repository.private ? 'Private' : 'Public'}
@@ -213,7 +228,11 @@ export default function RepositoryDetailsPage() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <select className="text-sm border border-gray-300 rounded-md px-3 py-1">
+                    <select 
+                      className="text-sm border border-gray-300 rounded-md px-3 py-1"
+                      title="Select branch"
+                      aria-label="Select branch"
+                    >
                       <option>{repository.default_branch}</option>
                     </select>
                     <span className="text-sm text-gray-500">
@@ -297,11 +316,18 @@ export default function RepositoryDetailsPage() {
                     <div className="flex mt-1">
                       <input 
                         type="text" 
-                        value={repository.clone_url}
+                        value={cloneUrl}
                         readOnly
-                        className="flex-1 text-sm bg-gray-50 border border-gray-300 rounded-l-md px-3 py-2"
+                        title="HTTPS clone URL"
+                        aria-label="HTTPS clone URL"
+                        className="flex-1 text-sm bg-gray-50 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      <Button size="sm" variant="outline" className="rounded-l-none">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="rounded-l-none border-l-0"
+                        onClick={() => copyToClipboard(cloneUrl)}
+                      >
                         Copy
                       </Button>
                     </div>
@@ -311,11 +337,18 @@ export default function RepositoryDetailsPage() {
                     <div className="flex mt-1">
                       <input 
                         type="text" 
-                        value={repository.ssh_url}
+                        value={sshUrl}
                         readOnly
-                        className="flex-1 text-sm bg-gray-50 border border-gray-300 rounded-l-md px-3 py-2"
+                        title="SSH clone URL"
+                        aria-label="SSH clone URL"
+                        className="flex-1 text-sm bg-gray-50 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      <Button size="sm" variant="outline" className="rounded-l-none">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="rounded-l-none border-l-0"
+                        onClick={() => copyToClipboard(sshUrl)}
+                      >
                         Copy
                       </Button>
                     </div>
