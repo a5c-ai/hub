@@ -72,39 +72,37 @@
   --radius-xl: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Brand Colors */
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
-    --secondary: #475569;
-    --secondary-foreground: #ffffff;
-    
-    /* Background Colors */
-    --background: #020617;
-    --foreground: #f8fafc;
-    --muted: #0f172a;
-    --muted-foreground: #94a3b8;
-    
-    /* Border Colors */
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #3b82f6;
-    
-    /* Semantic Colors */
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --success: #22c55e;
-    --success-foreground: #ffffff;
-    --warning: #f59e0b;
-    --warning-foreground: #ffffff;
-    
-    /* Component Colors */
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --popover: #0f172a;
-    --popover-foreground: #f8fafc;
-  }
+.dark {
+  /* Brand Colors */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #475569;
+  --secondary-foreground: #ffffff;
+  
+  /* Background Colors */
+  --background: #020617;
+  --foreground: #f8fafc;
+  --muted: #0f172a;
+  --muted-foreground: #94a3b8;
+  
+  /* Border Colors */
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  
+  /* Semantic Colors */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  
+  /* Component Colors */
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
 }
 
 * {

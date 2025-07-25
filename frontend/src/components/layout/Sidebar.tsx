@@ -35,18 +35,6 @@ const navigation = [
     icon: FolderIcon,
     iconSolid: FolderIconSolid,
   },
-  {
-    name: 'Organizations',
-    href: '/organizations',
-    icon: UsersIcon,
-    iconSolid: UsersIconSolid,
-  },
-  {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: ChartBarIcon,
-    iconSolid: ChartBarIconSolid,
-  },
 ];
 
 const bottomNavigation = [
