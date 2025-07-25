@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/a5c-ai/hub/internal/models"
+	"github.com/a5c-ai/hub/internal/storage"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -16,21 +17,21 @@ import (
 
 // ArtifactService handles artifact management operations
 type ArtifactService struct {
-	db           *gorm.DB
-	logger       *logrus.Logger
-	storagePath  string
-	maxSizeMB    int64
+	db            *gorm.DB
+	logger        *logrus.Logger
+	storage       storage.Backend
+	maxSizeMB     int64
 	retentionDays int
 }
 
 // NewArtifactService creates a new artifact service
-func NewArtifactService(db *gorm.DB, logger *logrus.Logger, storagePath string) *ArtifactService {
+func NewArtifactService(db *gorm.DB, logger *logrus.Logger, storageBackend storage.Backend, maxSizeMB int64, retentionDays int) *ArtifactService {
 	return &ArtifactService{
 		db:            db,
 		logger:        logger,
-		storagePath:   storagePath,
-		maxSizeMB:     1024, // 1GB default max size per artifact
-		retentionDays: 90,   // 90 days default retention
+		storage:       storageBackend,
+		maxSizeMB:     maxSizeMB,
+		retentionDays: retentionDays,
 	}
 }
 
@@ -53,9 +54,7 @@ func (s *ArtifactService) UploadArtifact(ctx context.Context, workflowRunID uuid
 		ExpiresAt:     timePtr(time.Now().AddDate(0, 0, s.retentionDays)),
 	}
 
-	// In a real implementation, this would upload to configured storage backend
-	// (Azure Blob Storage, AWS S3, Google Cloud Storage, MinIO, etc.)
-	// For now, we simulate the upload
+	// Upload to configured storage backend
 	s.logger.WithFields(logrus.Fields{
 		"workflow_run_id": workflowRunID,
 		"name":            name,
@@ -63,11 +62,10 @@ func (s *ArtifactService) UploadArtifact(ctx context.Context, workflowRunID uuid
 		"path":            storagePath,
 	}).Info("Uploading artifact to storage backend")
 
-	// TODO: Implement actual storage integration:
-	// 1. Upload to configured storage backend
-	// 2. Verify upload integrity
-	// 3. Handle compression/encryption if enabled
-	// 4. Set proper access controls
+	// Upload to storage backend
+	if err := s.storage.Upload(ctx, storagePath, reader, sizeBytes); err != nil {
+		return nil, fmt.Errorf("failed to upload artifact to storage: %w", err)
+	}
 
 	// Save artifact metadata to database
 	if err := s.db.WithContext(ctx).Create(artifact).Error; err != nil {
@@ -98,18 +96,19 @@ func (s *ArtifactService) DownloadArtifact(ctx context.Context, artifactID uuid.
 		return nil, nil, fmt.Errorf("artifact has expired")
 	}
 
-	// TODO: In a real implementation, you would:
-	// 1. Open the file from storage (Azure Blob, S3, etc.)
-	// 2. Return a ReadCloser to stream the content
-	// For now, we'll return a placeholder
-
 	s.logger.WithFields(logrus.Fields{
 		"artifact_id": artifactID,
 		"name":        artifact.Name,
+		"path":        artifact.Path,
 	}).Info("Artifact download requested")
 
-	// Placeholder - return nil for now since we don't have actual storage
-	return nil, &artifact, fmt.Errorf("artifact download not implemented - storage backend needed")
+	// Download from storage backend
+	reader, err := s.storage.Download(ctx, artifact.Path)
+	if err != nil {
+		return nil, &artifact, fmt.Errorf("failed to download artifact from storage: %w", err)
+	}
+
+	return reader, &artifact, nil
 }
 
 // ListArtifacts lists artifacts for a workflow run
@@ -135,11 +134,15 @@ func (s *ArtifactService) DeleteArtifact(ctx context.Context, artifactID uuid.UU
 		return fmt.Errorf("failed to get artifact: %w", err)
 	}
 
-	// TODO: In a real implementation, you would:
-	// 1. Delete the file from storage (Azure Blob, S3, etc.)
-	// 2. Only mark as deleted in DB after successful storage deletion
+	// Delete from storage backend first
+	if err := s.storage.Delete(ctx, artifact.Path); err != nil {
+		s.logger.WithError(err).WithFields(logrus.Fields{
+			"artifact_id": artifactID,
+			"path":        artifact.Path,
+		}).Warn("Failed to delete artifact from storage, marking as expired anyway")
+	}
 
-	// Mark artifact as expired
+	// Mark artifact as expired in database
 	if err := s.db.WithContext(ctx).Model(&artifact).Updates(map[string]interface{}{
 		"expired":    true,
 		"updated_at": time.Now(),
@@ -180,6 +183,48 @@ func (s *ArtifactService) CleanupExpiredArtifacts(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// EnforceRetentionPolicy enforces retention policies for artifacts
+func (s *ArtifactService) EnforceRetentionPolicy(ctx context.Context) error {
+	// Get all non-expired artifacts that should be expired based on retention policy
+	cutoffDate := time.Now().AddDate(0, 0, -s.retentionDays)
+	
+	var artifactsToExpire []models.Artifact
+	err := s.db.WithContext(ctx).
+		Where("expired = false AND created_at < ?", cutoffDate).
+		Find(&artifactsToExpire).Error
+	if err != nil {
+		return fmt.Errorf("failed to find artifacts for retention policy: %w", err)
+	}
+
+	// Mark them as expired
+	for _, artifact := range artifactsToExpire {
+		if err := s.DeleteArtifact(ctx, artifact.ID); err != nil {
+			s.logger.WithError(err).WithField("artifact_id", artifact.ID).
+				Error("Failed to enforce retention policy on artifact")
+		}
+	}
+
+	if len(artifactsToExpire) > 0 {
+		s.logger.WithFields(logrus.Fields{
+			"count":         len(artifactsToExpire),
+			"retention_days": s.retentionDays,
+		}).Info("Enforced retention policy on artifacts")
+	}
+
+	return nil
+}
+
+// SetRetentionPolicy updates the retention policy for new artifacts
+func (s *ArtifactService) SetRetentionPolicy(days int) {
+	s.retentionDays = days
+	s.logger.WithField("retention_days", days).Info("Updated artifact retention policy")
+}
+
+// GetRetentionPolicy returns the current retention policy in days
+func (s *ArtifactService) GetRetentionPolicy() int {
+	return s.retentionDays
 }
 
 // GetArtifact retrieves an artifact by ID
@@ -265,4 +310,126 @@ func (s *ArtifactService) GetStorageStats(ctx context.Context) (map[string]inter
 		"retention_days":   s.retentionDays,
 		"max_size_mb":      s.maxSizeMB,
 	}, nil
+}
+
+// Build Log Storage Methods
+
+// StoreBuildLog stores build logs for a job
+func (s *ArtifactService) StoreBuildLog(ctx context.Context, jobID uuid.UUID, logContent string) error {
+	// Generate storage path for build log
+	logPath := s.generateBuildLogPath(jobID)
+	
+	// Store the log content
+	reader := strings.NewReader(logContent)
+	if err := s.storage.Upload(ctx, logPath, reader, int64(len(logContent))); err != nil {
+		return fmt.Errorf("failed to store build log: %w", err)
+	}
+
+	s.logger.WithFields(logrus.Fields{
+		"job_id":    jobID,
+		"log_path":  logPath,
+		"log_size":  len(logContent),
+	}).Info("Build log stored successfully")
+
+	return nil
+}
+
+// GetBuildLog retrieves build logs for a job
+func (s *ArtifactService) GetBuildLog(ctx context.Context, jobID uuid.UUID) (string, error) {
+	logPath := s.generateBuildLogPath(jobID)
+	
+	// Check if log exists
+	exists, err := s.storage.Exists(ctx, logPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to check build log existence: %w", err)
+	}
+	
+	if !exists {
+		return "", fmt.Errorf("build log not found for job %s", jobID)
+	}
+
+	// Download the log
+	reader, err := s.storage.Download(ctx, logPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to download build log: %w", err)
+	}
+	defer reader.Close()
+
+	// Read the content
+	logBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return "", fmt.Errorf("failed to read build log content: %w", err)
+	}
+
+	return string(logBytes), nil
+}
+
+// SearchBuildLogs searches through build logs for specific content
+func (s *ArtifactService) SearchBuildLogs(ctx context.Context, repositoryID uuid.UUID, query string, limit int) ([]map[string]interface{}, error) {
+	// TODO: For now, this is a basic implementation
+	// In a production environment, you would want to:
+	// 1. Use Elasticsearch or similar search engine for indexing logs
+	// 2. Store log metadata in database for efficient searching
+	// 3. Implement advanced search features (regex, filters, etc.)
+	
+	s.logger.WithFields(logrus.Fields{
+		"repository_id": repositoryID,
+		"query":         query,
+		"limit":         limit,
+	}).Info("Build log search requested")
+
+	// For now, return empty results with a note
+	return []map[string]interface{}{
+		{
+			"message": "Build log search functionality requires Elasticsearch integration",
+			"query":   query,
+			"status":  "not_implemented",
+		},
+	}, nil
+}
+
+// CleanupBuildLogs removes old build logs based on retention policy
+func (s *ArtifactService) CleanupBuildLogs(ctx context.Context) error {
+	// List all build logs
+	buildLogs, err := s.storage.List(ctx, "build-logs/")
+	if err != nil {
+		return fmt.Errorf("failed to list build logs for cleanup: %w", err)
+	}
+
+	cutoffDate := time.Now().AddDate(0, 0, -s.retentionDays)
+	cleanedCount := 0
+
+	for _, logPath := range buildLogs {
+		// Get last modified time
+		modTime, err := s.storage.GetLastModified(ctx, logPath)
+		if err != nil {
+			s.logger.WithError(err).WithField("log_path", logPath).
+				Warn("Failed to get build log modification time")
+			continue
+		}
+
+		// Delete if older than retention period
+		if modTime.Before(cutoffDate) {
+			if err := s.storage.Delete(ctx, logPath); err != nil {
+				s.logger.WithError(err).WithField("log_path", logPath).
+					Error("Failed to delete old build log")
+			} else {
+				cleanedCount++
+			}
+		}
+	}
+
+	if cleanedCount > 0 {
+		s.logger.WithFields(logrus.Fields{
+			"count":          cleanedCount,
+			"retention_days": s.retentionDays,
+		}).Info("Cleaned up old build logs")
+	}
+
+	return nil
+}
+
+// generateBuildLogPath generates a storage path for build logs
+func (s *ArtifactService) generateBuildLogPath(jobID uuid.UUID) string {
+	return filepath.Join("build-logs", jobID.String()+".log")
 }

@@ -22,18 +22,20 @@ type ActionsHandlers struct {
 	repositoryService   services.RepositoryService
 	logStreamingService *services.LogStreamingService
 	webhookService      *services.WebhookService
+	artifactService     *services.ArtifactService
 	gitService          git.GitService
 	logger              *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logStreamingService *services.LogStreamingService, webhookService *services.WebhookService, gitService git.GitService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logStreamingService *services.LogStreamingService, webhookService *services.WebhookService, artifactService *services.ArtifactService, gitService git.GitService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
 		workflowService:     workflowService,
 		runnerService:       runnerService,
 		repositoryService:   repositoryService,
 		logStreamingService: logStreamingService,
 		webhookService:      webhookService,
+		artifactService:     artifactService,
 		gitService:          gitService,
 		logger:              logger,
 	}
@@ -814,4 +816,138 @@ func (h *ActionsHandlers) resolveSHAFromRef(ctx context.Context, repositoryID uu
 	}
 
 	return sha
+}
+
+// Artifact Management Endpoints
+
+// ListArtifacts handles GET /api/v1/repos/{owner}/{repo}/actions/runs/{runId}/artifacts
+func (h *ActionsHandlers) ListArtifacts(c *gin.Context) {
+	runID, err := uuid.Parse(c.Param("run_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	artifacts, err := h.artifactService.ListArtifacts(c.Request.Context(), runID)
+	if err != nil {
+		h.logger.WithError(err).WithField("run_id", runID).Error("Failed to list artifacts")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list artifacts"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"artifacts": artifacts})
+}
+
+// UploadArtifact handles POST /api/v1/repos/{owner}/{repo}/actions/runs/{runId}/artifacts
+func (h *ActionsHandlers) UploadArtifact(c *gin.Context) {
+	runID, err := uuid.Parse(c.Param("run_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	// Parse multipart form
+	err = c.Request.ParseMultipartForm(32 << 20) // 32 MB max memory
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse multipart form"})
+		return
+	}
+
+	// Get the uploaded file
+	file, header, err := c.Request.FormFile("artifact")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No artifact file provided"})
+		return
+	}
+	defer file.Close()
+
+	// Get the artifact name (use filename if not provided)
+	name := c.Request.FormValue("name")
+	if name == "" {
+		name = header.Filename
+	}
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Artifact name is required"})
+		return
+	}
+
+	// Upload the artifact
+	artifact, err := h.artifactService.UploadArtifact(c.Request.Context(), runID, name, file, header.Size)
+	if err != nil {
+		h.logger.WithError(err).WithFields(logrus.Fields{
+			"run_id": runID,
+			"name":   name,
+			"size":   header.Size,
+		}).Error("Failed to upload artifact")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"artifact": artifact})
+}
+
+// DownloadArtifact handles GET /api/v1/repos/{owner}/{repo}/actions/runs/{runId}/artifacts/{artifactId}
+func (h *ActionsHandlers) DownloadArtifact(c *gin.Context) {
+	artifactID, err := uuid.Parse(c.Param("artifact_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid artifact ID"})
+		return
+	}
+
+	// Download the artifact
+	reader, artifact, err := h.artifactService.DownloadArtifact(c.Request.Context(), artifactID)
+	if err != nil {
+		h.logger.WithError(err).WithField("artifact_id", artifactID).Error("Failed to download artifact")
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+
+	// Set appropriate headers
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", artifact.Name))
+	c.Header("Content-Length", fmt.Sprintf("%d", artifact.SizeBytes))
+
+	// Stream the file
+	_, err = io.Copy(c.Writer, reader)
+	if err != nil {
+		h.logger.WithError(err).WithField("artifact_id", artifactID).Error("Failed to stream artifact")
+		return
+	}
+}
+
+// GetArtifact handles GET /api/v1/repos/{owner}/{repo}/actions/artifacts/{artifactId}
+func (h *ActionsHandlers) GetArtifact(c *gin.Context) {
+	artifactID, err := uuid.Parse(c.Param("artifact_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid artifact ID"})
+		return
+	}
+
+	artifact, err := h.artifactService.GetArtifact(c.Request.Context(), artifactID)
+	if err != nil {
+		h.logger.WithError(err).WithField("artifact_id", artifactID).Error("Failed to get artifact")
+		c.JSON(http.StatusNotFound, gin.H{"error": "Artifact not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, artifact)
+}
+
+// DeleteArtifact handles DELETE /api/v1/repos/{owner}/{repo}/actions/artifacts/{artifactId}
+func (h *ActionsHandlers) DeleteArtifact(c *gin.Context) {
+	artifactID, err := uuid.Parse(c.Param("artifact_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid artifact ID"})
+		return
+	}
+
+	if err := h.artifactService.DeleteArtifact(c.Request.Context(), artifactID); err != nil {
+		h.logger.WithError(err).WithField("artifact_id", artifactID).Error("Failed to delete artifact")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete artifact"})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
 }
