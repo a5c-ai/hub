@@ -520,4 +520,20 @@ export const milestoneApi = {
 
 };
 
+// SSH Key API methods
+export const sshKeyApi = {
+  // Get all SSH keys for current user
+  getSSHKeys: () => apiClient.get('/user/keys'),
+
+  // Get specific SSH key
+  getSSHKey: (keyId: string) => apiClient.get(`/user/keys/${keyId}`),
+
+  // Create new SSH key
+  createSSHKey: (data: { title: string; key_data: string }) =>
+    apiClient.post('/user/keys', data),
+
+  // Delete SSH key
+  deleteSSHKey: (keyId: string) => apiClient.delete(`/user/keys/${keyId}`),
+};
+
 export default api;
