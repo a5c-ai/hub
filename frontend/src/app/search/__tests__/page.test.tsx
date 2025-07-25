@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, ReadonlyURLSearchParams } from 'next/navigation';
 import SearchPage from '../page';
 import { searchApi } from '@/lib/api';
 
@@ -23,7 +23,8 @@ describe('SearchPage', () => {
     jest.clearAllMocks();
     mockUseSearchParams.mockReturnValue({
       get: jest.fn(() => null),
-    } as unknown as URLSearchParams);
+      append: jest.fn(),
+    } as unknown as ReadonlyURLSearchParams);
   });
 
   it('renders search form correctly', () => {
@@ -76,6 +77,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 1,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);
@@ -123,6 +125,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 1,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);
@@ -190,6 +193,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 0,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);
@@ -211,7 +215,8 @@ describe('SearchPage', () => {
   it('initializes search from URL parameters', () => {
     mockUseSearchParams.mockReturnValue({
       get: jest.fn((param) => param === 'q' ? 'initial query' : null),
-    } as unknown as URLSearchParams);
+      append: jest.fn(),
+    } as unknown as ReadonlyURLSearchParams);
 
     const mockResults = {
       data: {
@@ -222,6 +227,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 0,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);
@@ -256,6 +262,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 1,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);
@@ -298,6 +305,7 @@ describe('SearchPage', () => {
         commits: [],
         total_count: 1,
       },
+      success: true,
     };
 
     mockGlobalSearch.mockResolvedValue(mockResults);

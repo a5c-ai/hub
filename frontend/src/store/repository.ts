@@ -61,7 +61,7 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
         totalCount = response.length;
       } else if (response.data && Array.isArray(response.data)) {
         // Wrapped array response
-        repositories = response.data;
+        repositories = response.data as Repository[];
         totalCount = response.pagination?.total || response.data.length;
         currentPage = response.pagination?.page || 1;
         totalPages = response.pagination?.total_pages || 1;
@@ -138,8 +138,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       console.log('Repository store: API response received:', response);
       
       // Handle direct repository response from backend
-      if (response && response.id && response.name) {
-        const newRepo = response as Repository;
+      if (response.success && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
+        const newRepo = response.data as Repository;
         console.log('Repository store: Created repository:', newRepo);
         set((state) => ({
           repositories: [newRepo, ...state.repositories],
