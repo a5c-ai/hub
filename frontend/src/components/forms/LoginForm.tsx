@@ -30,9 +30,20 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       clearError();
+      console.log('LoginForm: Starting login process...', { email: data.email });
       await login(data.email, data.password, data.mfaCode);
-      router.push('/dashboard');
+      console.log('LoginForm: Login successful, redirecting to dashboard...');
+      
+      // Add small delay to ensure tokens are stored before navigation
+      setTimeout(() => {
+        console.log('LoginForm: Checking localStorage before redirect:', {
+          authToken: !!localStorage.getItem('auth_token'),
+          refreshToken: !!localStorage.getItem('refresh_token')
+        });
+        router.push('/dashboard');
+      }, 100);
     } catch (err: unknown) {
+      console.error('LoginForm: Login failed:', err);
       if (
         err && 
         typeof err === 'object' && 

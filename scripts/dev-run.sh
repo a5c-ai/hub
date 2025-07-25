@@ -6,7 +6,7 @@ set -e
 DEV_ENV=${DEV_ENV:-development}
 BACKEND_PORT=${BACKEND_PORT:-8080}
 FRONTEND_PORT=${FRONTEND_PORT:-3000}
-LOG_LEVEL=${LOG_LEVEL:-debug}
+LOG_LEVEL=${LOG_LEVEL:-4}
 
 # Colors for output
 RED='\033[0;31m'
@@ -172,7 +172,7 @@ run_frontend() {
     export NODE_ENV="development"
     export PORT="$FRONTEND_PORT"
     export NEXT_TELEMETRY_DISABLED=1
-    export NEXT_PUBLIC_API_URL="http://localhost:$BACKEND_PORT"
+    export NEXT_PUBLIC_API_URL="http://localhost:$BACKEND_PORT/api/v1"
     
     # Start frontend development server
     npm run dev

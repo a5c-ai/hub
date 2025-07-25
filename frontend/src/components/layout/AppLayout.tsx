@@ -15,19 +15,27 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useAppStore();
-  const { checkAuth, isAuthenticated, isLoading } = useAuthStore();
+  const { checkAuth, isAuthenticated, isLoading, token } = useAuthStore();
 
   useEffect(() => {
-    // Check authentication status on app load
+    // Check auth status on initial load
+    console.log('AppLayout: Checking auth on mount...');
     checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
-    // Redirect to login if not authenticated and not loading
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+    console.log('AppLayout: Auth state changed:', { isLoading, isAuthenticated, token });
+    // Only redirect after auth check is complete and we're definitely not authenticated
+    // Give a small delay to allow for rehydration to complete
+    if (!isLoading && !isAuthenticated && !token) {
+      console.log('AppLayout: Not authenticated, redirecting to login...');
+      const timeoutId = setTimeout(() => {
+        router.push('/login');
+      }, 100); // Small delay to allow rehydration
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, token, router]);
 
   useEffect(() => {
     // Close sidebar on mobile when clicking outside

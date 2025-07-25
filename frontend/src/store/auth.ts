@@ -35,11 +35,43 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       // Actions
       login: async (email: string, password: string, mfaCode?: string) => {
+        console.log('AuthStore: Starting login...', { email });
         set({ isLoading: true, error: null });
         try {
+          console.log('AuthStore: Making API call...');
           const response = await authApi.login(email, password, mfaCode);
-          if (response.success && response.data) {
-            const authData = response.data as AuthUser;
+          console.log('AuthStore: API response received:', response);
+          console.log('AuthStore: Response structure check:', {
+            hasSuccess: 'success' in response,
+            hasData: 'data' in response,
+            successValue: response.success,
+            dataValue: response.data,
+            responseKeys: Object.keys(response)
+          });
+          
+          // Handle direct AuthResponse from backend (not wrapped)
+          if (response && response.user && response.access_token) {
+            const authData = response as AuthUser;
+            console.log('AuthStore: Setting auth state...', { user: authData.user.username });
+            
+            // Store tokens in localStorage FIRST
+            console.log('AuthStore: Storing tokens in localStorage...', {
+              access_token: authData.access_token?.substring(0, 20) + '...',
+              refresh_token: authData.refresh_token?.substring(0, 20) + '...'
+            });
+            localStorage.setItem('auth_token', authData.access_token);
+            if (authData.refresh_token) {
+              localStorage.setItem('refresh_token', authData.refresh_token);
+            }
+            
+            // Verify storage worked
+            const storedToken = localStorage.getItem('auth_token');
+            console.log('AuthStore: Token storage verification:', {
+              stored: !!storedToken,
+              matches: storedToken === authData.access_token
+            });
+            
+            // Then set the store state
             set({
               user: authData.user,
               token: authData.access_token,
@@ -47,13 +79,21 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               isLoading: false,
               error: null,
             });
-            // Store tokens in localStorage
-            localStorage.setItem('auth_token', authData.access_token);
-            if (authData.refresh_token) {
-              localStorage.setItem('refresh_token', authData.refresh_token);
-            }
+            
+            console.log('AuthStore: Login completed successfully');
+          } else {
+            console.error('AuthStore: Response does not have expected structure', {
+              hasUser: !!response?.user,
+              hasAccessToken: !!response?.access_token,
+              responseKeys: response ? Object.keys(response) : 'no response'
+            });
+            set({
+              isLoading: false,
+              error: 'Invalid response format from server',
+            });
           }
         } catch (error: unknown) {
+          console.error('AuthStore: Login error:', error);
           const errorMessage = error instanceof Error && 'response' in error && 
             typeof error.response === 'object' && error.response !== null &&
             'data' in error.response && typeof error.response.data === 'object' &&
@@ -198,16 +238,39 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem('auth_token');
+        const { token: storeToken, isAuthenticated } = get();
+        console.log('AuthStore: checkAuth called', { storeToken: !!storeToken, isAuthenticated });
+        
+        // If already authenticated with a valid token, no need to check again
+        if (isAuthenticated && storeToken) {
+          console.log('AuthStore: Already authenticated, skipping check');
+          return;
+        }
+        
+        // Always check localStorage as the source of truth
+        const storageToken = localStorage.getItem('auth_token');
+        const token = storeToken || storageToken;
+        console.log('AuthStore: Tokens found', { 
+          storeToken: !!storeToken, 
+          storageToken: !!storageToken,
+          localStorageKeys: Object.keys(localStorage),
+          actualStorageToken: storageToken?.substring(0, 20) + '...' || 'none'
+        });
+        
         if (!token) {
+          console.log('AuthStore: No token found, clearing auth state');
           set({ isAuthenticated: false, user: null, token: null });
           return;
         }
 
+        console.log('AuthStore: Token found, validating with API...');
         set({ isLoading: true });
         try {
           const response = await authApi.getProfile();
+          console.log('AuthStore: Profile API response:', response);
+          
           if (response.success && response.data) {
+            console.log('AuthStore: Valid token, setting authenticated state');
             set({
               user: response.data as User,
               token,
@@ -215,10 +278,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               isLoading: false,
               error: null,
             });
+            // Ensure localStorage is in sync for API interceptor
+            localStorage.setItem('auth_token', token);
           }
-        } catch {
-          // Token is invalid, clear auth state
+        } catch (error) {
+          console.error('AuthStore: Token validation failed:', error);
+          // Token is invalid, clear all auth state
           localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
           set({
             user: null,
             token: null,
@@ -237,6 +304,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        console.log('AuthStore: Rehydrating from storage...', state);
+        // Ensure localStorage token is in sync after rehydration
+        if (state?.token) {
+          localStorage.setItem('auth_token', state.token);
+        }
+      },
     }
   )
 );
