@@ -30,8 +30,11 @@ export default function UserProfilePage() {
         ]);
         setUser(userResponse.data);
         setRepositories(reposResponse.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch user data');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch user data'
+        );
       } finally {
         setLoading(false);
       }
@@ -244,7 +247,7 @@ export default function UserProfilePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 7a2 2 0 012-2h10a2 2 0 012 2v2M7 7h10" />
                       </svg>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories yet</h3>
-                      <p className="text-gray-600">This user hasn't created any repositories yet.</p>
+                      <p className="text-gray-600">This user hasn&apos;t created any repositories yet.</p>
                     </div>
                   </Card>
                 )}
