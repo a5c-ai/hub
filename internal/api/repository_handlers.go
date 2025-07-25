@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -87,7 +88,7 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 
 	// Get primary language from repository statistics
 	var primaryLanguage *string
-	if stats, err := h.repositoryService.GetRepositoryStatistics(ctx, repo.ID); err == nil {
+	if _, err := h.repositoryService.GetRepositoryStatistics(context.Background(), repo.ID); err == nil {
 		var repoStats models.RepositoryStatistics
 		if err := h.db.Where("repository_id = ?", repo.ID).First(&repoStats).Error; err == nil && repoStats.PrimaryLanguage != "" {
 			primaryLanguage = &repoStats.PrimaryLanguage

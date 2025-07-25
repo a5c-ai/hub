@@ -2,11 +2,9 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -33,16 +31,16 @@ func NewHooksHandlers(repositoryService services.RepositoryService, webhookDeliv
 
 // Webhook represents a repository webhook
 type Webhook struct {
-	ID          int                    `json:"id"`
-	Name        string                 `json:"name"`
-	Config      map[string]interface{} `json:"config"`
-	Events      []string               `json:"events"`
-	Active      bool                   `json:"active"`
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
-	PingURL     string                 `json:"ping_url,omitempty"`
-	TestURL     string                 `json:"test_url,omitempty"`
-	LastResponse *WebhookResponse      `json:"last_response,omitempty"`
+	ID           int                    `json:"id"`
+	Name         string                 `json:"name"`
+	Config       map[string]interface{} `json:"config"`
+	Events       []string               `json:"events"`
+	Active       bool                   `json:"active"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+	PingURL      string                 `json:"ping_url,omitempty"`
+	TestURL      string                 `json:"test_url,omitempty"`
+	LastResponse *WebhookResponse       `json:"last_response,omitempty"`
 }
 
 // WebhookResponse represents a webhook delivery response
@@ -101,7 +99,13 @@ func (h *HooksHandlers) ListWebhooks(c *gin.Context) {
 			Config: map[string]interface{}{
 				"url":          dbWebhook.URL,
 				"content_type": dbWebhook.ContentType,
-				"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+				"insecure_ssl": func() string {
+					if dbWebhook.InsecureSSL {
+						return "1"
+					} else {
+						return "0"
+					}
+				}(),
 			},
 			Events:    dbWebhook.GetEventsSlice(),
 			Active:    dbWebhook.Active,
@@ -226,9 +230,21 @@ func (h *HooksHandlers) CreateWebhook(c *gin.Context) {
 		ID:   int(dbWebhook.ID.ID()), // Convert UUID to int for API compatibility
 		Name: dbWebhook.Name,
 		Config: map[string]interface{}{
-			"url":          dbWebhook.URL,
-			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
-			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+			"url": dbWebhook.URL,
+			"content_type": func() string {
+				if dbWebhook.ContentType == "application/json" {
+					return "json"
+				} else {
+					return "form"
+				}
+			}(),
+			"insecure_ssl": func() string {
+				if dbWebhook.InsecureSSL {
+					return "1"
+				} else {
+					return "0"
+				}
+			}(),
 		},
 		Events:    dbWebhook.GetEventsSlice(),
 		Active:    dbWebhook.Active,
@@ -295,8 +311,14 @@ func (h *HooksHandlers) GetWebhook(c *gin.Context) {
 	if err == nil && len(deliveries) > 0 {
 		latest := deliveries[0]
 		lastResponse = &WebhookResponse{
-			Code:    latest.StatusCode,
-			Status:  func() string { if latest.Success { return "success" } else { return "failed" } }(),
+			Code: latest.StatusCode,
+			Status: func() string {
+				if latest.Success {
+					return "success"
+				} else {
+					return "failed"
+				}
+			}(),
 			Message: latest.ErrorMessage,
 		}
 		if latest.Success {
@@ -309,9 +331,21 @@ func (h *HooksHandlers) GetWebhook(c *gin.Context) {
 		ID:   int(dbWebhook.ID.ID()),
 		Name: dbWebhook.Name,
 		Config: map[string]interface{}{
-			"url":          dbWebhook.URL,
-			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
-			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+			"url": dbWebhook.URL,
+			"content_type": func() string {
+				if dbWebhook.ContentType == "application/json" {
+					return "json"
+				} else {
+					return "form"
+				}
+			}(),
+			"insecure_ssl": func() string {
+				if dbWebhook.InsecureSSL {
+					return "1"
+				} else {
+					return "0"
+				}
+			}(),
 		},
 		Events:       dbWebhook.GetEventsSlice(),
 		Active:       dbWebhook.Active,
@@ -416,9 +450,21 @@ func (h *HooksHandlers) UpdateWebhook(c *gin.Context) {
 		ID:   int(dbWebhook.ID.ID()),
 		Name: dbWebhook.Name,
 		Config: map[string]interface{}{
-			"url":          dbWebhook.URL,
-			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
-			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+			"url": dbWebhook.URL,
+			"content_type": func() string {
+				if dbWebhook.ContentType == "application/json" {
+					return "json"
+				} else {
+					return "form"
+				}
+			}(),
+			"insecure_ssl": func() string {
+				if dbWebhook.InsecureSSL {
+					return "1"
+				} else {
+					return "0"
+				}
+			}(),
 		},
 		Events:    dbWebhook.GetEventsSlice(),
 		Active:    dbWebhook.Active,
@@ -672,10 +718,10 @@ func (h *HooksHandlers) CreateDeployKey(c *gin.Context) {
 	}
 
 	h.logger.WithFields(logrus.Fields{
-		"repo_id":      repo.ID,
+		"repo_id":       repo.ID,
 		"deploy_key_id": deployKey.ID,
-		"title":        req.Title,
-		"read_only":    readOnly,
+		"title":         req.Title,
+		"read_only":     readOnly,
 	}).Info("Created repository deploy key")
 
 	c.JSON(http.StatusCreated, deployKey)
