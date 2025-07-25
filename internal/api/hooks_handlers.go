@@ -3,24 +3,31 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
 // HooksHandlers contains handlers for webhook-related endpoints
 type HooksHandlers struct {
-	repositoryService services.RepositoryService
-	logger           *logrus.Logger
+	repositoryService      services.RepositoryService
+	webhookDeliveryService *services.WebhookDeliveryService
+	deployKeyService       *services.DeployKeyService
+	logger                 *logrus.Logger
 }
 
 // NewHooksHandlers creates a new hooks handlers instance
-func NewHooksHandlers(repositoryService services.RepositoryService, logger *logrus.Logger) *HooksHandlers {
+func NewHooksHandlers(repositoryService services.RepositoryService, webhookDeliveryService *services.WebhookDeliveryService, deployKeyService *services.DeployKeyService, logger *logrus.Logger) *HooksHandlers {
 	return &HooksHandlers{
-		repositoryService: repositoryService,
-		logger:           logger,
+		repositoryService:      repositoryService,
+		webhookDeliveryService: webhookDeliveryService,
+		deployKeyService:       deployKeyService,
+		logger:                 logger,
 	}
 }
 
@@ -77,24 +84,32 @@ func (h *HooksHandlers) ListWebhooks(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock webhook data
-	// In a full implementation, this would query webhooks from the database
-	webhooks := []Webhook{
-		{
-			ID:   1,
-			Name: "web",
+	// Get webhooks from database
+	dbWebhooks, err := h.webhookDeliveryService.ListWebhooks(c.Request.Context(), repo.ID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to list webhooks")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list webhooks"})
+		return
+	}
+
+	// Convert to API format
+	webhooks := make([]Webhook, len(dbWebhooks))
+	for i, dbWebhook := range dbWebhooks {
+		webhooks[i] = Webhook{
+			ID:   int(dbWebhook.ID.ID()), // Convert UUID to int for API compatibility
+			Name: dbWebhook.Name,
 			Config: map[string]interface{}{
-				"url":          "https://example.com/webhook",
-				"content_type": "json",
-				"insecure_ssl": "0",
+				"url":          dbWebhook.URL,
+				"content_type": dbWebhook.ContentType,
+				"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
 			},
-			Events:    []string{"push", "pull_request"},
-			Active:    true,
-			CreatedAt: time.Now().Add(-24 * time.Hour),
-			UpdatedAt: time.Now().Add(-1 * time.Hour),
-			PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/1/pings",
-			TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/1/test",
-		},
+			Events:    dbWebhook.GetEventsSlice(),
+			Active:    dbWebhook.Active,
+			CreatedAt: dbWebhook.CreatedAt,
+			UpdatedAt: dbWebhook.UpdatedAt,
+			PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/pings",
+			TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/test",
+		}
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -159,17 +174,68 @@ func (h *HooksHandlers) CreateWebhook(c *gin.Context) {
 		req.Events = []string{"push"}
 	}
 
-	// Create webhook (mock implementation)
+	// Extract URL from config
+	url, ok := req.Config["url"].(string)
+	if !ok || url == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "URL is required in config"})
+		return
+	}
+
+	// Extract content type
+	contentType := "application/json"
+	if ct, ok := req.Config["content_type"].(string); ok {
+		if ct == "form" {
+			contentType = "application/x-www-form-urlencoded"
+		} else {
+			contentType = "application/json"
+		}
+	}
+
+	// Extract insecure SSL setting
+	insecureSSL := false
+	if ssl, ok := req.Config["insecure_ssl"].(string); ok {
+		insecureSSL = ssl == "1"
+	}
+
+	// Extract secret
+	secret := ""
+	if s, ok := req.Config["secret"].(string); ok {
+		secret = s
+	}
+
+	// Create webhook in database
+	dbWebhook, err := h.webhookDeliveryService.CreateWebhook(
+		c.Request.Context(),
+		repo.ID,
+		req.Name,
+		url,
+		secret,
+		req.Events,
+		contentType,
+		insecureSSL,
+		active,
+	)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create webhook")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create webhook"})
+		return
+	}
+
+	// Convert to API format
 	webhook := Webhook{
-		ID:        2, // Mock ID
-		Name:      req.Name,
-		Config:    req.Config,
-		Events:    req.Events,
-		Active:    active,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/2/pings",
-		TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/2/test",
+		ID:   int(dbWebhook.ID.ID()), // Convert UUID to int for API compatibility
+		Name: dbWebhook.Name,
+		Config: map[string]interface{}{
+			"url":          dbWebhook.URL,
+			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
+			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+		},
+		Events:    dbWebhook.GetEventsSlice(),
+		Active:    dbWebhook.Active,
+		CreatedAt: dbWebhook.CreatedAt,
+		UpdatedAt: dbWebhook.UpdatedAt,
+		PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/pings",
+		TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/test",
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -193,7 +259,8 @@ func (h *HooksHandlers) GetWebhook(c *gin.Context) {
 		return
 	}
 
-	hookID, err := strconv.Atoi(hookIDStr)
+	// Parse hook ID as UUID
+	hookID, err := uuid.Parse(hookIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
 		return
@@ -210,35 +277,52 @@ func (h *HooksHandlers) GetWebhook(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock webhook data
-	// In a full implementation, this would query the specific webhook from the database
-	if hookID == 1 {
-		webhook := Webhook{
-			ID:   1,
-			Name: "web",
-			Config: map[string]interface{}{
-				"url":          "https://example.com/webhook",
-				"content_type": "json",
-				"insecure_ssl": "0",
-			},
-			Events:    []string{"push", "pull_request"},
-			Active:    true,
-			CreatedAt: time.Now().Add(-24 * time.Hour),
-			UpdatedAt: time.Now().Add(-1 * time.Hour),
-			PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/1/pings",
-			TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/1/test",
-			LastResponse: &WebhookResponse{
-				Code:    200,
-				Status:  "success",
-				Message: "OK",
-			},
+	// Get webhook from database
+	dbWebhook, err := h.webhookDeliveryService.GetWebhook(c.Request.Context(), hookID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to get webhook")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get webhook"})
 		}
-
-		c.JSON(http.StatusOK, webhook)
 		return
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
+	// Get latest delivery for last response
+	deliveries, err := h.webhookDeliveryService.GetDeliveries(c.Request.Context(), hookID, 1, 0)
+	var lastResponse *WebhookResponse
+	if err == nil && len(deliveries) > 0 {
+		latest := deliveries[0]
+		lastResponse = &WebhookResponse{
+			Code:    latest.StatusCode,
+			Status:  func() string { if latest.Success { return "success" } else { return "failed" } }(),
+			Message: latest.ErrorMessage,
+		}
+		if latest.Success {
+			lastResponse.Message = "OK"
+		}
+	}
+
+	// Convert to API format
+	webhook := Webhook{
+		ID:   int(dbWebhook.ID.ID()),
+		Name: dbWebhook.Name,
+		Config: map[string]interface{}{
+			"url":          dbWebhook.URL,
+			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
+			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+		},
+		Events:       dbWebhook.GetEventsSlice(),
+		Active:       dbWebhook.Active,
+		CreatedAt:    dbWebhook.CreatedAt,
+		UpdatedAt:    dbWebhook.UpdatedAt,
+		PingURL:      "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/pings",
+		TestURL:      "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/test",
+		LastResponse: lastResponse,
+	}
+
+	c.JSON(http.StatusOK, webhook)
 }
 
 // UpdateWebhook handles PATCH /api/v1/repositories/{owner}/{repo}/hooks/{hook_id}
@@ -252,7 +336,8 @@ func (h *HooksHandlers) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	hookID, err := strconv.Atoi(hookIDStr)
+	// Parse hook ID as UUID
+	hookID, err := uuid.Parse(hookIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
 		return
@@ -280,35 +365,67 @@ func (h *HooksHandlers) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	// For now, return updated mock webhook data
-	// In a full implementation, this would update the webhook in the database
-	webhook := Webhook{
-		ID:   hookID,
-		Name: "web",
-		Config: map[string]interface{}{
-			"url":          "https://example.com/webhook",
-			"content_type": "json",
-			"insecure_ssl": "0",
-		},
-		Events:    []string{"push", "pull_request"},
-		Active:    true,
-		CreatedAt: time.Now().Add(-24 * time.Hour),
-		UpdatedAt: time.Now(),
-		PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + hookIDStr + "/pings",
-		TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + hookIDStr + "/test",
-	}
+	// Prepare updates map
+	updates := make(map[string]interface{})
 
-	// Apply updates
+	// Handle config updates
 	if req.Config != nil {
-		for k, v := range req.Config {
-			webhook.Config[k] = v
+		if url, ok := req.Config["url"].(string); ok && url != "" {
+			updates["url"] = url
+		}
+		if contentType, ok := req.Config["content_type"].(string); ok {
+			if contentType == "form" {
+				updates["content_type"] = "application/x-www-form-urlencoded"
+			} else {
+				updates["content_type"] = "application/json"
+			}
+		}
+		if insecureSSL, ok := req.Config["insecure_ssl"].(string); ok {
+			updates["insecure_ssl"] = insecureSSL == "1"
+		}
+		if secret, ok := req.Config["secret"].(string); ok {
+			updates["secret"] = secret
 		}
 	}
+
+	// Handle events update
 	if req.Events != nil {
-		webhook.Events = req.Events
+		// In a full implementation, this would properly serialize events
+		updates["events"] = strings.Join(req.Events, ",")
 	}
+
+	// Handle active status update
 	if req.Active != nil {
-		webhook.Active = *req.Active
+		updates["active"] = *req.Active
+	}
+
+	// Update webhook in database
+	dbWebhook, err := h.webhookDeliveryService.UpdateWebhook(c.Request.Context(), hookID, updates)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to update webhook")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update webhook"})
+		}
+		return
+	}
+
+	// Convert to API format
+	webhook := Webhook{
+		ID:   int(dbWebhook.ID.ID()),
+		Name: dbWebhook.Name,
+		Config: map[string]interface{}{
+			"url":          dbWebhook.URL,
+			"content_type": func() string { if dbWebhook.ContentType == "application/json" { return "json" } else { return "form" } }(),
+			"insecure_ssl": func() string { if dbWebhook.InsecureSSL { return "1" } else { return "0" } }(),
+		},
+		Events:    dbWebhook.GetEventsSlice(),
+		Active:    dbWebhook.Active,
+		CreatedAt: dbWebhook.CreatedAt,
+		UpdatedAt: dbWebhook.UpdatedAt,
+		PingURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/pings",
+		TestURL:   "/api/v1/repositories/" + owner + "/" + repoName + "/hooks/" + dbWebhook.ID.String() + "/test",
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -330,7 +447,8 @@ func (h *HooksHandlers) DeleteWebhook(c *gin.Context) {
 		return
 	}
 
-	hookID, err := strconv.Atoi(hookIDStr)
+	// Parse hook ID as UUID
+	hookID, err := uuid.Parse(hookIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
 		return
@@ -347,8 +465,18 @@ func (h *HooksHandlers) DeleteWebhook(c *gin.Context) {
 		return
 	}
 
-	// For now, just log the deletion
-	// In a full implementation, this would delete the webhook from the database
+	// Delete webhook from database
+	err = h.webhookDeliveryService.DeleteWebhook(c.Request.Context(), hookID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to delete webhook")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete webhook"})
+		}
+		return
+	}
+
 	h.logger.WithFields(logrus.Fields{
 		"repo_id":    repo.ID,
 		"webhook_id": hookID,
@@ -368,7 +496,8 @@ func (h *HooksHandlers) PingWebhook(c *gin.Context) {
 		return
 	}
 
-	hookID, err := strconv.Atoi(hookIDStr)
+	// Parse hook ID as UUID
+	hookID, err := uuid.Parse(hookIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hook ID"})
 		return
@@ -385,8 +514,18 @@ func (h *HooksHandlers) PingWebhook(c *gin.Context) {
 		return
 	}
 
-	// For now, just return success
-	// In a full implementation, this would send a ping to the webhook URL
+	// Send ping webhook
+	err = h.webhookDeliveryService.PingWebhook(c.Request.Context(), hookID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to ping webhook")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to ping webhook"})
+		}
+		return
+	}
+
 	h.logger.WithFields(logrus.Fields{
 		"repo_id":    repo.ID,
 		"webhook_id": hookID,
@@ -418,18 +557,26 @@ func (h *HooksHandlers) ListDeployKeys(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock deploy keys data
-	// In a full implementation, this would query deploy keys from the database
-	deployKeys := []DeployKey{
-		{
-			ID:        1,
-			Key:       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Ht...",
-			URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/1",
-			Title:     "Deploy Key for CI/CD",
-			Verified:  true,
-			CreatedAt: time.Now().Add(-7 * 24 * time.Hour),
-			ReadOnly:  true,
-		},
+	// Get deploy keys from database
+	dbDeployKeys, err := h.deployKeyService.ListDeployKeys(c.Request.Context(), repo.ID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to list deploy keys")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list deploy keys"})
+		return
+	}
+
+	// Convert to API format
+	deployKeys := make([]DeployKey, len(dbDeployKeys))
+	for i, dbKey := range dbDeployKeys {
+		deployKeys[i] = DeployKey{
+			ID:        int(dbKey.ID.ID()),
+			Key:       dbKey.Key,
+			URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/" + dbKey.ID.String(),
+			Title:     dbKey.Title,
+			Verified:  dbKey.Verified,
+			CreatedAt: dbKey.CreatedAt,
+			ReadOnly:  dbKey.ReadOnly,
+		}
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -489,15 +636,39 @@ func (h *HooksHandlers) CreateDeployKey(c *gin.Context) {
 		readOnly = *req.ReadOnly
 	}
 
-	// Create deploy key (mock implementation)
+	// Validate the SSH key
+	if err := h.deployKeyService.ValidateSSHKey(req.Key); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid SSH key: " + err.Error()})
+		return
+	}
+
+	// Create deploy key in database
+	dbDeployKey, err := h.deployKeyService.CreateDeployKey(
+		c.Request.Context(),
+		repo.ID,
+		req.Title,
+		req.Key,
+		readOnly,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Deploy key already exists"})
+		} else {
+			h.logger.WithError(err).Error("Failed to create deploy key")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create deploy key"})
+		}
+		return
+	}
+
+	// Convert to API format
 	deployKey := DeployKey{
-		ID:        2, // Mock ID
-		Key:       req.Key,
-		URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/2",
-		Title:     req.Title,
-		Verified:  true, // Mock as verified
-		CreatedAt: time.Now(),
-		ReadOnly:  readOnly,
+		ID:        int(dbDeployKey.ID.ID()),
+		Key:       dbDeployKey.Key,
+		URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/" + dbDeployKey.ID.String(),
+		Title:     dbDeployKey.Title,
+		Verified:  dbDeployKey.Verified,
+		CreatedAt: dbDeployKey.CreatedAt,
+		ReadOnly:  dbDeployKey.ReadOnly,
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -521,7 +692,8 @@ func (h *HooksHandlers) GetDeployKey(c *gin.Context) {
 		return
 	}
 
-	keyID, err := strconv.Atoi(keyIDStr)
+	// Parse key ID as UUID
+	keyID, err := uuid.Parse(keyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID"})
 		return
@@ -538,24 +710,30 @@ func (h *HooksHandlers) GetDeployKey(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock deploy key data
-	// In a full implementation, this would query the specific deploy key from the database
-	if keyID == 1 {
-		deployKey := DeployKey{
-			ID:        1,
-			Key:       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Ht...",
-			URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/1",
-			Title:     "Deploy Key for CI/CD",
-			Verified:  true,
-			CreatedAt: time.Now().Add(-7 * 24 * time.Hour),
-			ReadOnly:  true,
+	// Get deploy key from database
+	dbDeployKey, err := h.deployKeyService.GetDeployKey(c.Request.Context(), keyID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Deploy key not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to get deploy key")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get deploy key"})
 		}
-
-		c.JSON(http.StatusOK, deployKey)
 		return
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{"error": "Deploy key not found"})
+	// Convert to API format
+	deployKey := DeployKey{
+		ID:        int(dbDeployKey.ID.ID()),
+		Key:       dbDeployKey.Key,
+		URL:       "/api/v1/repositories/" + owner + "/" + repoName + "/keys/" + dbDeployKey.ID.String(),
+		Title:     dbDeployKey.Title,
+		Verified:  dbDeployKey.Verified,
+		CreatedAt: dbDeployKey.CreatedAt,
+		ReadOnly:  dbDeployKey.ReadOnly,
+	}
+
+	c.JSON(http.StatusOK, deployKey)
 }
 
 // DeleteDeployKey handles DELETE /api/v1/repositories/{owner}/{repo}/keys/{key_id}
@@ -569,7 +747,8 @@ func (h *HooksHandlers) DeleteDeployKey(c *gin.Context) {
 		return
 	}
 
-	keyID, err := strconv.Atoi(keyIDStr)
+	// Parse key ID as UUID
+	keyID, err := uuid.Parse(keyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID"})
 		return
@@ -586,8 +765,18 @@ func (h *HooksHandlers) DeleteDeployKey(c *gin.Context) {
 		return
 	}
 
-	// For now, just log the deletion
-	// In a full implementation, this would delete the deploy key from the database
+	// Delete deploy key from database
+	err = h.deployKeyService.DeleteDeployKey(c.Request.Context(), keyID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Deploy key not found"})
+		} else {
+			h.logger.WithError(err).Error("Failed to delete deploy key")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete deploy key"})
+		}
+		return
+	}
+
 	h.logger.WithFields(logrus.Fields{
 		"repo_id":       repo.ID,
 		"deploy_key_id": keyID,
