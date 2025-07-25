@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { apiClient } from '@/lib/api';
 
 interface Workflow {
   id: string;
@@ -47,29 +48,40 @@ export default function ActionsPage() {
 
   const fetchWorkflows = async () => {
     try {
-      const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/workflows`);
-      if (response.ok) {
-        const data = await response.json();
-        setWorkflows(data.workflows || []);
+      console.log('Fetching workflows for:', { owner, repo });
+      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/workflows`);
+      console.log('Workflows response:', data);
+      setWorkflows(data.workflows || []);
+    } catch (err: any) {
+      console.error('Workflow fetch error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      
+      if (err.response?.status === 401) {
+        setError('Please log in to access GitHub Actions');
+      } else if (err.response?.status === 404) {
+        setError('Repository not found or you do not have access to it');
+      } else if (err.response?.status === 400) {
+        setError(`Bad request: ${err.response?.data?.error || err.message}`);
       } else {
-        throw new Error('Failed to fetch workflows');
+        setError(err instanceof Error ? err.message : 'Failed to fetch workflows');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   const fetchRecentRuns = async () => {
     try {
-      const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runs?limit=10`);
-      if (response.ok) {
-        const data = await response.json();
-        setRecentRuns(data.workflow_runs || []);
+      const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/runs?limit=10`);
+      setRecentRuns(data.workflow_runs || []);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError('Please log in to access GitHub Actions');
+      } else if (err.response?.status === 404) {
+        setError('Repository not found or you do not have access to it');
       } else {
-        throw new Error('Failed to fetch workflow runs');
+        setError(err instanceof Error ? err.message : 'Failed to fetch workflow runs');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

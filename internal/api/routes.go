@@ -63,7 +63,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	runnerService := services.NewRunnerService(database.DB, logger)
 	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
 	actionsEventService := services.NewActionsEventService(database.DB, workflowService, logger)
-	
+
 	// Initialize secret service with encryption key from config
 	secretService := services.NewSecretService(database.DB, logger, cfg.Security.EncryptionKey)
 	// Set job executor and secret service on workflow service to avoid circular dependencies
@@ -110,9 +110,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	git := router.Group("/")
 	git.Use(gitHandlers.GitMiddleware())
 	{
-		git.GET("/:owner/:repo.git/info/refs", gitHandlers.InfoRefs)
-		git.POST("/:owner/:repo.git/git-upload-pack", gitHandlers.UploadPack)
-		git.POST("/:owner/:repo.git/git-receive-pack", gitHandlers.ReceivePack)
+		git.GET("/:owner/:repo/info/refs", gitHandlers.InfoRefs)
+		git.POST("/:owner/:repo/git-upload-pack", gitHandlers.UploadPack)
+		git.POST("/:owner/:repo/git-receive-pack", gitHandlers.ReceivePack)
 	}
 
 	v1 := router.Group("/api/v1")

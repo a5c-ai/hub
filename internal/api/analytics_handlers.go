@@ -16,14 +16,14 @@ import (
 // AnalyticsHandlers contains handlers for analytics-related endpoints
 type AnalyticsHandlers struct {
 	analyticsService services.AnalyticsService
-	logger          *logrus.Logger
+	logger           *logrus.Logger
 }
 
 // NewAnalyticsHandlers creates a new analytics handlers instance
 func NewAnalyticsHandlers(analyticsService services.AnalyticsService, logger *logrus.Logger) *AnalyticsHandlers {
 	return &AnalyticsHandlers{
 		analyticsService: analyticsService,
-		logger:          logger,
+		logger:           logger,
 	}
 }
 
@@ -33,7 +33,7 @@ func NewAnalyticsHandlers(analyticsService services.AnalyticsService, logger *lo
 func (h *AnalyticsHandlers) GetRepositoryAnalytics(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -80,7 +80,7 @@ func (h *AnalyticsHandlers) GetRepositoryAnalytics(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryCodeStats(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -94,7 +94,7 @@ func (h *AnalyticsHandlers) GetRepositoryCodeStats(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryContributors(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -108,7 +108,7 @@ func (h *AnalyticsHandlers) GetRepositoryContributors(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryActivity(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -122,7 +122,7 @@ func (h *AnalyticsHandlers) GetRepositoryActivity(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryPerformance(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -136,7 +136,7 @@ func (h *AnalyticsHandlers) GetRepositoryPerformance(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -150,7 +150,7 @@ func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 func (h *AnalyticsHandlers) GetRepositoryPulls(c *gin.Context) {
 	owner := c.Param("owner")
 	repo := c.Param("repo")
-	
+
 	if owner == "" || repo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -217,7 +217,7 @@ func (h *AnalyticsHandlers) GetUserContributions(c *gin.Context) {
 		return
 	}
 
-	uid, err := parseUserID(userID)
+	_, err := parseUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -235,7 +235,7 @@ func (h *AnalyticsHandlers) GetUserRepositories(c *gin.Context) {
 		return
 	}
 
-	uid, err := parseUserID(userID)
+	_, err := parseUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -383,7 +383,7 @@ func (h *AnalyticsHandlers) GetPerformanceAnalytics(c *gin.Context) {
 	// Parse query parameters for performance filters
 	limitStr := c.DefaultQuery("limit", "100")
 	offsetStr := c.DefaultQuery("offset", "0")
-	
+
 	limit, _ := strconv.Atoi(limitStr)
 	offset, _ := strconv.Atoi(offsetStr)
 

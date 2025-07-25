@@ -18,32 +18,56 @@ import (
 // GitHandlers contains handlers for Git HTTP protocol endpoints
 type GitHandlers struct {
 	repositoryService services.RepositoryService
-	logger           *logrus.Logger
+	logger            *logrus.Logger
 }
 
 // NewGitHandlers creates a new Git handlers instance
 func NewGitHandlers(repositoryService services.RepositoryService, logger *logrus.Logger) *GitHandlers {
 	return &GitHandlers{
 		repositoryService: repositoryService,
-		logger:           logger,
+		logger:            logger,
 	}
 }
 
-// InfoRefs handles GET /{owner}/{repo}.git/info/refs
+// InfoRefs handles GET /{owner}/{repo}/info/refs
 func (h *GitHandlers) InfoRefs(c *gin.Context) {
 	owner := c.Param("owner")
-	repoName := strings.TrimSuffix(c.Param("repo"), ".git")
+	repoWithGit := c.Param("repo")
 	service := c.Query("service")
 
+	// Remove .git suffix if present - the route should include .git
+	repoName := strings.TrimSuffix(repoWithGit, ".git")
+
+	// If no .git suffix was found, this might not be a git request
+	if repoName == repoWithGit {
+		h.logger.WithFields(logrus.Fields{
+			"owner": owner,
+			"repo":  repoWithGit,
+		}).Error("Repository path does not end with .git")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
 	h.logger.WithFields(logrus.Fields{
-		"owner":   owner,
-		"repo":    repoName,
-		"service": service,
+		"owner":         owner,
+		"repo_with_git": repoWithGit,
+		"repo":          repoName,
+		"service":       service,
 	}).Info("Git info/refs request")
+
+	if repoName == "" {
+		h.logger.Error("Repository name is empty after parsing")
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
 	// Get repository
 	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
 	if err != nil {
+		h.logger.WithError(err).WithFields(logrus.Fields{
+			"owner": owner,
+			"repo":  repoName,
+		}).Error("Failed to get repository in git handler")
 		if err.Error() == "repository not found" {
 			c.Status(http.StatusNotFound)
 		} else {
@@ -53,6 +77,12 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 		return
 	}
 
+	h.logger.WithFields(logrus.Fields{
+		"repo_id": repo.ID,
+		"owner":   owner,
+		"repo":    repoName,
+	}).Info("Repository found in database")
+
 	// Get repository path
 	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
 	if err != nil {
@@ -60,6 +90,8 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+
+	h.logger.WithField("path", repoPath).Info("Repository path determined")
 
 	// Check if repository exists on filesystem, create if needed
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
@@ -69,6 +101,9 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+		h.logger.WithField("path", repoPath).Info("Repository initialized successfully")
+	} else {
+		h.logger.WithField("path", repoPath).Info("Repository already exists on filesystem")
 	}
 
 	switch service {
@@ -81,10 +116,13 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 	}
 }
 
-// UploadPack handles POST /{owner}/{repo}.git/git-upload-pack
+// UploadPack handles POST /{owner}/{repo}/git-upload-pack
 func (h *GitHandlers) UploadPack(c *gin.Context) {
 	owner := c.Param("owner")
-	repoName := strings.TrimSuffix(c.Param("repo"), ".git")
+	repoWithGit := c.Param("repo")
+
+	// Remove .git suffix if present
+	repoName := strings.TrimSuffix(repoWithGit, ".git")
 
 	h.logger.WithFields(logrus.Fields{
 		"owner": owner,
@@ -124,10 +162,13 @@ func (h *GitHandlers) UploadPack(c *gin.Context) {
 	h.handleGitCommand(c, repoPath, "git-upload-pack", "--stateless-rpc", repoPath)
 }
 
-// ReceivePack handles POST /{owner}/{repo}.git/git-receive-pack
+// ReceivePack handles POST /{owner}/{repo}/git-receive-pack
 func (h *GitHandlers) ReceivePack(c *gin.Context) {
 	owner := c.Param("owner")
-	repoName := strings.TrimSuffix(c.Param("repo"), ".git")
+	repoWithGit := c.Param("repo")
+
+	// Remove .git suffix if present
+	repoName := strings.TrimSuffix(repoWithGit, ".git")
 
 	h.logger.WithFields(logrus.Fields{
 		"owner": owner,
@@ -177,17 +218,28 @@ func (h *GitHandlers) handleUploadPackInfoRefs(c *gin.Context, repoPath string) 
 	c.Writer.Write(h.packetWrite("# service=git-upload-pack\n"))
 	c.Writer.Write([]byte("0000"))
 
-	// Execute git-upload-pack command
-	cmd := exec.Command("git-upload-pack", "--stateless-rpc", "--advertise-refs", repoPath)
+	// Execute git-upload-pack command from the repository directory
+	cmd := exec.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
 	cmd.Dir = repoPath
+	
+	h.logger.WithFields(logrus.Fields{
+		"command": cmd.String(),
+		"dir":     repoPath,
+		"args":    cmd.Args,
+	}).Info("Executing git upload-pack command")
 	
 	output, err := cmd.Output()
 	if err != nil {
-		h.logger.WithError(err).Error("Failed to execute git-upload-pack")
+		if exitError, ok := err.(*exec.ExitError); ok {
+			h.logger.WithError(err).WithField("stderr", string(exitError.Stderr)).Error("Failed to execute git-upload-pack")
+		} else {
+			h.logger.WithError(err).Error("Failed to execute git-upload-pack")
+		}
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
+	h.logger.WithField("output_size", len(output)).Info("Git upload-pack completed successfully")
 	c.Writer.Write(output)
 }
 
@@ -202,7 +254,7 @@ func (h *GitHandlers) handleReceivePackInfoRefs(c *gin.Context, repoPath string)
 	// Execute git-receive-pack command
 	cmd := exec.Command("git-receive-pack", "--stateless-rpc", "--advertise-refs", repoPath)
 	cmd.Dir = repoPath
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to execute git-receive-pack")
@@ -215,7 +267,7 @@ func (h *GitHandlers) handleReceivePackInfoRefs(c *gin.Context, repoPath string)
 
 func (h *GitHandlers) handleDumbInfoRefs(c *gin.Context, repoPath string) {
 	refsPath := filepath.Join(repoPath, "info", "refs")
-	
+
 	// Update info/refs file
 	cmd := exec.Command("git", "update-server-info")
 	cmd.Dir = repoPath
@@ -225,7 +277,7 @@ func (h *GitHandlers) handleDumbInfoRefs(c *gin.Context, repoPath string) {
 
 	c.Header("Content-Type", "text/plain")
 	c.Header("Cache-Control", "no-cache")
-	
+
 	if _, err := os.Stat(refsPath); os.IsNotExist(err) {
 		c.Status(http.StatusNotFound)
 		return
@@ -285,9 +337,9 @@ func (h *GitHandlers) handleGitCommand(c *gin.Context, repoPath, command string,
 	// Handle request body (input to git command)
 	go func() {
 		defer stdin.Close()
-		
+
 		var reader io.Reader = c.Request.Body
-		
+
 		// Handle gzip compression
 		if c.GetHeader("Content-Encoding") == "gzip" {
 			if gzipReader, err := gzip.NewReader(c.Request.Body); err == nil {
@@ -295,7 +347,7 @@ func (h *GitHandlers) handleGitCommand(c *gin.Context, repoPath, command string,
 				reader = gzipReader
 			}
 		}
-		
+
 		io.Copy(stdin, reader)
 	}()
 

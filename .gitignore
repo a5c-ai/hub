@@ -95,3 +95,6 @@ config.json
 tmp/
 temp/
 *.tmp
+
+repositories/user/**
+backend.log

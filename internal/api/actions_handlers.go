@@ -14,17 +14,19 @@ import (
 
 // ActionsHandlers handles Actions-related HTTP requests
 type ActionsHandlers struct {
-	workflowService *services.WorkflowService
-	runnerService   *services.RunnerService
-	logger          *logrus.Logger
+	workflowService   *services.WorkflowService
+	runnerService     *services.RunnerService
+	repositoryService *services.RepositoryService
+	logger            *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService *services.RepositoryService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
-		workflowService: workflowService,
-		runnerService:   runnerService,
-		logger:          logger,
+		workflowService:   workflowService,
+		runnerService:     runnerService,
+		repositoryService: repositoryService,
+		logger:            logger,
 	}
 }
 
@@ -56,10 +58,10 @@ func (h *ActionsHandlers) ListWorkflows(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"workflows":    workflows,
-		"total_count":  total,
-		"limit":        limit,
-		"offset":       offset,
+		"workflows":   workflows,
+		"total_count": total,
+		"limit":       limit,
+		"offset":      offset,
 	})
 }
 
@@ -229,10 +231,10 @@ func (h *ActionsHandlers) DispatchWorkflow(c *gin.Context) {
 
 	// Create workflow run
 	runReq := services.CreateWorkflowRunRequest{
-		WorkflowID:   workflowID,
-		Event:        "workflow_dispatch",
-		HeadSHA:      "latest", // TODO: Resolve actual SHA from ref
-		HeadBranch:   &dispatchReq.Ref,
+		WorkflowID: workflowID,
+		Event:      "workflow_dispatch",
+		HeadSHA:    "latest", // TODO: Resolve actual SHA from ref
+		HeadBranch: &dispatchReq.Ref,
 		EventPayload: map[string]interface{}{
 			"ref":    dispatchReq.Ref,
 			"inputs": dispatchReq.Inputs,
@@ -604,9 +606,13 @@ func (h *ActionsHandlers) getRepositoryID(c *gin.Context) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("owner and repo parameters are required")
 	}
 
-	// TODO: Look up repository by owner/repo name
-	// For now, assume repo parameter is the UUID
-	return uuid.Parse(repo)
+	// Look up repository by owner/repo name
+	repository, err := h.repositoryService.Get(c.Request.Context(), owner, repo)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("repository not found: %w", err)
+	}
+
+	return repository.ID, nil
 }
 
 // parseBoolQuery parses a boolean query parameter
@@ -628,4 +634,3 @@ func (h *ActionsHandlers) parseIntQuery(c *gin.Context, key string, defaultValue
 	}
 	return defaultValue
 }
-
