@@ -22,7 +22,9 @@ export default function ProfileEditPage() {
     website: '',
     location: '',
     company: '',
-    avatar_url: ''
+    avatar_url: '',
+    twitter: '',
+    linkedin: ''
   });
 
   useEffect(() => {
@@ -35,7 +37,9 @@ export default function ProfileEditPage() {
         website: '',
         location: '',
         company: '',
-        avatar_url: user.avatar_url || ''
+        avatar_url: user.avatar_url || '',
+        twitter: '',
+        linkedin: ''
       });
     }
   }, [user]);

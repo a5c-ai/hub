@@ -148,8 +148,9 @@ export function OrganizationAnalyticsDashboard({ orgName }: AnalyticsDashboardPr
       setDashboardMetrics(dashboardResponse.data);
       setMemberMetrics(memberResponse.data);
       setSecurityMetrics(securityResponse.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch analytics data');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to fetch analytics data');
     } finally {
       setLoading(false);
     }
@@ -168,8 +169,9 @@ export function OrganizationAnalyticsDashboard({ orgName }: AnalyticsDashboardPr
       link.download = `${orgName}-analytics-${period}.${format}`;
       link.click();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to export analytics');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to export analytics');
     }
   };
 
@@ -251,7 +253,7 @@ export function OrganizationAnalyticsDashboard({ orgName }: AnalyticsDashboardPr
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'members' | 'repositories' | 'security' | 'usage')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
