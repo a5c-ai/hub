@@ -9,10 +9,21 @@ The A5C Hub CI/CD Actions system provides a comprehensive GitHub Actions-compati
 ### Core Capabilities
 - **GitHub Actions Compatibility**: Run existing workflows with compatible syntax
 - **Real-time Job Execution**: Kubernetes-based job execution with live log streaming
-- **Advanced Runner Management**: Repository, organization, and global runners
-- **Artifact Management**: Complete artifact lifecycle with retention policies
-- **Build Monitoring**: Real-time build status and log streaming
-- **Webhook Integration**: Comprehensive webhook system with security verification
+- **Scalable Job Queue System**: Redis-based distributed job queue supporting 1,000+ parallel jobs with database fallback
+- **Advanced Runner Management**: Repository, organization, and global runners with multi-level coordination
+- **Multi-Backend Artifact Storage**: Complete artifact lifecycle with filesystem, Azure Blob, and S3 support
+- **Automated Retention Policies**: Configurable artifact cleanup and storage management
+- **Build Monitoring**: Real-time build status and log streaming with Server-Sent Events
+- **Comprehensive Branch Protection**: Required status checks, PR reviews, and admin enforcement
+- **Webhook Integration**: Advanced webhook system with HMAC verification and trigger evaluation
+
+### Job Queue System
+- **Redis-Based Queue**: Distributed job queue using Redis sorted sets for priority-based scheduling
+- **Database Fallback**: Automatic fallback to database storage when Redis is unavailable
+- **Atomic Operations**: Redis transactions ensure data consistency during enqueue/dequeue
+- **Job Persistence**: Configurable TTL (24h pending, 1h completed) with automatic cleanup
+- **Priority Scheduling**: Support for job priorities and queue monitoring
+- **Recovery Mechanisms**: Built-in handling for stuck jobs and cleanup of old data
 
 ### Job Execution System
 - **Kubernetes Execution**: Enhanced executor running jobs in ephemeral containers
@@ -26,14 +37,21 @@ The A5C Hub CI/CD Actions system provides a comprehensive GitHub Actions-compati
 ### Components
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Workflow      │    │   Job Executor  │    │   Runner Pool   │
-│   Parser        │◄───│   (Kubernetes)  │◄───│   Management    │
+│   Workflow      │    │   Redis Job     │    │   Job Executor  │
+│   Parser        │◄───│   Queue         │◄───│   (Kubernetes)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Webhook       │    │   Artifact      │    │   Log Streaming │
-│   Processing    │    │   Storage       │    │   (SSE)         │
+│   Webhook       │    │   Multi-Backend │    │   Branch        │
+│   Processing    │    │   Artifact      │    │   Protection    │
+│                 │    │   Storage       │    │   Rules         │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Runner Pool   │    │   Log Streaming │    │   Analytics     │
+│   Management    │    │   (SSE)         │    │   System        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
