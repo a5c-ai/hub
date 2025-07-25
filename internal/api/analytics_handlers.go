@@ -211,17 +211,19 @@ func (h *AnalyticsHandlers) GetUserAnalytics(c *gin.Context) {
 
 // GetUserContributions handles GET /api/v1/user/analytics/contributions
 func (h *AnalyticsHandlers) GetUserContributions(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
+	// TODO: Authenticate user for implementation
+	// userID, exists := c.Get("user_id")
+	// if !exists {
+	//	c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	//	return
+	// }
 
-	uid, err := parseUserID(userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	// TODO: Get user ID for implementation
+	// uid, err := parseUserID(userID)
+	// if err != nil {
+	//	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+	//	return
+	// }
 
 	// TODO: Implementation for user contributions
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "User contributions analytics not implemented yet"})
@@ -229,17 +231,19 @@ func (h *AnalyticsHandlers) GetUserContributions(c *gin.Context) {
 
 // GetUserRepositories handles GET /api/v1/user/analytics/repositories
 func (h *AnalyticsHandlers) GetUserRepositories(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
+	// TODO: Authenticate user for implementation
+	// userID, exists := c.Get("user_id")
+	// if !exists {
+	//	c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+	//	return
+	// }
 
-	uid, err := parseUserID(userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	// TODO: Get user ID for implementation
+	// uid, err := parseUserID(userID)
+	// if err != nil {
+	//	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+	//	return
+	// }
 
 	// TODO: Implementation for user repository analytics
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "User repository analytics not implemented yet"})

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -31,11 +31,7 @@ export default function SecretsPage() {
   const [secretEnvironment, setSecretEnvironment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchSecrets();
-  }, [owner, repo]);
-
-  const fetchSecrets = async () => {
+  const fetchSecrets = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/secrets`);
       if (response.ok) {
@@ -49,7 +45,11 @@ export default function SecretsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo]);
+
+  useEffect(() => {
+    fetchSecrets();
+  }, [owner, repo, fetchSecrets]);
 
   const handleAddSecret = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,7 +199,7 @@ export default function SecretsPage() {
 
       {/* Add/Update Secret Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setSecretName('');
@@ -290,7 +290,7 @@ export default function SecretsPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Delete secret"
       >

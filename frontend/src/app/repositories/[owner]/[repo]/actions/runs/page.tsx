@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +32,7 @@ interface WorkflowRun {
 
 export default function WorkflowRunsPage() {
   const params = useParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const searchParams = useSearchParams();
   const { owner, repo } = params;
   
@@ -42,11 +43,7 @@ export default function WorkflowRunsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventFilter, setEventFilter] = useState('all');
 
-  useEffect(() => {
-    fetchRuns();
-  }, [owner, repo, statusFilter, eventFilter]);
-
-  const fetchRuns = async () => {
+  const fetchRuns = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -73,7 +70,11 @@ export default function WorkflowRunsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo, statusFilter, eventFilter]);
+
+  useEffect(() => {
+    fetchRuns();
+  }, [owner, repo, statusFilter, eventFilter, fetchRuns]);
 
   const getStatusColor = (status: string, conclusion?: string) => {
     if (status === 'in_progress') return 'yellow';
@@ -246,7 +247,7 @@ export default function WorkflowRunsPage() {
                 </div>
                 
                 <div className="text-right">
-                  <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
+                  <Badge variant={getStatusColor(run.status, run.conclusion) as "default" | "secondary" | "destructive" | "outline"}>
                     {run.conclusion || run.status}
                   </Badge>
                   

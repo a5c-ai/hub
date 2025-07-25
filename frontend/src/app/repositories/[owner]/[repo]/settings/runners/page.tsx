@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -31,11 +31,7 @@ export default function RunnersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [registrationToken, setRegistrationToken] = useState<string>('');
 
-  useEffect(() => {
-    fetchRunners();
-  }, [owner, repo]);
-
-  const fetchRunners = async () => {
+  const fetchRunners = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/repos/${owner}/${repo}/actions/runners`);
       if (response.ok) {
@@ -49,7 +45,11 @@ export default function RunnersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [owner, repo]);
+
+  useEffect(() => {
+    fetchRunners();
+  }, [owner, repo, fetchRunners]);
 
   const generateRegistrationToken = async () => {
     try {
@@ -207,7 +207,7 @@ export default function RunnersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium">{runner.name}</h3>
-                        <Badge variant={getStatusColor(runner.status) as any}>
+                        <Badge variant={getStatusColor(runner.status) as "default" | "secondary" | "destructive" | "outline"}>
                           {runner.status}
                         </Badge>
                         <Badge variant="outline">
@@ -258,7 +258,7 @@ export default function RunnersPage() {
 
       {/* Add Runner Modal */}
       <Modal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => {
           setShowAddModal(false);
           setRegistrationToken('');
@@ -311,7 +311,7 @@ export default function RunnersPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={!!showDeleteModal}
+        open={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         title="Remove runner"
       >
