@@ -42,7 +42,23 @@ type CORS struct {
 }
 
 type Storage struct {
-	RepositoryPath string `mapstructure:"repository_path"`
+	RepositoryPath string            `mapstructure:"repository_path"`
+	Distributed    DistributedStorage `mapstructure:"distributed"`
+}
+
+type DistributedStorage struct {
+	Enabled             bool          `mapstructure:"enabled"`
+	NodeID              string        `mapstructure:"node_id"`
+	StorageNodes        []StorageNode `mapstructure:"storage_nodes"`
+	ReplicationCount    int           `mapstructure:"replication_count"`
+	ConsistentHashing   bool          `mapstructure:"consistent_hashing"`
+	HealthCheckInterval string        `mapstructure:"health_check_interval"`
+}
+
+type StorageNode struct {
+	ID      string `mapstructure:"id"`
+	Address string `mapstructure:"address"`
+	Weight  int    `mapstructure:"weight"`
 }
 
 type Security struct {
@@ -119,6 +135,11 @@ func Load() (*Config, error) {
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
 	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
+	viper.SetDefault("storage.distributed.enabled", false)
+	viper.SetDefault("storage.distributed.node_id", "")
+	viper.SetDefault("storage.distributed.replication_count", 3)
+	viper.SetDefault("storage.distributed.consistent_hashing", true)
+	viper.SetDefault("storage.distributed.health_check_interval", "30s")
 	viper.SetDefault("security.encryption_key", "default-32-byte-key-for-secrets")
 	viper.SetDefault("ssh.enabled", true)
 	viper.SetDefault("ssh.port", 2222)
@@ -142,6 +163,11 @@ func Load() (*Config, error) {
 	viper.BindEnv("oauth.google.client_id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
+	viper.BindEnv("storage.distributed.enabled", "DISTRIBUTED_STORAGE_ENABLED")
+	viper.BindEnv("storage.distributed.node_id", "DISTRIBUTED_STORAGE_NODE_ID")
+	viper.BindEnv("storage.distributed.replication_count", "DISTRIBUTED_STORAGE_REPLICATION_COUNT")
+	viper.BindEnv("storage.distributed.consistent_hashing", "DISTRIBUTED_STORAGE_CONSISTENT_HASHING")
+	viper.BindEnv("storage.distributed.health_check_interval", "DISTRIBUTED_STORAGE_HEALTH_CHECK_INTERVAL")
 	viper.BindEnv("security.encryption_key", "ENCRYPTION_KEY")
 	viper.BindEnv("ssh.enabled", "SSH_ENABLED")
 	viper.BindEnv("ssh.port", "SSH_PORT")
