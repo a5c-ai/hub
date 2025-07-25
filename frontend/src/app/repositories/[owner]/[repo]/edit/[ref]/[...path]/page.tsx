@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { repoApi } from '@/lib/api';
 import api from '@/lib/api';
 import { Repository, File } from '@/types';
+import { useAuthStore } from '@/store/auth';
 
 export default function EditPage() {
   const params = useParams();
@@ -22,6 +23,7 @@ export default function EditPage() {
   const pathArray = params.path as string[];
   const filePath = pathArray ? pathArray.join('/') : '';
   
+  const { user, isAuthenticated } = useAuthStore();
   const [repository, setRepository] = useState<Repository | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function EditPage() {
   }, [owner, repo, filePath, ref]);
 
   const handleCommit = async () => {
-    if (!file || !commitMessage.trim()) return;
+    if (!file || !commitMessage.trim() || !user || !isAuthenticated) return;
     
     setIsCommitting(true);
     try {
@@ -76,13 +78,13 @@ export default function EditPage() {
         branch: ref,
         sha: file.sha, // Include the file SHA for conflict detection
         author: {
-          name: "User", // TODO: Get from authenticated user
-          email: "user@example.com", // TODO: Get from authenticated user  
+          name: user.name || user.username,
+          email: user.email,
           date: now.toISOString()
         },
         committer: {
-          name: "User", // TODO: Get from authenticated user
-          email: "user@example.com", // TODO: Get from authenticated user
+          name: user.name || user.username,
+          email: user.email,
           date: now.toISOString()
         }
       };
@@ -117,6 +119,21 @@ export default function EditPage() {
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
             <div className="h-64 bg-muted rounded"></div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <AppLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="text-red-600 text-lg mb-4">Error: You must be authenticated to edit files</div>
+            <Button onClick={() => router.push('/login')}>
+              Go to Login
+            </Button>
           </div>
         </div>
       </AppLayout>
@@ -263,7 +280,7 @@ export default function EditPage() {
                     </Button>
                     <Button 
                       onClick={handleCommit}
-                      disabled={!commitMessage.trim() || isCommitting}
+                      disabled={!commitMessage.trim() || isCommitting || !user || !isAuthenticated}
                       className="min-w-[120px]"
                     >
                       {isCommitting ? (
