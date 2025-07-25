@@ -57,7 +57,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const [activity] = useState(mockActivity);
+  const [/* activity */] = useState(mockActivity);
 
   useEffect(() => {
     if (isAuthenticated) {

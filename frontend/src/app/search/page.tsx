@@ -282,6 +282,7 @@ function SearchPageContent() {
                   {results.users.map((user) => (
                     <Card key={user.id} className="p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-4">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={user.avatar_url || '/api/placeholder/50/50'}
                           alt={user.username}

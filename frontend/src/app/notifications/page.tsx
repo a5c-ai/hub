@@ -47,8 +47,8 @@ export default function NotificationsPage() {
         setLoading(true);
         const response = await api.get(`/notifications?filter=${filter}`);
         setNotifications(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch notifications');
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch notifications');
       } finally {
         setLoading(false);
       }
@@ -97,7 +97,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const getNotificationIcon = (type: string, reason: string) => {
+  const getNotificationIcon = (type: string, /* reason: string */) => {
     switch (type) {
       case 'issue':
         return (
@@ -332,7 +332,7 @@ export default function NotificationsPage() {
                       )}
                       
                       <div className="flex-shrink-0 mt-1">
-                        {getNotificationIcon(notification.type, notification.reason)}
+                        {getNotificationIcon(notification.type)}
                       </div>
                       
                       {notification.repository && (

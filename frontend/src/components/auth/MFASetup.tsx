@@ -9,8 +9,8 @@ interface MFASetupProps {
   onCancel: () => void;
 }
 
-export function MFASetup({ onComplete, onCancel }: MFASetupProps) {
-  const [isLoading] = useState(false);
+export function MFASetup({ /* onComplete, */ onCancel }: MFASetupProps) {
+  const [/* isLoading */] = useState(false);
 
   return (
     <Card className="p-6 max-w-md mx-auto">

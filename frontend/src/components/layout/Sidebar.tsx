@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
-  DocumentTextIcon,
   FolderIcon,
   UsersIcon,
   CogIcon,
@@ -12,7 +11,6 @@ import {
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
-  DocumentTextIcon as DocumentTextIconSolid,
   FolderIcon as FolderIconSolid,
   UsersIcon as UsersIconSolid,
   CogIcon as CogIconSolid,

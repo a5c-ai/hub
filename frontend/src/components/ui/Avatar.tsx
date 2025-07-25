@@ -59,6 +59,7 @@ export function Avatar({
     >
       {src && !imageError ? (
         <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className={cn(
               'aspect-square h-full w-full object-cover transition-opacity',

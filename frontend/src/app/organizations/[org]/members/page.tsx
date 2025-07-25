@@ -30,8 +30,8 @@ export default function OrganizationMembersPage() {
         setLoading(true);
         const response = await api.get(`/organizations/${org}/members`);
         setMembers(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch members');
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch members');
       } finally {
         setLoading(false);
       }

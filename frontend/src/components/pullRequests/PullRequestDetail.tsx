@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { PullRequest } from '../../types'
-import { Button } from '../ui/Button'
+// import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Card } from '../ui/Card'
 

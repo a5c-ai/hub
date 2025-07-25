@@ -29,7 +29,7 @@ interface OrganizationActions {
   clearOrganizations: () => void;
 }
 
-export const useOrganizationStore = create<OrganizationState & OrganizationActions>((set, get) => ({
+export const useOrganizationStore = create<OrganizationState & OrganizationActions>((set, /* get */) => ({
   // State
   organizations: [],
   currentOrganization: null,

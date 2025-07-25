@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
@@ -26,7 +25,7 @@ interface ActivityItem {
       username: string;
     };
   };
-  payload: any;
+  payload: Record<string, unknown>;
   created_at: string;
 }
 
@@ -42,8 +41,8 @@ export default function ActivityPage() {
         setLoading(true);
         const response = await api.get(`/activity?filter=${filter}`);
         setActivities(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch activity');
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch activity');
       } finally {
         setLoading(false);
       }
@@ -112,7 +111,7 @@ export default function ActivityPage() {
       case 'push':
         return (
           <span>
-            <strong>{actor.username}</strong> pushed {payload.commits?.length || 1} commit{payload.commits?.length !== 1 ? 's' : ''} to{' '}
+            <strong>{actor.username}</strong> pushed {(payload.commits as Record<string, unknown>[] | undefined)?.length || 1} commit{(payload.commits as Record<string, unknown>[] | undefined)?.length !== 1 ? 's' : ''} to{' '}
             {repository && (
               <Link href={`/repositories/${repository.full_name}`} className="text-blue-600 hover:text-blue-800">
                 {repository.full_name}
@@ -125,8 +124,8 @@ export default function ActivityPage() {
           <span>
             <strong>{actor.username}</strong> {action} pull request{' '}
             {repository && (
-              <Link href={`/repositories/${repository.full_name}/pulls/${payload.number}`} className="text-blue-600 hover:text-blue-800">
-                #{payload.number}
+              <Link href={`/repositories/${repository.full_name}/pulls/${payload.number as string}`} className="text-blue-600 hover:text-blue-800">
+                #{payload.number as string}
               </Link>
             )}{' '}
             in{' '}
@@ -142,8 +141,8 @@ export default function ActivityPage() {
           <span>
             <strong>{actor.username}</strong> {action} issue{' '}
             {repository && (
-              <Link href={`/repositories/${repository.full_name}/issues/${payload.number}`} className="text-blue-600 hover:text-blue-800">
-                #{payload.number}
+              <Link href={`/repositories/${repository.full_name}/issues/${payload.number as string}`} className="text-blue-600 hover:text-blue-800">
+                #{payload.number as string}
               </Link>
             )}{' '}
             in{' '}
@@ -180,8 +179,8 @@ export default function ActivityPage() {
         return (
           <span>
             <strong>{actor.username}</strong> followed{' '}
-            <Link href={`/users/${payload.target?.username}`} className="text-blue-600 hover:text-blue-800">
-              {payload.target?.username}
+            <Link href={`/users/${(payload.target as { username?: string })?.username}`} className="text-blue-600 hover:text-blue-800">
+              {(payload.target as { username?: string })?.username}
             </Link>
           </span>
         );
@@ -243,7 +242,7 @@ export default function ActivityPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Activity Feed</h1>
-          <p className="text-gray-600 mt-2">Stay up to date with what's happening across your repositories and network</p>
+          <p className="text-gray-600 mt-2">Stay up to date with what&apos;s happening across your repositories and network</p>
         </div>
 
         {/* Filter Tabs */}
@@ -319,27 +318,27 @@ export default function ActivityPage() {
                       </div>
                       
                       {/* Additional payload information */}
-                      {activity.payload.title && (
+                      {(activity.payload.title as string) && (
                         <div className="mt-2 text-sm text-gray-700">
-                          "{activity.payload.title}"
+                          &quot;{activity.payload.title as string}&quot;
                         </div>
                       )}
                       
-                      {activity.type === 'push' && activity.payload.commits && (
+                      {activity.type === 'push' && (activity.payload.commits as Record<string, unknown>[] | undefined) && (
                         <div className="mt-2">
                           <div className="text-xs text-gray-500 mb-1">
-                            {activity.payload.commits.length} commit{activity.payload.commits.length !== 1 ? 's' : ''}
+                            {(activity.payload.commits as Record<string, unknown>[]).length} commit{(activity.payload.commits as Record<string, unknown>[]).length !== 1 ? 's' : ''}
                           </div>
                           <div className="space-y-1">
-                            {activity.payload.commits.slice(0, 3).map((commit: any, index: number) => (
+                            {(activity.payload.commits as Record<string, unknown>[]).slice(0, 3).map((commit: Record<string, unknown>, index: number) => (
                               <div key={index} className="text-xs bg-gray-50 p-2 rounded">
-                                <span className="font-mono text-blue-600">{commit.sha?.substring(0, 7)}</span>
-                                <span className="ml-2">{commit.message}</span>
+                                <span className="font-mono text-blue-600">{(commit.sha as string)?.substring(0, 7)}</span>
+                                <span className="ml-2">{commit.message as string}</span>
                               </div>
                             ))}
-                            {activity.payload.commits.length > 3 && (
+                            {(activity.payload.commits as Record<string, unknown>[]).length > 3 && (
                               <div className="text-xs text-gray-500">
-                                ...and {activity.payload.commits.length - 3} more commits
+                                ...and {(activity.payload.commits as Record<string, unknown>[]).length - 3} more commits
                               </div>
                             )}
                           </div>
@@ -363,8 +362,8 @@ export default function ActivityPage() {
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
               <p className="text-gray-600 mb-4">
-                {filter === 'all' && "There's no activity to show yet."}
-                {filter === 'own' && "You haven't performed any activities yet."}
+                {filter === 'all' && "There&apos;s no activity to show yet."}
+                {filter === 'own' && "You haven&apos;t performed any activities yet."}
                 {filter === 'following' && "Follow users to see their activity here."}
               </p>
               {filter === 'following' && (
