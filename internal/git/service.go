@@ -46,6 +46,7 @@ type GitService interface {
 	CanMerge(repoPath, base, head string) (bool, error)
 	MergeBranches(repoPath, base, head string, mergeMethod, title, message string) (string, error)
 	GetBranchCommit(repoPath, branch string) (string, error)
+	ResolveSHA(ctx context.Context, repoPath, ref string) (string, error)
 }
 
 // CloneOptions represents options for cloning a repository

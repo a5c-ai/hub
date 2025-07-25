@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 
+	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
@@ -20,17 +22,19 @@ type ActionsHandlers struct {
 	repositoryService   services.RepositoryService
 	logStreamingService *services.LogStreamingService
 	webhookService      *services.WebhookService
+	gitService          git.GitService
 	logger              *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logStreamingService *services.LogStreamingService, webhookService *services.WebhookService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logStreamingService *services.LogStreamingService, webhookService *services.WebhookService, gitService git.GitService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
 		workflowService:     workflowService,
 		runnerService:       runnerService,
 		repositoryService:   repositoryService,
 		logStreamingService: logStreamingService,
 		webhookService:      webhookService,
+		gitService:          gitService,
 		logger:              logger,
 	}
 }
@@ -238,7 +242,7 @@ func (h *ActionsHandlers) DispatchWorkflow(c *gin.Context) {
 	runReq := services.CreateWorkflowRunRequest{
 		WorkflowID: workflowID,
 		Event:      "workflow_dispatch",
-		HeadSHA:    "latest", // TODO: Resolve actual SHA from ref
+		HeadSHA:    h.resolveSHAFromRef(c.Request.Context(), repositoryID, dispatchReq.Ref),
 		HeadBranch: &dispatchReq.Ref,
 		EventPayload: map[string]interface{}{
 			"ref":    dispatchReq.Ref,
@@ -788,4 +792,26 @@ func (h *ActionsHandlers) parseIntQuery(c *gin.Context, key string, defaultValue
 		}
 	}
 	return defaultValue
+}
+
+// resolveSHAFromRef resolves a git reference to its SHA
+func (h *ActionsHandlers) resolveSHAFromRef(ctx context.Context, repositoryID uuid.UUID, ref string) string {
+	// Get repository path
+	repoPath, err := h.repositoryService.GetRepositoryPath(ctx, repositoryID)
+	if err != nil {
+		h.logger.WithError(err).WithField("repository_id", repositoryID).Error("Failed to get repository path")
+		return ref // Return original ref as fallback
+	}
+
+	// Resolve SHA using git service
+	sha, err := h.gitService.ResolveSHA(ctx, repoPath, ref)
+	if err != nil {
+		h.logger.WithError(err).WithFields(logrus.Fields{
+			"repository_id": repositoryID,
+			"ref":           ref,
+		}).Error("Failed to resolve SHA from ref")
+		return ref // Return original ref as fallback
+	}
+
+	return sha
 }
