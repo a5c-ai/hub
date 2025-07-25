@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,23 +11,124 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
+
+// RepositoryResponse represents a repository with additional fields for API responses
+type RepositoryResponse struct {
+	models.Repository
+	FullName        string     `json:"full_name"`
+	Owner           *OwnerInfo `json:"owner,omitempty"`
+	Private         bool       `json:"private"`
+	Fork            bool       `json:"fork"`
+	Language        *string    `json:"language,omitempty"`
+	StargazersCount int        `json:"stargazers_count"`
+	ForksCount      int        `json:"forks_count"`
+	WatchersCount   int        `json:"watchers_count"`
+	OpenIssuesCount int        `json:"open_issues_count"`
+	CloneURL        string     `json:"clone_url"`
+	SSHURL          string     `json:"ssh_url"`
+	Size            int64      `json:"size"`
+	PushedAt        *string    `json:"pushed_at,omitempty"`
+}
+
+// OwnerInfo represents repository owner information
+type OwnerInfo struct {
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	Type      string    `json:"type"`
+	AvatarURL *string   `json:"avatar_url,omitempty"`
+}
 
 // RepositoryHandlers contains handlers for repository-related endpoints
 type RepositoryHandlers struct {
 	repositoryService services.RepositoryService
 	branchService     services.BranchService
 	gitService        git.GitService
-	logger           *logrus.Logger
+	logger            *logrus.Logger
+	db                *gorm.DB
 }
 
 // NewRepositoryHandlers creates a new repository handlers instance
-func NewRepositoryHandlers(repositoryService services.RepositoryService, branchService services.BranchService, gitService git.GitService, logger *logrus.Logger) *RepositoryHandlers {
+func NewRepositoryHandlers(repositoryService services.RepositoryService, branchService services.BranchService, gitService git.GitService, logger *logrus.Logger, db *gorm.DB) *RepositoryHandlers {
 	return &RepositoryHandlers{
 		repositoryService: repositoryService,
 		branchService:     branchService,
 		gitService:        gitService,
-		logger:           logger,
+		logger:            logger,
+		db:                db,
+	}
+}
+
+// convertToRepositoryResponse converts a repository model to a response DTO
+func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository) (*RepositoryResponse, error) {
+	// Get owner information
+	owner, err := h.getOwnerInfo(repo.OwnerID, repo.OwnerType)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get owner info")
+		// Create a fallback owner info
+		owner = &OwnerInfo{
+			ID:       repo.OwnerID,
+			Username: "unknown",
+			Type:     string(repo.OwnerType),
+		}
+	}
+
+	// Construct full_name
+	fullName := fmt.Sprintf("%s/%s", owner.Username, repo.Name)
+
+	// Convert pushed_at to string if present
+	var pushedAtStr *string
+	if repo.PushedAt != nil {
+		pushedAtTime := repo.PushedAt.Format("2006-01-02T15:04:05Z")
+		pushedAtStr = &pushedAtTime
+	}
+
+	return &RepositoryResponse{
+		Repository:      *repo,
+		FullName:        fullName,
+		Owner:           owner,
+		Private:         repo.Visibility != models.VisibilityPublic,
+		Fork:            repo.IsFork,
+		Language:        nil, // TODO: Implement language detection
+		StargazersCount: repo.StarsCount,
+		ForksCount:      repo.ForksCount,
+		WatchersCount:   repo.WatchersCount,
+		OpenIssuesCount: 0, // TODO: Count open issues
+		CloneURL:        fmt.Sprintf("http://localhost:8080/%s/%s.git", owner.Username, repo.Name),
+		SSHURL:          fmt.Sprintf("git@localhost:%s/%s.git", owner.Username, repo.Name),
+		Size:            repo.SizeKB,
+		PushedAt:        pushedAtStr,
+	}, nil
+}
+
+// getOwnerInfo retrieves owner information based on owner ID and type
+func (h *RepositoryHandlers) getOwnerInfo(ownerID uuid.UUID, ownerType models.OwnerType) (*OwnerInfo, error) {
+	switch ownerType {
+	case models.OwnerTypeUser:
+		var user models.User
+		if err := h.db.Where("id = ?", ownerID).First(&user).Error; err != nil {
+			return nil, fmt.Errorf("failed to get user: %w", err)
+		}
+		return &OwnerInfo{
+			ID:        user.ID,
+			Username:  user.Username,
+			Type:      "user",
+			AvatarURL: &user.AvatarURL,
+		}, nil
+	case models.OwnerTypeOrganization:
+		var org models.Organization
+		if err := h.db.Where("id = ?", ownerID).First(&org).Error; err != nil {
+			return nil, fmt.Errorf("failed to get organization: %w", err)
+		}
+		return &OwnerInfo{
+			ID:        org.ID,
+			Username:  org.Name, // Use organization name as username
+			Type:      "organization",
+			AvatarURL: &org.AvatarURL,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown owner type: %s", ownerType)
 	}
 }
 
@@ -65,7 +167,15 @@ func (h *RepositoryHandlers) CreateRepository(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, repo)
+	// Convert to response DTO with full_name
+	repoResponse, err := h.convertToRepositoryResponse(repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to convert repository to response")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process repository"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, repoResponse)
 }
 
 // GetRepository handles GET /api/v1/repositories/{owner}/{repo}
@@ -84,7 +194,7 @@ func (h *RepositoryHandlers) GetRepository(c *gin.Context) {
 			"owner": owner,
 			"repo":  repoName,
 		}).Error("Failed to get repository")
-		
+
 		if err.Error() == "repository not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
 		} else {
@@ -93,7 +203,15 @@ func (h *RepositoryHandlers) GetRepository(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, repo)
+	// Convert to response DTO with full_name
+	repoResponse, err := h.convertToRepositoryResponse(repo)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to convert repository to response")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process repository"})
+		return
+	}
+
+	c.JSON(http.StatusOK, repoResponse)
 }
 
 // UpdateRepository handles PATCH /api/v1/repositories/{owner}/{repo}
@@ -228,8 +346,19 @@ func (h *RepositoryHandlers) ListRepositories(c *gin.Context) {
 		return
 	}
 
+	// Convert repositories to response DTOs with full_name
+	var repoResponses []*RepositoryResponse
+	for _, repo := range repositories {
+		repoResponse, err := h.convertToRepositoryResponse(repo)
+		if err != nil {
+			h.logger.WithError(err).WithField("repo_id", repo.ID).Warn("Failed to convert repository to response")
+			continue // Skip this repository instead of failing the entire request
+		}
+		repoResponses = append(repoResponses, repoResponse)
+	}
+
 	c.Header("X-Total-Count", strconv.FormatInt(total, 10))
-	c.JSON(http.StatusOK, repositories)
+	c.JSON(http.StatusOK, repoResponses)
 }
 
 // GetBranches handles GET /api/v1/repositories/{owner}/{repo}/branches

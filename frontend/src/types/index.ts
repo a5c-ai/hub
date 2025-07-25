@@ -15,7 +15,7 @@ export interface Repository {
   description?: string;
   private: boolean;
   fork: boolean;
-  owner: User;
+  owner?: User;
   default_branch: string;
   clone_url: string;
   ssh_url: string;

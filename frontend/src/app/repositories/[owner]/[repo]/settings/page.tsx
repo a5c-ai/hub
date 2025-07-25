@@ -296,28 +296,51 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Settings</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="actions-enabled"
-                          defaultChecked
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="actions-enabled" className="ml-2 block text-sm text-gray-900">
-                          Enable GitHub Actions for this repository
-                        </label>
+                      <div className="p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="actions-enabled"
+                            defaultChecked
+                            title="Enable GitHub Actions"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor="actions-enabled" className="ml-3 block text-sm font-medium text-gray-900">
+                            Enable GitHub Actions for this repository
+                          </label>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 ml-7">
+                          Allow workflows to run on this repository
+                        </p>
                       </div>
                       
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-gray-900 mb-3">Workflow Permissions</h4>
-                        <div className="space-y-2">
-                          <label className="flex items-center">
-                            <input type="radio" name="workflow-permissions" defaultChecked className="mr-2" />
-                            <span className="text-sm">Read repository contents and metadata permissions</span>
+                        <div className="space-y-3">
+                          <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <input 
+                              type="radio" 
+                              name="workflow-permissions" 
+                              defaultChecked 
+                              aria-label="Read repository contents and metadata permissions"
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
+                            />
+                            <div>
+                              <span className="text-sm font-medium text-gray-900">Read repository contents and metadata permissions</span>
+                              <p className="text-xs text-gray-500 mt-1">Actions can read repository contents and metadata</p>
+                            </div>
                           </label>
-                          <label className="flex items-center">
-                            <input type="radio" name="workflow-permissions" className="mr-2" />
-                            <span className="text-sm">Read and write permissions</span>
+                          <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <input 
+                              type="radio" 
+                              name="workflow-permissions" 
+                              aria-label="Read and write permissions"
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
+                            />
+                            <div>
+                              <span className="text-sm font-medium text-gray-900">Read and write permissions</span>
+                              <p className="text-xs text-gray-500 mt-1">Actions can read and write to the repository</p>
+                            </div>
                           </label>
                         </div>
                       </div>

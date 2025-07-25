@@ -60,12 +60,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	runnerService := services.NewRunnerService(database.DB, logger)
 	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
 	actionsEventService := services.NewActionsEventService(database.DB, workflowService, logger)
-	
+
 	// Set job executor on workflow service to avoid circular dependencies
 	workflowService.SetJobExecutor(jobExecutorService)
 
 	// Initialize handlers
-	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	searchHandlers := NewSearchHandlers(searchService, logger)
@@ -239,10 +239,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				})
 			}
 
-			// Protected repository endpoints  
+			// Protected repository endpoints
 			// Repository creation endpoint (without group to avoid trailing slash issues)
 			protected.POST("/repositories", repoHandlers.CreateRepository)
-			
+
 			repos := protected.Group("/repositories")
 			{
 				repos.PATCH("/:owner/:repo", repoHandlers.UpdateRepository)
@@ -265,8 +265,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/activity", activityHandlers.GetRepositoryActivity)
 
 				// Branch comparison
-				repos.GET("/:owner/:repo/compare/:base...:head", repoHandlers.CompareBranches)
-				repos.GET("/:owner/:repo/compare/:base...HEAD", repoHandlers.GetMergeBase)
+				repos.GET("/:owner/:repo/compare/:base/:head", repoHandlers.CompareBranches)
+				repos.GET("/:owner/:repo/compare/:base/head", repoHandlers.GetMergeBase)
 
 				// Branch protection
 				repos.GET("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.GetBranchProtection)

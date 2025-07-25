@@ -36,18 +36,6 @@ const navigation = [
     iconSolid: FolderIconSolid,
   },
   {
-    name: 'Issues',
-    href: '/issues',
-    icon: DocumentTextIcon,
-    iconSolid: DocumentTextIconSolid,
-  },
-  {
-    name: 'Pull Requests',
-    href: '/pulls',
-    icon: DocumentTextIcon,
-    iconSolid: DocumentTextIconSolid,
-  },
-  {
     name: 'Organizations',
     href: '/organizations',
     icon: UsersIcon,
