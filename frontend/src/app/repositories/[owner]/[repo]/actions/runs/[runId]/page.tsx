@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import LogStreamingComponent from '@/components/actions/LogStreamingComponent';
+import ArtifactManager from '@/components/actions/ArtifactManager';
 
 interface WorkflowRun {
   id: string;
@@ -305,14 +307,24 @@ export default function WorkflowRunDetailPage() {
                 </div>
               </Card>
 
-              {/* Logs */}
-              <Card>
+              {/* Real-time Logs */}
+              {selectedJob && (
+                <LogStreamingComponent
+                  jobId={selectedJob}
+                  owner={owner as string}
+                  repo={repo as string}
+                  onError={(error) => console.error('Log streaming error:', error)}
+                />
+              )}
+
+              {/* Historical Logs Fallback */}
+              <Card className="mt-4">
                 <div className="p-4 border-b">
-                  <h4 className="font-medium">Logs</h4>
+                  <h4 className="font-medium">Historical Logs</h4>
                 </div>
                 <div className="p-4">
                   {selectedJob && logs[selectedJob] ? (
-                    <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
+                    <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto max-h-96">
                       {logs[selectedJob]}
                     </pre>
                   ) : (
@@ -336,6 +348,15 @@ export default function WorkflowRunDetailPage() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Artifacts Section */}
+      <div className="mt-8">
+        <ArtifactManager
+          workflowRunId={runId as string}
+          owner={owner as string}
+          repo={repo as string}
+        />
       </div>
     </div>
   );
