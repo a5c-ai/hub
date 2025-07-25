@@ -85,17 +85,30 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 		pushedAtStr = &pushedAtTime
 	}
 
+	// Get primary language from repository statistics
+	var primaryLanguage *string
+	if stats, err := h.repositoryService.GetRepositoryStatistics(ctx, repo.ID); err == nil {
+		var repoStats models.RepositoryStatistics
+		if err := h.db.Where("repository_id = ?", repo.ID).First(&repoStats).Error; err == nil && repoStats.PrimaryLanguage != "" {
+			primaryLanguage = &repoStats.PrimaryLanguage
+		}
+	}
+
+	// Count open issues
+	var openIssuesCount int64
+	h.db.Model(&models.Issue{}).Where("repository_id = ? AND state = ?", repo.ID, models.IssueStateOpen).Count(&openIssuesCount)
+
 	return &RepositoryResponse{
 		Repository:      *repo,
 		FullName:        fullName,
 		Owner:           owner,
 		Private:         repo.Visibility != models.VisibilityPublic,
 		Fork:            repo.IsFork,
-		Language:        nil, // TODO: Implement language detection
+		Language:        primaryLanguage,
 		StargazersCount: repo.StarsCount,
 		ForksCount:      repo.ForksCount,
 		WatchersCount:   repo.WatchersCount,
-		OpenIssuesCount: 0, // TODO: Count open issues
+		OpenIssuesCount: int(openIssuesCount),
 		CloneURL:        fmt.Sprintf("http://localhost:8080/%s/%s.git", owner.Username, repo.Name),
 		SSHURL:          fmt.Sprintf("git@localhost:%s/%s.git", owner.Username, repo.Name),
 		Size:            repo.SizeKB,
