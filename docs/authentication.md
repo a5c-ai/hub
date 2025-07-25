@@ -33,18 +33,21 @@ The A5C Hub authentication system provides enterprise-grade authentication with 
 - Account linking and unlinking
 
 ### Enterprise SSO
-- **SAML 2.0** - Enterprise SAML authentication
-- **OIDC** - OpenID Connect support
-- **LDAP/AD** - Directory service integration
-- Just-in-time (JIT) user provisioning
+- **SAML 2.0** - Enterprise SAML authentication with group-based organization assignment
+- **OIDC** - OpenID Connect support with automatic organization creation from groups
+- **LDAP/AD** - Directory service integration with external team synchronization
+- **Just-in-time (JIT) Provisioning** - Automatic user and organization provisioning
+- **External Team Sync** - Synchronization with LDAP, Active Directory, Okta, and GitHub teams
 
 ### Session Management
-- Secure session tokens
-- Device tracking and naming
-- Location tracking (optional)
-- Idle timeout protection
-- Concurrent session limits
-- Remember me functionality
+- **Secure Session Tokens** - JWT-based authentication with configurable expiration
+- **Refresh Token Management** - Secure token rotation and lifecycle management  
+- **Token Blacklisting** - Secure token revocation for logout and security incidents
+- **OAuth State Validation** - CSRF protection for OAuth flows with secure state storage
+- **Device Tracking** - Device tracking and naming with location tracking (optional)
+- **Idle Timeout Protection** - Configurable session timeouts
+- **Concurrent Session Limits** - Multi-device session management
+- **Remember Me Functionality** - Extended session support
 
 ### Security Features
 - **Rate Limiting** - Protection against brute force attacks
