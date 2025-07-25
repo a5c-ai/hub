@@ -51,8 +51,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	teamMembershipService := services.NewTeamMembershipService(database.DB, activityService)
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
+	// Initialize Elasticsearch service
+	elasticsearchService, err := services.NewElasticsearchService(&cfg.Elasticsearch, logger)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize Elasticsearch service")
+	}
+
 	// Initialize search service
-	searchService := services.NewSearchService(database.DB)
+	searchService := services.NewSearchService(database.DB, elasticsearchService, logger)
 
 	// Initialize analytics service
 	analyticsService := services.NewAnalyticsService(database.DB, logger)
@@ -185,6 +191,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/search/issues", searchHandlers.SearchIssues)
 		v1.GET("/search/users", searchHandlers.SearchUsers)
 		v1.GET("/search/commits", searchHandlers.SearchCommits)
+		v1.GET("/search/code", searchHandlers.SearchCode)
 
 		// Public user profile endpoints
 		v1.GET("/users/:username", userHandlers.GetUserProfile)

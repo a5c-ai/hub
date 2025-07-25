@@ -337,6 +337,26 @@ export const searchApi = {
     return apiClient.get(`/search/commits?${searchParams.toString()}`);
   },
 
+  // Search code
+  searchCode: (query: string, params?: {
+    repo?: string;
+    language?: string;
+    sort?: string;
+    order?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
+    const searchParams = new URLSearchParams({ q: query });
+    if (params?.repo) searchParams.append('repo', params.repo);
+    if (params?.language) searchParams.append('language', params.language);
+    if (params?.sort) searchParams.append('sort', params.sort);
+    if (params?.order) searchParams.append('order', params.order);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
+    
+    return apiClient.get(`/search/code?${searchParams.toString()}`);
+  },
+
   // Search within a specific repository
   searchInRepository: (owner: string, repo: string, query: string, params?: {
     type?: string;

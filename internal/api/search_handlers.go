@@ -443,3 +443,62 @@ func (h *SearchHandlers) SearchInRepository(c *gin.Context) {
 		},
 	})
 }
+
+// SearchCode handles code search across repositories
+// GET /api/v1/search/code
+func (h *SearchHandlers) SearchCode(c *gin.Context) {
+	query := strings.TrimSpace(c.Query("q"))
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Search query is required",
+		})
+		return
+	}
+
+	// Parse filters
+	var repoID *uuid.UUID
+	if repoStr := c.Query("repo"); repoStr != "" {
+		if id, err := uuid.Parse(repoStr); err == nil {
+			repoID = &id
+		}
+	}
+
+	language := c.Query("language")
+	
+	// Parse pagination
+	page := 1
+	perPage := 30
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if perPageStr := c.Query("per_page"); perPageStr != "" {
+		if pp, err := strconv.Atoi(perPageStr); err == nil && pp > 0 && pp <= 100 {
+			perPage = pp
+		}
+	}
+
+	// Perform code search
+	results, err := h.searchService.SearchCode(query, repoID, language, page, perPage)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to search code")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to search code",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    results,
+		"meta": gin.H{
+			"query":     query,
+			"language":  language,
+			"page":      page,
+			"per_page":  perPage,
+			"total":     results.TotalCount,
+		},
+	})
+}
