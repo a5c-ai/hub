@@ -47,15 +47,45 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.getRepositories(params);
-      if (response.data) {
-        set({
-          repositories: response.data as Repository[],
-          totalCount: response.pagination?.total || 0,
-          currentPage: response.pagination?.page || 1,
-          totalPages: response.pagination?.total_pages || 1,
-          isLoading: false,
-        });
+      console.log('Repository store: Fetch response received:', response);
+      
+      // Handle different response formats
+      let repositories: Repository[] = [];
+      let totalCount = 0;
+      let currentPage = 1;
+      let totalPages = 1;
+      
+      if (Array.isArray(response)) {
+        // Direct array response
+        repositories = response;
+        totalCount = response.length;
+      } else if (response.data && Array.isArray(response.data)) {
+        // Wrapped array response
+        repositories = response.data;
+        totalCount = response.pagination?.total || response.data.length;
+        currentPage = response.pagination?.page || 1;
+        totalPages = response.pagination?.total_pages || 1;
+      } else if (response && response.data) {
+        // Other wrapped response
+        repositories = Array.isArray(response.data) ? response.data : [];
+        totalCount = response.pagination?.total || repositories.length;
+        currentPage = response.pagination?.page || 1;
+        totalPages = response.pagination?.total_pages || 1;
       }
+      
+      console.log('Repository store: Processed repositories:', { 
+        count: repositories.length, 
+        totalCount, 
+        repositories: repositories.slice(0, 2) // Log first 2 for debugging
+      });
+      
+      set({
+        repositories,
+        totalCount,
+        currentPage,
+        totalPages,
+        isLoading: false,
+      });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
@@ -105,14 +135,20 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.createRepository(data);
-      if (response.success && response.data) {
-        const newRepo = response.data as Repository;
+      console.log('Repository store: API response received:', response);
+      
+      // Handle direct repository response from backend
+      if (response && response.id && response.name) {
+        const newRepo = response as Repository;
+        console.log('Repository store: Created repository:', newRepo);
         set((state) => ({
           repositories: [newRepo, ...state.repositories],
           isLoading: false,
         }));
         return newRepo;
       }
+      
+      console.error('Repository store: Unexpected response structure:', response);
       throw new Error('Failed to create repository');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
