@@ -77,6 +77,7 @@ export const apiClient = {
     params?: { page?: number; per_page?: number; [key: string]: unknown }
   ): Promise<PaginatedResponse<T>> => {
     const response = await api.get(url, { params });
+    console.log('API Client: getPaginated response for', url, ':', response.data);
     return response.data;
   },
 };
@@ -141,7 +142,25 @@ export const repoApi = {
     description?: string;
     private: boolean;
     auto_init?: boolean;
-  }) => apiClient.post('/repositories', data),
+  }) => {
+    // Transform private boolean to visibility string for backend
+    const payload = {
+      name: data.name,
+      description: data.description,
+      visibility: data.private ? 'private' : 'public',
+      auto_init: data.auto_init,
+      // Set sensible defaults for repository features
+      has_issues: true,
+      has_projects: true,
+      has_wiki: true,
+      has_downloads: true,
+      allow_merge_commit: true,
+      allow_squash_merge: true,
+      allow_rebase_merge: true,
+      delete_branch_on_merge: false,
+    };
+    return apiClient.post('/repositories', payload);
+  },
 
   updateRepository: (owner: string, repo: string, data: Partial<{
     name: string;

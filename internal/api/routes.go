@@ -31,7 +31,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	if repoBasePath == "" {
 		repoBasePath = "/var/lib/hub/repositories"
 	}
-	
+
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
 	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
@@ -75,6 +75,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
 	actionsHandlers := NewActionsHandlers(workflowService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
+	userHandlers := NewUserHandlers(authService, logger)
+	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
+	hooksHandlers := NewHooksHandlers(repositoryService, logger)
+	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -118,20 +122,20 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			authGroup.POST("/forgot-password", authHandlers.ForgotPassword)
 			authGroup.POST("/reset-password", authHandlers.ResetPassword)
 			authGroup.GET("/verify-email", authHandlers.VerifyEmail)
-			
+
 			// OAuth endpoints
 			oauth := authGroup.Group("/oauth")
 			{
 				oauth.GET("/:provider", authHandlers.OAuthRedirect)
 				oauth.GET("/:provider/callback", authHandlers.OAuthCallback)
 			}
-			
+
 			// Protected auth endpoints
 			protected := authGroup.Group("/")
 			protected.Use(middleware.AuthMiddleware(jwtManager))
 			{
 				protected.POST("/logout", authHandlers.Logout)
-				
+
 				// MFA endpoints
 				mfa := protected.Group("/mfa")
 				{
@@ -148,13 +152,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo", repoHandlers.GetRepository)
 		v1.GET("/repositories/:owner/:repo/branches", repoHandlers.GetBranches)
 		v1.GET("/repositories/:owner/:repo/branches/:branch", repoHandlers.GetBranch)
-		
+
 		// Git content endpoints (public access)
 		v1.GET("/repositories/:owner/:repo/commits", repoHandlers.GetCommits)
 		v1.GET("/repositories/:owner/:repo/commits/:sha", repoHandlers.GetCommit)
 		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
 		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
-		
+
 		// Public issue endpoints (for public repos)
 		v1.GET("/repositories/:owner/:repo/issues", issueHandlers.ListIssues)
 		v1.GET("/repositories/:owner/:repo/issues/search", issueHandlers.SearchIssues)
@@ -173,6 +177,11 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/search/users", searchHandlers.SearchUsers)
 		v1.GET("/search/commits", searchHandlers.SearchCommits)
 
+		// Public user profile endpoints
+		v1.GET("/users/:username", userHandlers.GetUserProfile)
+		v1.GET("/users/:username/repositories", userHandlers.GetUserRepositories)
+		v1.GET("/users/:username/organizations", userHandlers.GetUserOrganizations)
+
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
@@ -190,6 +199,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
 		{
+			// Current user profile endpoints
+			protected.GET("/user", userHandlers.GetCurrentUserProfile)
+			protected.PATCH("/user", userHandlers.UpdateUserProfile)
+
+			// User activity and notifications
+			protected.GET("/user/activity", userHandlers.GetUserActivity)
+			protected.GET("/notifications", userHandlers.GetNotifications)
+			protected.PATCH("/notifications", userHandlers.MarkNotificationsAsRead)
+
+			// Legacy profile endpoint for backward compatibility
 			protected.GET("/profile", func(c *gin.Context) {
 				userID, exists := c.Get("user_id")
 				if !exists {
@@ -220,20 +239,68 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				})
 			}
 
-			// Protected repository endpoints
+			// Protected repository endpoints  
+			// Repository creation endpoint (without group to avoid trailing slash issues)
+			protected.POST("/repositories", repoHandlers.CreateRepository)
+			
 			repos := protected.Group("/repositories")
 			{
-				repos.POST("/", repoHandlers.CreateRepository)
 				repos.PATCH("/:owner/:repo", repoHandlers.UpdateRepository)
 				repos.DELETE("/:owner/:repo", repoHandlers.DeleteRepository)
-				
+
 				// Branch operations
 				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
 				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
 
+				// File operations
+				repos.POST("/:owner/:repo/contents/*path", repoHandlers.CreateFile)
+				repos.PUT("/:owner/:repo/contents/*path", repoHandlers.UpdateFile)
+				repos.DELETE("/:owner/:repo/contents/*path", repoHandlers.DeleteFile)
+
+				// Repository information and statistics
+				repos.GET("/:owner/:repo/stats", repoHandlers.GetRepositoryStats)
+				repos.GET("/:owner/:repo/languages", repoHandlers.GetRepositoryLanguages)
+				repos.GET("/:owner/:repo/tags", repoHandlers.GetRepositoryTags)
+				repos.GET("/:owner/:repo/contributors", activityHandlers.GetRepositoryContributors)
+				repos.GET("/:owner/:repo/activity", activityHandlers.GetRepositoryActivity)
+
+				// Branch comparison
+				repos.GET("/:owner/:repo/compare/:base...:head", repoHandlers.CompareBranches)
+				repos.GET("/:owner/:repo/compare/:base...HEAD", repoHandlers.GetMergeBase)
+
+				// Branch protection
+				repos.GET("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.GetBranchProtection)
+				repos.PUT("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.UpdateBranchProtection)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.DeleteBranchProtection)
+				repos.GET("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.GetRequiredStatusChecks)
+				repos.PATCH("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.UpdateRequiredStatusChecks)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection/required_status_checks", branchProtectionHandlers.DeleteRequiredStatusChecks)
+				repos.GET("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.GetRequiredPullRequestReviews)
+				repos.PATCH("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.UpdateRequiredPullRequestReviews)
+				repos.DELETE("/:owner/:repo/branches/:branch/protection/required_pull_request_reviews", branchProtectionHandlers.DeleteRequiredPullRequestReviews)
+
+				// Webhooks
+				repos.GET("/:owner/:repo/hooks", hooksHandlers.ListWebhooks)
+				repos.POST("/:owner/:repo/hooks", hooksHandlers.CreateWebhook)
+				repos.GET("/:owner/:repo/hooks/:hook_id", hooksHandlers.GetWebhook)
+				repos.PATCH("/:owner/:repo/hooks/:hook_id", hooksHandlers.UpdateWebhook)
+				repos.DELETE("/:owner/:repo/hooks/:hook_id", hooksHandlers.DeleteWebhook)
+				repos.POST("/:owner/:repo/hooks/:hook_id/pings", hooksHandlers.PingWebhook)
+
+				// Deploy keys
+				repos.GET("/:owner/:repo/keys", hooksHandlers.ListDeployKeys)
+				repos.POST("/:owner/:repo/keys", hooksHandlers.CreateDeployKey)
+				repos.GET("/:owner/:repo/keys/:key_id", hooksHandlers.GetDeployKey)
+				repos.DELETE("/:owner/:repo/keys/:key_id", hooksHandlers.DeleteDeployKey)
+
+				// Repository subscription (watching)
+				repos.GET("/:owner/:repo/subscription", activityHandlers.GetRepositorySubscription)
+				repos.PUT("/:owner/:repo/subscription", activityHandlers.WatchRepository)
+				repos.DELETE("/:owner/:repo/subscription", activityHandlers.UnwatchRepository)
+
 				// Repository-specific search
 				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
-				
+
 				// Pull request operations
 				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
 				repos.POST("/:owner/:repo/pulls", prHandlers.CreatePullRequest)
@@ -241,13 +308,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.PATCH("/:owner/:repo/pulls/:number", prHandlers.UpdatePullRequest)
 				repos.PUT("/:owner/:repo/pulls/:number/merge", prHandlers.MergePullRequest)
 				repos.GET("/:owner/:repo/pulls/:number/files", prHandlers.GetPullRequestFiles)
-				
+
 				// Review operations
 				repos.POST("/:owner/:repo/pulls/:number/reviews", prHandlers.CreateReview)
 				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
 				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
 				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
-				
+
 				// Issue operations (require authentication)
 				repos.POST("/:owner/:repo/issues", issueHandlers.CreateIssue)
 				repos.PATCH("/:owner/:repo/issues/:number", issueHandlers.UpdateIssue)
@@ -255,17 +322,17 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.POST("/:owner/:repo/issues/:number/reopen", issueHandlers.ReopenIssue)
 				repos.POST("/:owner/:repo/issues/:number/lock", issueHandlers.LockIssue)
 				repos.POST("/:owner/:repo/issues/:number/unlock", issueHandlers.UnlockIssue)
-				
+
 				// Comment operations (require authentication)
 				repos.POST("/:owner/:repo/issues/:number/comments", commentHandlers.CreateComment)
 				repos.PATCH("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.UpdateComment)
 				repos.DELETE("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.DeleteComment)
-				
+
 				// Label operations (require authentication)
 				repos.POST("/:owner/:repo/labels", labelHandlers.CreateLabel)
 				repos.PATCH("/:owner/:repo/labels/:name", labelHandlers.UpdateLabel)
 				repos.DELETE("/:owner/:repo/labels/:name", labelHandlers.DeleteLabel)
-				
+
 				// Milestone operations (require authentication)
 				repos.POST("/:owner/:repo/milestones", milestoneHandlers.CreateMilestone)
 				repos.PATCH("/:owner/:repo/milestones/:number", milestoneHandlers.UpdateMilestone)
@@ -290,7 +357,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.POST("/:owner/:repo/actions/runs/:run_id/rerun", actionsHandlers.RerunWorkflowRun)
 				repos.DELETE("/:owner/:repo/actions/runs/:run_id", actionsHandlers.DeleteWorkflowRun)
 			}
-			
+
 			// Admin-only operations
 			adminRepos := protected.Group("/repositories")
 			adminRepos.Use(middleware.AdminMiddleware())
