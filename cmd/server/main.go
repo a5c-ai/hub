@@ -85,8 +85,25 @@ func main() {
 	// Initialize SSH server if enabled
 	var sshServer *ssh.SSHServer
 	if cfg.SSH.Enabled {
-		// Initialize services
-		gitService := git.NewGitService(logger)
+		// Initialize services with distributed config support
+		distributedConfig := &git.DistributedConfig{
+			Enabled:             cfg.Storage.Distributed.Enabled,
+			NodeID:              cfg.Storage.Distributed.NodeID,
+			ReplicationCount:    cfg.Storage.Distributed.ReplicationCount,
+			ConsistentHashing:   cfg.Storage.Distributed.ConsistentHashing,
+			HealthCheckInterval: parseHealthCheckInterval(cfg.Storage.Distributed.HealthCheckInterval),
+		}
+
+		// Convert storage nodes from config format to git format
+		for _, node := range cfg.Storage.Distributed.StorageNodes {
+			distributedConfig.StorageNodes = append(distributedConfig.StorageNodes, git.StorageNode{
+				ID:      node.ID,
+				Address: node.Address,
+				Weight:  node.Weight,
+			})
+		}
+
+		gitService := git.NewGitServiceWithConfig(distributedConfig, logger)
 		repoBasePath := cfg.Storage.RepositoryPath
 		if repoBasePath == "" {
 			repoBasePath = "./repositories"
@@ -165,4 +182,18 @@ func main() {
 	}
 
 	logger.Info("Servers stopped")
+}
+
+// parseHealthCheckInterval parses a string duration or returns a default
+func parseHealthCheckInterval(interval string) time.Duration {
+	if interval == "" {
+		return 30 * time.Second
+	}
+	
+	duration, err := time.ParseDuration(interval)
+	if err != nil {
+		return 30 * time.Second
+	}
+	
+	return duration
 }

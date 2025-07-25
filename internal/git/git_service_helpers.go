@@ -12,7 +12,23 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/sirupsen/logrus"
 )
+
+// NewGitServiceWithConfig creates a git service based on the provided configuration
+// If distributed storage is enabled, it returns a DistributedGitService, otherwise a regular GitService
+func NewGitServiceWithConfig(distributedConfig *DistributedConfig, logger *logrus.Logger) GitService {
+	// Create the base local git service
+	localService := NewGitService(logger)
+	
+	// If distributed storage is not enabled, return the local service
+	if distributedConfig == nil || !distributedConfig.Enabled {
+		return localService
+	}
+	
+	// Create and return the distributed git service
+	return NewDistributedGitService(distributedConfig, localService, logger)
+}
 
 // Helper methods for bare repository operations
 

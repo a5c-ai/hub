@@ -20,3 +20,22 @@ cors:
   allowed_origins:
     - http://localhost:3000
     - http://localhost:3001
+
+storage:
+  repository_path: /var/lib/hub/repositories
+  distributed:
+    enabled: false  # Set to true to enable distributed storage
+    node_id: hub-git-storage-0.hub  # Unique ID for this storage node
+    replication_count: 3  # Number of replicas for each repository
+    consistent_hashing: true  # Use consistent hashing for load balancing
+    health_check_interval: 30s  # Health check interval
+    storage_nodes:  # Configure other nodes in the cluster
+      - id: hub-git-storage-0.hub
+        address: hub-git-storage-0.hub:8080
+        weight: 100
+      - id: hub-git-storage-1.hub
+        address: hub-git-storage-1.hub:8080
+        weight: 100
+      - id: hub-git-storage-2.hub
+        address: hub-git-storage-2.hub:8080
+        weight: 100
