@@ -24,13 +24,13 @@ func (PasswordResetToken) TableName() string {
 }
 
 func init() {
-	registerMigration("009_password_reset_tokens", migrate009Up, migrate009Down)
+	registerMigration("013_password_reset_tokens", migrate013Up, migrate013Down)
 }
 
-func migrate009Up(db *gorm.DB) error {
+func migrate013Up(db *gorm.DB) error {
 	return db.AutoMigrate(&PasswordResetToken{})
 }
 
-func migrate009Down(db *gorm.DB) error {
+func migrate013Down(db *gorm.DB) error {
 	return db.Migrator().DropTable(&PasswordResetToken{})
 }
