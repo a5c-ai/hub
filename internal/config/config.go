@@ -45,7 +45,33 @@ type CORS struct {
 }
 
 type Storage struct {
-	RepositoryPath string `mapstructure:"repository_path"`
+	RepositoryPath string          `mapstructure:"repository_path"`
+	Artifacts      ArtifactStorage `mapstructure:"artifacts"`
+}
+
+type ArtifactStorage struct {
+	Backend       string        `mapstructure:"backend"`        // "azure", "s3", "filesystem"
+	Azure         AzureStorage  `mapstructure:"azure"`
+	S3            S3Storage     `mapstructure:"s3"`
+	MaxSizeMB     int64         `mapstructure:"max_size_mb"`    // Max artifact size in MB
+	RetentionDays int           `mapstructure:"retention_days"` // Retention period in days
+	BasePath      string        `mapstructure:"base_path"`      // For filesystem backend
+}
+
+type AzureStorage struct {
+	AccountName   string `mapstructure:"account_name"`
+	AccountKey    string `mapstructure:"account_key"`
+	ContainerName string `mapstructure:"container_name"`
+	EndpointURL   string `mapstructure:"endpoint_url"`
+}
+
+type S3Storage struct {
+	Region          string `mapstructure:"region"`
+	Bucket          string `mapstructure:"bucket"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	EndpointURL     string `mapstructure:"endpoint_url"` // For S3-compatible services
+	UseSSL          bool   `mapstructure:"use_ssl"`
 }
 
 type Security struct {
@@ -154,6 +180,12 @@ func Load() (*Config, error) {
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
 	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
+	viper.SetDefault("storage.artifacts.backend", "filesystem")
+	viper.SetDefault("storage.artifacts.base_path", "/var/lib/hub/artifacts")
+	viper.SetDefault("storage.artifacts.max_size_mb", 1024)
+	viper.SetDefault("storage.artifacts.retention_days", 90)
+	viper.SetDefault("storage.artifacts.azure.container_name", "artifacts")
+	viper.SetDefault("storage.artifacts.s3.use_ssl", true)
 	viper.SetDefault("security.encryption_key", "default-32-byte-key-for-secrets")
 	viper.SetDefault("ssh.enabled", true)
 	viper.SetDefault("ssh.port", 2222)
@@ -194,6 +226,20 @@ func Load() (*Config, error) {
 	viper.BindEnv("oauth.gitlab.client_secret", "GITLAB_CLIENT_SECRET")
 	viper.BindEnv("oauth.gitlab.base_url", "GITLAB_BASE_URL")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
+	viper.BindEnv("storage.artifacts.backend", "ARTIFACT_STORAGE_BACKEND")
+	viper.BindEnv("storage.artifacts.base_path", "ARTIFACT_STORAGE_PATH")
+	viper.BindEnv("storage.artifacts.max_size_mb", "ARTIFACT_MAX_SIZE_MB")
+	viper.BindEnv("storage.artifacts.retention_days", "ARTIFACT_RETENTION_DAYS")
+	viper.BindEnv("storage.artifacts.azure.account_name", "AZURE_STORAGE_ACCOUNT_NAME")
+	viper.BindEnv("storage.artifacts.azure.account_key", "AZURE_STORAGE_ACCOUNT_KEY")
+	viper.BindEnv("storage.artifacts.azure.container_name", "AZURE_STORAGE_CONTAINER_NAME")
+	viper.BindEnv("storage.artifacts.azure.endpoint_url", "AZURE_STORAGE_ENDPOINT_URL")
+	viper.BindEnv("storage.artifacts.s3.region", "AWS_REGION")
+	viper.BindEnv("storage.artifacts.s3.bucket", "S3_BUCKET")
+	viper.BindEnv("storage.artifacts.s3.access_key_id", "AWS_ACCESS_KEY_ID")
+	viper.BindEnv("storage.artifacts.s3.secret_access_key", "AWS_SECRET_ACCESS_KEY")
+	viper.BindEnv("storage.artifacts.s3.endpoint_url", "S3_ENDPOINT_URL")
+	viper.BindEnv("storage.artifacts.s3.use_ssl", "S3_USE_SSL")
 	viper.BindEnv("security.encryption_key", "ENCRYPTION_KEY")
 	viper.BindEnv("ssh.enabled", "SSH_ENABLED")
 	viper.BindEnv("ssh.port", "SSH_PORT")
