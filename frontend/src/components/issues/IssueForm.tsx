@@ -12,16 +12,18 @@ interface IssueFormProps {
   repositoryName: string;
   mode?: 'create' | 'edit';
   initialData?: Partial<CreateIssueRequest>;
+  issueNumber?: number; // Required for edit mode
 }
 
 export function IssueForm({ 
   repositoryOwner, 
   repositoryName, 
   mode = 'create',
-  initialData = {}
+  initialData = {},
+  issueNumber
 }: IssueFormProps) {
   const router = useRouter();
-  const { createIssue, isCreating, operationError } = useIssueStore();
+  const { createIssue, updateIssue, isCreating, isUpdating, operationError } = useIssueStore();
   
   const [formData, setFormData] = useState<CreateIssueRequest>({
     title: initialData.title || '',
@@ -52,8 +54,13 @@ export function IssueForm({
     }
 
     try {
-      const issue = await createIssue(repositoryOwner, repositoryName, formData);
-      router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues/${issue.number}`);
+      if (mode === 'create') {
+        const issue = await createIssue(repositoryOwner, repositoryName, formData);
+        router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues/${issue.number}`);
+      } else if (mode === 'edit' && issueNumber) {
+        await updateIssue(repositoryOwner, repositoryName, issueNumber, formData);
+        router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues/${issueNumber}`);
+      }
     } catch (error) {
       // Error is handled by the store
       console.error('Failed to create issue:', error);
@@ -61,14 +68,18 @@ export function IssueForm({
   };
 
   const handleCancel = () => {
-    router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues`);
+    if (mode === 'edit' && issueNumber) {
+      router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues/${issueNumber}`);
+    } else {
+      router.push(`/repositories/${repositoryOwner}/${repositoryName}/issues`);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
           Title *
         </label>
         <Input
@@ -76,16 +87,16 @@ export function IssueForm({
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Brief description of the issue"
-          className={errors.title ? 'border-red-300' : ''}
+          className={errors.title ? 'border-destructive' : ''}
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+          <p className="mt-1 text-sm text-destructive">{errors.title}</p>
         )}
       </div>
 
       {/* Body */}
       <div>
-        <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="body" className="block text-sm font-medium text-foreground mb-2">
           Description
         </label>
         <textarea
@@ -94,7 +105,7 @@ export function IssueForm({
           value={formData.body}
           onChange={(e) => setFormData({ ...formData, body: e.target.value })}
           placeholder="Detailed description of the issue..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
         />
       </div>
 
@@ -102,7 +113,7 @@ export function IssueForm({
               <div className="flex items-center justify-between pt-6 border-t border-border">
         <div>
           {operationError && (
-            <p className="text-sm text-red-600">{operationError}</p>
+            <p className="text-sm text-destructive">{operationError}</p>
           )}
         </div>
         <div className="flex items-center space-x-3">
@@ -110,18 +121,18 @@ export function IssueForm({
             type="button"
             variant="outline"
             onClick={handleCancel}
-            disabled={isCreating}
+            disabled={isCreating || isUpdating}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isCreating || !formData.title.trim()}
+            disabled={isCreating || isUpdating || !formData.title.trim()}
           >
-            {isCreating ? (
+            {isCreating || isUpdating ? (
               <div className="flex items-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Creating...
+                {isCreating ? 'Creating...' : 'Updating...'}
               </div>
             ) : (
               `${mode === 'create' ? 'Create' : 'Update'} Issue`

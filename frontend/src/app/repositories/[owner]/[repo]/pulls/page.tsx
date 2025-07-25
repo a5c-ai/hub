@@ -20,21 +20,18 @@ export default function PullRequestsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm mb-6">
-          <Link 
-            href="/repositories" 
-            className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
-          >
+          <Link href="/repositories" className="hover:text-foreground transition-colors">
             Repositories
           </Link>
-          <span className="text-gray-400">/</span>
+          <span className="text-muted-foreground">/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
-          <span className="text-gray-400">/</span>
-          <span className="text-foreground font-semibold">Pull requests</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-foreground font-medium">Pull requests</span>
         </nav>
 
         {/* Header */}
@@ -152,7 +149,7 @@ export default function PullRequestsPage() {
             {/* Search bar */}
             <div className="mb-6">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input

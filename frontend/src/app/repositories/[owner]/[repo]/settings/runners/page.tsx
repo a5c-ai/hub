@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { apiClient } from '@/lib/api';
+import { Dropdown } from '@/components/ui/Dropdown';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Runner {
   id: string;
@@ -69,10 +71,10 @@ export default function RunnersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'online': return 'green';
-      case 'busy': return 'yellow';
-      case 'offline': return 'gray';
-      default: return 'gray';
+      case 'online': return 'text-green-600';
+      case 'busy': return 'text-yellow-600';
+      case 'offline': return 'text-muted-foreground';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -120,7 +122,7 @@ export default function RunnersPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Runners</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Self-hosted runners for this repository. Kubernetes runners are managed automatically.
           </p>
         </div>
@@ -142,25 +144,25 @@ export default function RunnersPage() {
           <div className="text-2xl font-bold text-green-600">
             {runners.filter(r => r.status === 'online').length}
           </div>
-          <div className="text-sm text-gray-600">Online</div>
+                          <div className="text-sm text-muted-foreground">Online</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-yellow-600">
             {runners.filter(r => r.status === 'busy').length}
           </div>
-          <div className="text-sm text-gray-600">Busy</div>
+                          <div className="text-sm text-muted-foreground">Busy</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-gray-600">
+          <div className="text-2xl font-bold text-muted-foreground">
             {runners.filter(r => r.status === 'offline').length}
           </div>
-          <div className="text-sm text-gray-600">Offline</div>
+          <div className="text-sm text-muted-foreground">Offline</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-primary">
             {runners.filter(r => r.type === 'kubernetes').length}
           </div>
-          <div className="text-sm text-gray-600">Kubernetes</div>
+          <div className="text-sm text-muted-foreground">Kubernetes</div>
         </Card>
       </div>
 

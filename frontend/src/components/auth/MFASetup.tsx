@@ -16,8 +16,8 @@ export function MFASetup({ onCancel }: MFASetupProps) {
     <Card className="p-6 max-w-md mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold mb-2">Setup Two-Factor Authentication</h2>
-        <p className="text-gray-600">
-          MFA setup is not yet implemented in this version
+        <p className="text-muted-foreground">
+          Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in.
         </p>
       </div>
 

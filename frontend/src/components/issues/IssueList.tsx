@@ -39,7 +39,7 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
   if (isLoadingIssues) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -47,8 +47,8 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
   if (issuesError) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-600 mb-4">Error loading issues</div>
-        <div className="text-gray-500 text-sm">{issuesError}</div>
+        <div className="text-destructive mb-4">Error loading issues</div>
+        <div className="text-muted-foreground text-sm">{issuesError}</div>
       </div>
     );
   }
@@ -62,13 +62,13 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
             onClick={() => handleStateFilter('open')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               filters.state === 'open'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
             }`}
           >
             Open Issues
             {filters.state === 'open' && (
-              <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+              <span className="ml-2 bg-muted text-foreground py-0.5 px-2 rounded-full text-xs">
                 {issuesTotal}
               </span>
             )}
@@ -77,13 +77,13 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
             onClick={() => handleStateFilter('closed')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               filters.state === 'closed'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
             }`}
           >
             Closed Issues
             {filters.state === 'closed' && (
-              <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+              <span className="ml-2 bg-muted text-foreground py-0.5 px-2 rounded-full text-xs">
                 {issuesTotal}
               </span>
             )}
@@ -95,7 +95,7 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
       {issues.length === 0 ? (
         <div className="text-center py-12">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-muted-foreground"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -107,8 +107,8 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No issues</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-foreground">No issues</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             {filters.state === 'open'
               ? 'There are no open issues in this repository.'
               : 'There are no closed issues in this repository.'}
@@ -130,26 +130,24 @@ export function IssueList({ repositoryOwner, repositoryName }: IssueListProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Showing {((currentPage - 1) * (filters.per_page || 30)) + 1} to{' '}
-            {Math.min(currentPage * (filters.per_page || 30), issuesTotal)} of{' '}
-            {issuesTotal} results
+          <div className="text-sm text-foreground">
+            Showing {issues.length} of {issuesTotal} issues
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm font-medium text-muted-foreground bg-background border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
-            <span className="px-3 py-2 text-sm font-medium text-gray-700">
+            <span className="px-3 py-2 text-sm font-medium text-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm font-medium text-muted-foreground bg-background border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>

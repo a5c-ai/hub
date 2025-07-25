@@ -11,11 +11,11 @@ export function IssueStateButton({ state, className = '' }: IssueStateButtonProp
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
       isOpen 
-        ? 'bg-green-100 text-green-800 border border-green-200' 
-        : 'bg-red-100 text-red-800 border border-red-200'
+        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700' 
+        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700'
     } ${className}`}>
       <svg 
-        className={`w-3 h-3 mr-1 ${isOpen ? 'text-green-500' : 'text-red-500'}`}
+        className={`w-3 h-3 mr-1 ${isOpen ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
         fill="currentColor" 
         viewBox="0 0 20 20"
       >

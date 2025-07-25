@@ -110,7 +110,7 @@ export default function RepositoryBrowser({
     
     // File icon
     return (
-      <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+      <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
       </svg>
     );
@@ -139,10 +139,10 @@ export default function RepositoryBrowser({
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center space-x-3">
-              <div className="w-4 h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded flex-1"></div>
-              <div className="w-16 h-4 bg-gray-200 rounded"></div>
-              <div className="w-24 h-4 bg-gray-200 rounded"></div>
+              <div className="w-4 h-4 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded flex-1"></div>
+              <div className="w-16 h-4 bg-muted rounded"></div>
+              <div className="w-24 h-4 bg-muted rounded"></div>
             </div>
           ))}
         </div>
@@ -169,7 +169,7 @@ export default function RepositoryBrowser({
 
   if (!tree || !tree.entries || tree.entries.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
@@ -183,7 +183,7 @@ export default function RepositoryBrowser({
   return (
     <div>
       {/* Breadcrumb navigation */}
-      <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4 p-3 bg-muted rounded-md">
         <Link 
           href={`/repositories/${owner}/${repo}`}
           className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
@@ -193,7 +193,7 @@ export default function RepositoryBrowser({
         {currentPath && (
           <>
             <span>/</span>
-            <span className="text-gray-700 dark:text-gray-300">tree</span>
+            <span className="text-foreground">tree</span>
             <span>/</span>
             <Link 
               href={`/repositories/${owner}/${repo}`}
@@ -241,7 +241,7 @@ export default function RepositoryBrowser({
                    <option value={repository.default_branch}>{repository.default_branch}</option>
                  }
                </select>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 {tree.entries.length} {tree.entries.length === 1 ? 'item' : 'items'}
               </span>
             </div>
@@ -259,7 +259,7 @@ export default function RepositoryBrowser({
         <div className="divide-y divide-gray-200">
           {/* Go up directory link */}
           {currentPath && (
-            <div className="px-4 py-3 hover:bg-gray-50 transition-colors">
+            <div className="px-4 py-3 hover:bg-muted transition-colors">
               <Link 
                 href={
                   currentPath.split('/').slice(0, -1).length > 0
@@ -268,7 +268,7 @@ export default function RepositoryBrowser({
                 }
                 className="flex items-center space-x-3 text-sm"
               >
-                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
                 <span className="text-blue-600 hover:underline">..</span>
@@ -278,7 +278,7 @@ export default function RepositoryBrowser({
 
           {/* File/directory entries */}
           {tree.entries.map((entry) => (
-            <div key={entry.path} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+            <div key={entry.path} className="px-4 py-3 hover:bg-muted transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   {getFileIcon(entry)}
@@ -293,7 +293,7 @@ export default function RepositoryBrowser({
                     {entry.name}
                   </Link>
                 </div>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   {entry.type === 'blob' && (
                     <span>{formatFileSize(entry.size)}</span>
                   )}

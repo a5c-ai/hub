@@ -6,6 +6,7 @@ import { pullRequestApi, PullRequestListOptions } from '../../lib/pullRequestApi
 import { PullRequest } from '../../types'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { formatDistanceToNow } from 'date-fns'
 
 interface PullRequestListProps {
   repositoryOwner: string
@@ -84,7 +85,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h2 className="text-xl font-semibold">Pull Requests</h2>
-          <span className="text-gray-500">{totalCount} total</span>
+          <span className="text-muted-foreground">{totalCount} total</span>
         </div>
         <Link href={`/${repositoryOwner}/${repositoryName}/pulls/new`}>
           <Button>New Pull Request</Button>
@@ -97,8 +98,8 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           onClick={() => handleFilterChange({ state: 'open' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'open'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
           }`}
         >
           Open ({pullRequests.filter(pr => pr.issue.state === 'open').length})
@@ -107,8 +108,8 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           onClick={() => handleFilterChange({ state: 'closed' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'closed'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
           }`}
         >
           Closed
@@ -117,8 +118,8 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
           onClick={() => handleFilterChange({ state: 'all' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
             filters.state === 'all'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
           }`}
         >
           All
@@ -127,13 +128,11 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
 
       {/* Pull Request List */}
       {pullRequests.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <p className="mt-2 text-sm text-gray-500">No pull requests found</p>
-          </div>
+        <div className="text-muted-foreground">
+          <svg className="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <p className="mt-2 text-sm text-muted-foreground">No pull requests found</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -146,7 +145,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                       {getStateText(pr.issue.state, pr.merged)}
                     </Badge>
                     {pr.draft && (
-                      <Badge className="bg-gray-100 text-gray-800">Draft</Badge>
+                      <Badge className="bg-muted text-foreground">Draft</Badge>
                     )}
                   </div>
                   
@@ -157,10 +156,10 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                     >
                       {pr.issue.title}
                     </Link>
-                    <span className="text-gray-500">#{pr.issue.number}</span>
+                    <span className="text-muted-foreground">#{pr.issue.number}</span>
                   </div>
                   
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                     <span>
                       {pr.head_ref} → {pr.base_ref}
                     </span>
@@ -172,7 +171,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                     </span>
                   </div>
                   
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                     <span className="flex items-center">
                       <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -186,7 +185,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
                       -{pr.deletions}
                     </span>
                     <span>
-                      {pr.changed_files} {pr.changed_files === 1 ? 'file' : 'files'} changed
+                      {pr.changed_files} files
                     </span>
                     <span>
                       {pr.issue.comments_count} {pr.issue.comments_count === 1 ? 'comment' : 'comments'}
@@ -210,8 +209,8 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       {/* Pagination */}
       {totalCount > (filters.per_page || 25) && (
         <div className="flex justify-between items-center pt-4">
-          <div className="text-sm text-gray-500">
-            Showing {Math.min((filters.page || 1) * (filters.per_page || 25), totalCount)} of {totalCount} pull requests
+          <div className="text-sm text-muted-foreground">
+            Showing {pullRequests.length} of {totalCount} pull requests
           </div>
           <div className="flex space-x-2">
             <Button

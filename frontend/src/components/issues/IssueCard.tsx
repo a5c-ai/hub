@@ -21,14 +21,14 @@ export function IssueCard({ issue, repositoryOwner, repositoryName }: IssueCardP
             <IssueStateButton state={issue.state} />
             <Link
               href={`/repositories/${repositoryOwner}/${repositoryName}/issues/${issue.number}`}
-              className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+              className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
             >
               {issue.title}
             </Link>
           </div>
           
           {issue.body && (
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
               {issue.body}
             </p>
           )}
@@ -41,7 +41,7 @@ export function IssueCard({ issue, repositoryOwner, repositoryName }: IssueCardP
             </div>
           )}
           
-          <div className="flex items-center text-sm text-gray-500 space-x-4">
+          <div className="flex items-center text-sm text-muted-foreground space-x-4">
             <span>#{issue.number}</span>
             <span>
               opened {formatRelativeTime(issue.created_at)}
