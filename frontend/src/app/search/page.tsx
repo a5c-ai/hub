@@ -3,8 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, Input, Button } from '@/components/ui';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ChevronDownIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { searchApi } from '@/lib/api';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type SearchType = 'all' | 'repositories' | 'issues' | 'users' | 'commits' | 'code';
 
@@ -14,7 +16,7 @@ interface SearchResult {
   issues: Issue[];
   organizations: Organization[];
   commits: Commit[];
-  code: CodeResult[];
+  code?: CodeResult[];
   total_count: number;
 }
 
@@ -87,6 +89,11 @@ interface CodeResult {
   line_count: number;
   branch: string;
   highlighted_content?: string;
+  matched_lines?: {
+    line_number: number;
+    content: string;
+    highlighted: boolean;
+  }[];
 }
 
 function SearchPageContent() {
@@ -96,6 +103,16 @@ function SearchPageContent() {
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showQueryHelp, setShowQueryHelp] = useState(false);
+  const [filters, setFilters] = useState({
+    language: '',
+    visibility: '',
+    sort: '',
+    direction: '',
+    created: '',
+    updated: ''
+  });
 
   const searchTypes = [
     { key: 'all', label: 'All' },
@@ -113,12 +130,21 @@ function SearchPageContent() {
     setError(null);
 
     try {
-      const result = await searchApi.globalSearch(searchQuery, {
+      const searchParams: Record<string, string | number | undefined> = {
         type: searchType === 'all' ? undefined : searchType,
         page: 1,
         per_page: 30,
-      });
+      };
 
+      // Add filters
+      if (filters.language) searchParams.language = filters.language;
+      if (filters.visibility) searchParams.visibility = filters.visibility;
+      if (filters.sort) searchParams.sort = filters.sort;
+      if (filters.direction) searchParams.order = filters.direction;
+      if (filters.created) searchParams.created = filters.created;
+      if (filters.updated) searchParams.updated = filters.updated;
+
+      const result = await searchApi.globalSearch(searchQuery, searchParams);
       setResults(result.data as SearchResult);
     } catch (err) {
       setError('Failed to perform search. Please try again.');
@@ -148,16 +174,50 @@ function SearchPageContent() {
     }
   };
 
+  const handleFilterChange = (filterName: string, value: string) => {
+    const newFilters = { ...filters, [filterName]: value };
+    setFilters(newFilters);
+    if (query.trim()) {
+      performSearch(query, type);
+    }
+  };
+
+  const getLanguageFromFileName = (fileName: string): string => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const languageMap: { [key: string]: string } = {
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'py': 'python',
+      'rb': 'ruby',
+      'go': 'go',
+      'java': 'java',
+      'c': 'c',
+      'cpp': 'cpp',
+      'css': 'css',
+      'html': 'html',
+      'json': 'json',
+      'xml': 'xml',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+      'sh': 'bash',
+      'sql': 'sql',
+      'php': 'php'
+    };
+    return languageMap[ext || ''] || 'text';
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Search Form */}
-        <form onSubmit={handleSearch} className="mb-8">
+        <form onSubmit={handleSearch} className="mb-6">
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search repositories, issues, users, and commits..."
+              placeholder="Search repositories, issues, users, code, and commits..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10 pr-20 py-3 text-lg"
@@ -171,6 +231,137 @@ function SearchPageContent() {
             </Button>
           </div>
         </form>
+
+        {/* Search Controls */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <ChevronDownIcon className={`h-4 w-4 mr-1 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            Filters
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowQueryHelp(!showQueryHelp)}
+          >
+            <InformationCircleIcon className="h-4 w-4 mr-1" />
+            Query Syntax
+          </Button>
+        </div>
+
+        {/* Query Help */}
+        {showQueryHelp && (
+          <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
+            <h3 className="font-semibold mb-3">Advanced Search Syntax</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h4 className="font-medium mb-2">Basic Queries:</h4>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li><code className="bg-gray-100 px-1 rounded">hello world</code> - Contains both words</li>
+                  <li><code className="bg-gray-100 px-1 rounded">{"\"hello world\""}</code> - Exact phrase</li>
+                  <li><code className="bg-gray-100 px-1 rounded">hello OR world</code> - Either word</li>
+                  <li><code className="bg-gray-100 px-1 rounded">hello -world</code> - Hello but not world</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Code Search:</h4>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li><code className="bg-gray-100 px-1 rounded">language:javascript</code> - Language filter</li>
+                  <li><code className="bg-gray-100 px-1 rounded">extension:js</code> - File extension</li>
+                  <li><code className="bg-gray-100 px-1 rounded">path:src/</code> - Path filter</li>
+                  <li><code className="bg-gray-100 px-1 rounded">repo:owner/name</code> - Repository filter</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <Card className="p-4 mb-6">
+            <h3 className="font-semibold mb-3">Search Filters</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Language</label>
+                <select
+                  value={filters.language}
+                  onChange={(e) => handleFilterChange('language', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Any</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                  <option value="go">Go</option>
+                  <option value="rust">Rust</option>
+                  <option value="c">C</option>
+                  <option value="cpp">C++</option>
+                  <option value="php">PHP</option>
+                  <option value="ruby">Ruby</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Visibility</label>
+                <select
+                  value={filters.visibility}
+                  onChange={(e) => handleFilterChange('visibility', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Any</option>
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Sort By</label>
+                <select
+                  value={filters.sort}
+                  onChange={(e) => handleFilterChange('sort', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Relevance</option>
+                  <option value="created">Created</option>
+                  <option value="updated">Updated</option>
+                  <option value="stars">Stars</option>
+                  <option value="forks">Forks</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Order</label>
+                <select
+                  value={filters.direction}
+                  onChange={(e) => handleFilterChange('direction', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Created</label>
+                <input
+                  type="date"
+                  value={filters.created}
+                  onChange={(e) => handleFilterChange('created', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Updated</label>
+                <input
+                  type="date"
+                  value={filters.updated}
+                  onChange={(e) => handleFilterChange('updated', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Search Type Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -364,36 +555,72 @@ function SearchPageContent() {
                   Code
                   {type === 'all' && ` (${results.code.length})`}
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {results.code.map((code) => (
-                    <Card key={code.id} className="p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                    <Card key={code.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="p-4 border-b bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
                             <h3 className="text-lg font-medium text-primary">
                               <a href={`/repositories/${code.repository_name}/blob/${code.branch}/${code.file_path}`} className="hover:underline">
                                 {code.file_name}
                               </a>
                             </h3>
                             {code.language && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">
                                 {code.language}
                               </span>
                             )}
+                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                              {code.line_count} lines
+                            </span>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            in <a href={`/repositories/${code.repository_name}`} className="text-primary hover:underline">
-                              {code.repository_name}
-                            </a> • {code.file_path}
-                          </p>
-                          <div className="bg-gray-50 p-3 rounded border">
-                            <pre className="text-sm overflow-x-auto">
-                              <code>
-                                {code.highlighted_content || code.content.substring(0, 300)}
-                                {code.content.length > 300 && !code.highlighted_content && '...'}
-                              </code>
-                            </pre>
-                          </div>
+                          <a 
+                            href={`/repositories/${code.repository_name}`} 
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {code.repository_name}
+                          </a>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {code.file_path}
+                        </p>
+                      </div>
+                      <div className="max-h-96 overflow-auto">
+                        {code.highlighted_content ? (
+                          <div dangerouslySetInnerHTML={{ __html: code.highlighted_content }} />
+                        ) : (
+                          <SyntaxHighlighter
+                            language={getLanguageFromFileName(code.file_name)}
+                            style={oneLight}
+                            showLineNumbers={true}
+                            customStyle={{
+                              margin: 0,
+                              padding: '1rem',
+                              background: 'white',
+                              fontSize: '0.875rem'
+                            }}
+                            lineNumberStyle={{
+                              minWidth: '3em',
+                              paddingRight: '1em',
+                              color: '#666',
+                              borderRight: '1px solid #e5e7eb',
+                              marginRight: '1em'
+                            }}
+                          >
+                            {code.content.length > 1000 ? code.content.substring(0, 1000) + '\n\n// ... truncated ...' : code.content}
+                          </SyntaxHighlighter>
+                        )}
+                      </div>
+                      <div className="p-3 bg-gray-50 border-t">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>Branch: {code.branch}</span>
+                          <a 
+                            href={`/repositories/${code.repository_name}/blob/${code.branch}/${code.file_path}`}
+                            className="text-primary hover:underline"
+                          >
+                            View full file →
+                          </a>
                         </div>
                       </div>
                     </Card>
