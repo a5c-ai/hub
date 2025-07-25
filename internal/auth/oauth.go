@@ -130,10 +130,12 @@ func (s *OAuthService) InitiateOAuth(provider, redirectURI string) (string, stri
 		return "", "", err
 	}
 
+	// Store state for validation
+	if err := s.StoreState(state, provider); err != nil {
+		return "", "", fmt.Errorf("failed to store OAuth state: %w", err)
+	}
+
 	authURL := oauthProvider.GetAuthURL(state, redirectURI)
-	
-	// TODO: Store state in cache/session for validation
-	// For now, we'll return the state and expect it to be validated later
 	
 	return authURL, state, nil
 }
@@ -144,8 +146,10 @@ func (s *OAuthService) HandleCallback(ctx context.Context, providerName, code, s
 		return nil, err
 	}
 
-	// TODO: Validate state from cache/session
-	// For now, we'll skip state validation (not recommended for production)
+	// Validate state parameter
+	if err := s.ValidateState(state, providerName); err != nil {
+		return nil, fmt.Errorf("OAuth state validation failed: %w", err)
+	}
 
 	// Exchange code for token
 	token, err := provider.ExchangeCode(code, redirectURI)
