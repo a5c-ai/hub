@@ -12,6 +12,7 @@ type Config struct {
 	JWT         JWT        `mapstructure:"jwt"`
 	CORS        CORS       `mapstructure:"cors"`
 	Storage     Storage    `mapstructure:"storage"`
+	Security    Security   `mapstructure:"security"`
 	OAuth       OAuth      `mapstructure:"oauth"`
 	SAML        SAML       `mapstructure:"saml"`
 	LDAP        LDAP       `mapstructure:"ldap"`
@@ -41,6 +42,10 @@ type CORS struct {
 
 type Storage struct {
 	RepositoryPath string `mapstructure:"repository_path"`
+}
+
+type Security struct {
+	EncryptionKey string `mapstructure:"encryption_key"`
 }
 
 type OAuth struct {
@@ -107,6 +112,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
 	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
+	viper.SetDefault("security.encryption_key", "default-32-byte-key-for-secrets")
 
 	viper.AutomaticEnv()
 
@@ -126,6 +132,7 @@ func Load() (*Config, error) {
 	viper.BindEnv("oauth.google.client_id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
+	viper.BindEnv("security.encryption_key", "ENCRYPTION_KEY")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

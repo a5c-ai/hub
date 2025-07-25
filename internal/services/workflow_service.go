@@ -16,10 +16,11 @@ import (
 
 // WorkflowService handles workflow operations
 type WorkflowService struct {
-	db          *gorm.DB
-	parser      *actions.WorkflowParser
-	logger      *logrus.Logger
-	jobExecutor *JobExecutorService
+	db            *gorm.DB
+	parser        *actions.WorkflowParser
+	logger        *logrus.Logger
+	jobExecutor   *JobExecutorService
+	secretService *SecretService
 }
 
 // NewWorkflowService creates a new workflow service
@@ -34,6 +35,11 @@ func NewWorkflowService(db *gorm.DB, logger *logrus.Logger) *WorkflowService {
 // SetJobExecutor sets the job executor (used to avoid circular dependencies)
 func (s *WorkflowService) SetJobExecutor(jobExecutor *JobExecutorService) {
 	s.jobExecutor = jobExecutor
+}
+
+// SetSecretService sets the secret service (used to avoid circular dependencies)
+func (s *WorkflowService) SetSecretService(secretService *SecretService) {
+	s.secretService = secretService
 }
 
 // CreateWorkflowRequest represents a request to create a workflow
@@ -530,4 +536,87 @@ func (s *WorkflowService) CheckWorkflowTrigger(ctx context.Context, repositoryID
 	}
 
 	return triggeredWorkflows, nil
+}
+
+// Secret Management Methods (delegating to SecretService)
+
+// ListSecrets lists secrets for a repository
+func (s *WorkflowService) ListSecrets(ctx context.Context, repositoryID uuid.UUID) ([]models.Secret, error) {
+	if s.secretService == nil {
+		return nil, fmt.Errorf("secret service not initialized")
+	}
+	return s.secretService.ListSecrets(ctx, &repositoryID, nil)
+}
+
+// CreateSecret creates a new secret for a repository
+func (s *WorkflowService) CreateSecret(ctx context.Context, repositoryID uuid.UUID, name, value string, environment *string) (*models.Secret, error) {
+	if s.secretService == nil {
+		return nil, fmt.Errorf("secret service not initialized")
+	}
+	return s.secretService.CreateSecret(ctx, &repositoryID, nil, name, value, environment)
+}
+
+// UpdateSecret updates a secret's value
+func (s *WorkflowService) UpdateSecret(ctx context.Context, repositoryID uuid.UUID, secretID uuid.UUID, value string, environment *string) (*models.Secret, error) {
+	if s.secretService == nil {
+		return nil, fmt.Errorf("secret service not initialized")
+	}
+	
+	// Verify the secret belongs to this repository
+	secret, err := s.secretService.GetSecret(ctx, secretID)
+	if err != nil {
+		return nil, err
+	}
+	
+	if secret.RepositoryID == nil || *secret.RepositoryID != repositoryID {
+		return nil, fmt.Errorf("secret not found in repository")
+	}
+	
+	return s.secretService.UpdateSecret(ctx, secretID, value, environment)
+}
+
+// DeleteSecret deletes a secret
+func (s *WorkflowService) DeleteSecret(ctx context.Context, repositoryID uuid.UUID, secretID uuid.UUID) error {
+	if s.secretService == nil {
+		return fmt.Errorf("secret service not initialized")
+	}
+	
+	// Verify the secret belongs to this repository
+	secret, err := s.secretService.GetSecret(ctx, secretID)
+	if err != nil {
+		return err
+	}
+	
+	if secret.RepositoryID == nil || *secret.RepositoryID != repositoryID {
+		return fmt.Errorf("secret not found in repository")
+	}
+	
+	return s.secretService.DeleteSecret(ctx, secretID)
+}
+
+// Job Log Methods
+
+// GetJobLogs retrieves logs for a job
+func (s *WorkflowService) GetJobLogs(ctx context.Context, jobID uuid.UUID) (string, error) {
+	var job models.Job
+	err := s.db.WithContext(ctx).
+		Preload("Steps").
+		First(&job, "id = ?", jobID).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to get job: %w", err)
+	}
+
+	// Combine all step outputs into a single log
+	var logs strings.Builder
+	for _, step := range job.Steps {
+		logs.WriteString(fmt.Sprintf("==== Step %d: %s ====\n", step.Number, step.Name))
+		if step.Output != nil {
+			logs.WriteString(*step.Output)
+		} else {
+			logs.WriteString("No output available\n")
+		}
+		logs.WriteString("\n")
+	}
+
+	return logs.String(), nil
 }

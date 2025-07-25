@@ -63,9 +63,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	runnerService := services.NewRunnerService(database.DB, logger)
 	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
 	actionsEventService := services.NewActionsEventService(database.DB, workflowService, logger)
-
+	
+	// Initialize secret service with encryption key from config
+	secretService := services.NewSecretService(database.DB, logger, cfg.Security.EncryptionKey)
+	// Set job executor and secret service on workflow service to avoid circular dependencies
 	// Set job executor on workflow service to avoid circular dependencies
 	workflowService.SetJobExecutor(jobExecutorService)
+	workflowService.SetSecretService(secretService)
 
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
@@ -76,7 +80,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
-	actionsHandlers := NewActionsHandlers(workflowService, logger)
+	actionsHandlers := NewActionsHandlers(workflowService, runnerService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
@@ -374,6 +378,19 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.POST("/:owner/:repo/actions/runs/:run_id/rerun", actionsHandlers.RerunWorkflowRun)
 				repos.DELETE("/:owner/:repo/actions/runs/:run_id", actionsHandlers.DeleteWorkflowRun)
 
+				// Actions secret operations (require authentication)
+				repos.GET("/:owner/:repo/actions/secrets", actionsHandlers.ListSecrets)
+				repos.POST("/:owner/:repo/actions/secrets", actionsHandlers.CreateSecret)
+				repos.PUT("/:owner/:repo/actions/secrets/:secret_id", actionsHandlers.UpdateSecret)
+				repos.DELETE("/:owner/:repo/actions/secrets/:secret_id", actionsHandlers.DeleteSecret)
+
+				// Actions runner operations (require authentication)
+				repos.GET("/:owner/:repo/actions/runners", actionsHandlers.ListRunners)
+				repos.POST("/:owner/:repo/actions/runners/registration-token", actionsHandlers.CreateRunnerRegistrationToken)
+				repos.DELETE("/:owner/:repo/actions/runners/:runner_id", actionsHandlers.DeleteRunner)
+
+				// Actions job operations (require authentication)
+				repos.GET("/:owner/:repo/actions/jobs/:job_id/logs", actionsHandlers.GetJobLogs)
 				// Repository analytics endpoints (require authentication)
 				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)
 				repos.GET("/:owner/:repo/analytics/code-stats", analyticsHandlers.GetRepositoryCodeStats)
