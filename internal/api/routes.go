@@ -51,10 +51,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	teamMembershipService := services.NewTeamMembershipService(database.DB, activityService)
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
+	// Initialize search service
+	searchService := services.NewSearchService(database.DB)
+
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
+	searchHandlers := NewSearchHandlers(searchService, logger)
 	issueHandlers := NewIssueHandlers(issueService, commentService, labelService, milestoneService, repositoryService, logger)
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
@@ -150,6 +154,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo/milestones", milestoneHandlers.ListMilestones)
 		v1.GET("/repositories/:owner/:repo/milestones/:number", milestoneHandlers.GetMilestone)
 
+		// Public search endpoints (for public content)
+		v1.GET("/search", searchHandlers.GlobalSearch)
+		v1.GET("/search/repositories", searchHandlers.SearchRepositories)
+		v1.GET("/search/issues", searchHandlers.SearchIssues)
+		v1.GET("/search/users", searchHandlers.SearchUsers)
+		v1.GET("/search/commits", searchHandlers.SearchCommits)
+
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
@@ -196,6 +207,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Branch operations
 				repos.POST("/:owner/:repo/branches", repoHandlers.CreateBranch)
 				repos.DELETE("/:owner/:repo/branches/:branch", repoHandlers.DeleteBranch)
+
+				// Repository-specific search
+				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
 				
 				// Pull request operations
 				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
