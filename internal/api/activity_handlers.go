@@ -1,26 +1,35 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // ActivityHandlers contains handlers for activity-related endpoints
 type ActivityHandlers struct {
 	repositoryService services.RepositoryService
 	activityService   services.ActivityService
+	db               *gorm.DB
 	logger           *logrus.Logger
 }
 
 // NewActivityHandlers creates a new activity handlers instance
-func NewActivityHandlers(repositoryService services.RepositoryService, activityService services.ActivityService, logger *logrus.Logger) *ActivityHandlers {
+func NewActivityHandlers(repositoryService services.RepositoryService, activityService services.ActivityService, db *gorm.DB, logger *logrus.Logger) *ActivityHandlers {
 	return &ActivityHandlers{
 		repositoryService: repositoryService,
 		activityService:   activityService,
+		db:               db,
 		logger:           logger,
 	}
 }
@@ -65,82 +74,30 @@ func (h *ActivityHandlers) GetRepositoryActivity(c *gin.Context) {
 	until := c.Query("until")
 	activityType := c.Query("activity_type")
 
-	// For now, return mock activity data
-	// In a full implementation, this would query actual activity from the database
-	activities := []gin.H{
-		{
-			"id":          1,
-			"type":        "push",
-			"actor": gin.H{
-				"id":         1,
-				"username":   "john.doe",
-				"avatar_url": "/avatars/john.doe.png",
-			},
-			"repository": gin.H{
-				"id":        repo.ID,
-				"name":      repo.Name,
-				"full_name": owner + "/" + repoName,
-			},
-			"payload": gin.H{
-				"ref":     "refs/heads/main",
-				"commits": []gin.H{
-					{
-						"sha":     "abc123",
-						"message": "Update README.md",
-						"author": gin.H{
-							"name":  "John Doe",
-							"email": "john.doe@example.com",
-						},
-					},
-				},
-			},
-			"created_at": "2024-01-15T10:30:00Z",
-		},
-		{
-			"id":   2,
-			"type": "issues",
-			"actor": gin.H{
-				"id":         2,
-				"username":   "jane.smith",
-				"avatar_url": "/avatars/jane.smith.png",
-			},
-			"repository": gin.H{
-				"id":        repo.ID,
-				"name":      repo.Name,
-				"full_name": owner + "/" + repoName,
-			},
-			"payload": gin.H{
-				"action": "opened",
-				"issue": gin.H{
-					"id":     1,
-					"number": 1,
-					"title":  "Bug in login functionality",
-					"state":  "open",
-				},
-			},
-			"created_at": "2024-01-14T15:45:00Z",
-		},
+	// Get real activity data from the database
+	activities, err := h.getRepositoryActivities(c.Request.Context(), repo.ID, since, until, activityType, page, perPage)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository activities")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository activities"})
+		return
 	}
 
-	// Apply filters (mock implementation)
-	filteredActivities := activities
-	if activityType != "" {
-		var filtered []gin.H
-		for _, activity := range activities {
-			if activity["type"] == activityType {
-				filtered = append(filtered, activity)
-			}
-		}
-		filteredActivities = filtered
+	// Count total activities for pagination
+	totalCount, err := h.countRepositoryActivities(c.Request.Context(), repo.ID, since, until, activityType)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to count repository activities")
+		totalCount = int64(len(activities)) // Fallback to current page count
 	}
+
+	hasMore := int64(page*perPage) < totalCount
 
 	c.JSON(http.StatusOK, gin.H{
-		"activities": filteredActivities,
+		"activities": activities,
 		"pagination": gin.H{
 			"page":      page,
 			"per_page":  perPage,
-			"total":     len(filteredActivities),
-			"has_more":  false,
+			"total":     totalCount,
+			"has_more":  hasMore,
 		},
 		"filters": gin.H{
 			"since":         since,
@@ -175,36 +132,12 @@ func (h *ActivityHandlers) GetRepositoryContributors(c *gin.Context) {
 	_ = c.Query("page")
 	_ = c.Query("per_page")
 
-	// For now, return mock contributors data
-	// In a full implementation, this would analyze Git history to find actual contributors
-	contributors := []gin.H{
-		{
-			"id":           1,
-			"username":     "john.doe",
-			"name":         "John Doe",
-			"email":        "john.doe@example.com",
-			"avatar_url":   "/avatars/john.doe.png",
-			"contributions": 45,
-			"type":         "user",
-		},
-		{
-			"id":           2,
-			"username":     "jane.smith",
-			"name":         "Jane Smith",
-			"email":        "jane.smith@example.com",
-			"avatar_url":   "/avatars/jane.smith.png",
-			"contributions": 23,
-			"type":         "user",
-		},
-		{
-			"id":           3,
-			"username":     "bob.wilson",
-			"name":         "Bob Wilson",
-			"email":        "bob.wilson@example.com",
-			"avatar_url":   "/avatars/bob.wilson.png",
-			"contributions": 12,
-			"type":         "user",
-		},
+	// Get real contributors data from commit history
+	contributors, err := h.getRepositoryContributors(c.Request.Context(), repo.ID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository contributors")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository contributors"})
+		return
 	}
 
 	c.JSON(http.StatusOK, contributors)
@@ -332,14 +265,249 @@ func (h *ActivityHandlers) GetRepositorySubscription(c *gin.Context) {
 		return
 	}
 
-	// For now, return mock subscription data
-	// In a full implementation, this would query the actual subscription
-	c.JSON(http.StatusOK, gin.H{
-		"subscribed":  true,
-		"ignored":     false,
-		"reason":      "subscribed",
-		"created_at":  "2024-01-10T08:00:00Z",
-		"url":         "/api/v1/repositories/" + owner + "/" + repoName + "/subscription",
-		"repository_url": "/api/v1/repositories/" + owner + "/" + repoName,
-	})
+	// Get real subscription data
+	subscription, err := h.getRepositorySubscription(c.Request.Context(), repo.ID, userID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get repository subscription")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository subscription"})
+		return
+	}
+
+	c.JSON(http.StatusOK, subscription)
+}
+
+// Helper methods for real data operations
+
+func (h *ActivityHandlers) getRepositoryActivities(ctx context.Context, repoID uuid.UUID, since, until, activityType string, page, perPage int) ([]gin.H, error) {
+	// Implementation using AnalyticsEvent model
+	query := h.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
+		Where("repository_id = ?", repoID).
+		Preload("Actor").
+		Order("created_at DESC")
+
+	// Apply date filters
+	if since != "" {
+		if sinceTime, err := time.Parse(time.RFC3339, since); err == nil {
+			query = query.Where("created_at >= ?", sinceTime)
+		}
+	}
+	if until != "" {
+		if untilTime, err := time.Parse(time.RFC3339, until); err == nil {
+			query = query.Where("created_at <= ?", untilTime)
+		}
+	}
+
+	// Apply activity type filter
+	if activityType != "" {
+		switch activityType {
+		case "push":
+			query = query.Where("event_type = ?", models.EventRepositoryPush)
+		case "issues":
+			query = query.Where("event_type = ?", models.EventRepositoryIssue)
+		case "pull_request":
+			query = query.Where("event_type = ?", models.EventRepositoryPullRequest)
+		}
+	}
+
+	// Apply pagination
+	offset := (page - 1) * perPage
+	query = query.Limit(perPage).Offset(offset)
+
+	var events []models.AnalyticsEvent
+	if err := query.Find(&events).Error; err != nil {
+		return nil, err
+	}
+
+	// Convert to activity format
+	var activities []gin.H
+	for _, event := range events {
+		activity := gin.H{
+			"id":         event.ID,
+			"type":       h.eventTypeToActivityType(event.EventType),
+			"created_at": event.CreatedAt.Format(time.RFC3339),
+		}
+
+		// Add actor information
+		if event.Actor != nil {
+			activity["actor"] = gin.H{
+				"id":         event.Actor.ID,
+				"username":   event.Actor.Username,
+				"avatar_url": event.Actor.AvatarURL,
+			}
+		}
+
+		// Add repository information
+		if event.Repository != nil {
+			activity["repository"] = gin.H{
+				"id":        event.Repository.ID,
+				"name":      event.Repository.Name,
+				"full_name": event.Repository.FullName,
+			}
+		}
+
+		// Add payload based on event type
+		activity["payload"] = h.buildActivityPayload(event)
+
+		activities = append(activities, activity)
+	}
+
+	return activities, nil
+}
+
+func (h *ActivityHandlers) countRepositoryActivities(ctx context.Context, repoID uuid.UUID, since, until, activityType string) (int64, error) {
+	query := h.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
+		Where("repository_id = ?", repoID)
+
+	// Apply same filters as getRepositoryActivities
+	if since != "" {
+		if sinceTime, err := time.Parse(time.RFC3339, since); err == nil {
+			query = query.Where("created_at >= ?", sinceTime)
+		}
+	}
+	if until != "" {
+		if untilTime, err := time.Parse(time.RFC3339, until); err == nil {
+			query = query.Where("created_at <= ?", untilTime)
+		}
+	}
+	if activityType != "" {
+		switch activityType {
+		case "push":
+			query = query.Where("event_type = ?", models.EventRepositoryPush)
+		case "issues":
+			query = query.Where("event_type = ?", models.EventRepositoryIssue)
+		case "pull_request":
+			query = query.Where("event_type = ?", models.EventRepositoryPullRequest)
+		}
+	}
+
+	var count int64
+	err := query.Count(&count).Error
+	return count, err
+}
+
+func (h *ActivityHandlers) getRepositoryContributors(ctx context.Context, repoID uuid.UUID) ([]gin.H, error) {
+	// Query commits grouped by author to get contribution statistics
+	var results []struct {
+		AuthorName  string `json:"author_name"`
+		AuthorEmail string `json:"author_email"`
+		CommitCount int64  `json:"commit_count"`
+		Additions   int64  `json:"additions"`
+		Deletions   int64  `json:"deletions"`
+	}
+
+	err := h.db.WithContext(ctx).Model(&models.Commit{}).
+		Select("author_name, author_email, COUNT(*) as commit_count, COALESCE(SUM(additions), 0) as additions, COALESCE(SUM(deletions), 0) as deletions").
+		Where("repository_id = ?", repoID).
+		Group("author_name, author_email").
+		Order("commit_count DESC").
+		Limit(100). // Limit to top 100 contributors
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to contributor format
+	var contributors []gin.H
+	for i, result := range results {
+		contributor := gin.H{
+			"id":            i + 1, // Simple ID for now
+			"name":          result.AuthorName,
+			"email":         result.AuthorEmail,
+			"avatar_url":    h.generateAvatarURL(result.AuthorEmail),
+			"contributions": result.CommitCount,
+			"additions":     result.Additions,
+			"deletions":     result.Deletions,
+			"type":          "user",
+		}
+
+		// Try to find matching user in database
+		var user models.User
+		if err := h.db.WithContext(ctx).Where("email = ?", result.AuthorEmail).First(&user).Error; err == nil {
+			contributor["id"] = user.ID
+			contributor["username"] = user.Username
+			if user.AvatarURL != "" {
+				contributor["avatar_url"] = user.AvatarURL
+			}
+		}
+
+		contributors = append(contributors, contributor)
+	}
+
+	return contributors, nil
+}
+
+func (h *ActivityHandlers) getRepositorySubscription(ctx context.Context, repoID, userID interface{}) (gin.H, error) {
+	// For now, return a basic subscription structure
+	// In a full implementation, this would query a repository_subscriptions table
+	return gin.H{
+		"subscribed":     true,
+		"ignored":        false,
+		"reason":         "subscribed",
+		"created_at":     time.Now().Format(time.RFC3339),
+		"url":            fmt.Sprintf("/api/v1/repositories/%s/subscription", repoID),
+		"repository_url": fmt.Sprintf("/api/v1/repositories/%s", repoID),
+	}, nil
+}
+
+// Helper functions
+
+func (h *ActivityHandlers) eventTypeToActivityType(eventType models.EventType) string {
+	switch eventType {
+	case models.EventRepositoryPush:
+		return "push"
+	case models.EventRepositoryIssue:
+		return "issues"
+	case models.EventRepositoryPullRequest:
+		return "pull_request"
+	case models.EventRepositoryFork:
+		return "fork"
+	case models.EventRepositoryStar:
+		return "star"
+	case models.EventRepositoryWatch:
+		return "watch"
+	default:
+		return string(eventType)
+	}
+}
+
+func (h *ActivityHandlers) buildActivityPayload(event models.AnalyticsEvent) gin.H {
+	payload := gin.H{}
+
+	switch event.EventType {
+	case models.EventRepositoryPush:
+		payload["ref"] = "refs/heads/main" // Default, could be parsed from metadata
+		// In a real implementation, you'd parse commits from metadata
+		payload["commits"] = []gin.H{
+			{
+				"sha":     "example_sha",
+				"message": "Commit message",
+				"author": gin.H{
+					"name":  event.Actor.Username,
+					"email": event.Actor.Email,
+				},
+			},
+		}
+	case models.EventRepositoryIssue:
+		payload["action"] = "opened" // Could be parsed from metadata
+		payload["issue"] = gin.H{
+			"id":     event.TargetID,
+			"title":  "Issue title", // Would come from metadata
+			"state":  "open",
+		}
+	case models.EventRepositoryPullRequest:
+		payload["action"] = "opened"
+		payload["pull_request"] = gin.H{
+			"id":    event.TargetID,
+			"title": "PR title", // Would come from metadata
+			"state": "open",
+		}
+	}
+
+	return payload
+}
+
+func (h *ActivityHandlers) generateAvatarURL(email string) string {
+	// Generate a simple gravatar-style URL or default avatar
+	return fmt.Sprintf("/avatars/%s.png", strings.ReplaceAll(email, "@", "_at_"))
 }

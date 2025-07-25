@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
+import { OrganizationAdvancedSettings } from '@/components/organization/OrganizationAdvancedSettings';
 import api from '@/lib/api';
 import { Organization } from '@/types';
 
@@ -88,6 +89,7 @@ export default function OrganizationSettingsPage() {
     { id: 'members', name: 'Members', icon: '👥' },
     { id: 'teams', name: 'Teams', icon: '🏢' },
     { id: 'security', name: 'Security', icon: '🔒' },
+    { id: 'advanced', name: 'Advanced', icon: '🔧' },
     { id: 'billing', name: 'Billing', icon: '💳' },
     { id: 'danger', name: 'Danger Zone', icon: '⚠️' }
   ];
@@ -333,6 +335,12 @@ export default function OrganizationSettingsPage() {
                     </div>
                   </div>
                 </Card>
+              </div>
+            )}
+
+            {activeTab === 'advanced' && (
+              <div className="space-y-6">
+                <OrganizationAdvancedSettings orgName={org} />
               </div>
             )}
 

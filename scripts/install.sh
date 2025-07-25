@@ -45,7 +45,7 @@ if [[ -f "go.mod" ]]; then
     export GOPROXY=https://proxy.golang.org,direct
     export GOSUMDB=sum.golang.org
     export GOTIMEOUT=15m
-    export GOMAXPROCS=4
+    export GOMAXPROCS=2  # Reduced from 4 to prevent resource exhaustion
     
     # Download with retry logic and timeout
     for i in {1..5}; do
