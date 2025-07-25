@@ -94,46 +94,38 @@ jobs:
     timeout-minutes: 30  # Increased timeout from 15 to 30 minutes
     strategy:
       matrix:
-        node-version: [22] 
+        node-version: [20] 
     steps:
       - uses: actions/checkout@v4
       
-      # Setup Go with better caching and proper version specification
+      # Setup Go with explicit version to avoid toolchain conflicts
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.24.x'  # Use explicit version compatible with toolchain
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true  # Ensure latest available version is used
+          check-latest: true
           
       - name: Setup Node.js with better caching
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '20.x'  # Use LTS version for better stability
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
           check-latest: true
           
-      - name: Setup Python with better caching
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-          check-latest: true
-
       # Optimize Go module download with parallel processing
       - name: Download Go modules
         timeout-minutes: 10
         run: |
           go mod download
           go mod verify
+          go mod tidy
           
       # Build with increased timeout and better error handling
       - name: Build application
@@ -154,8 +146,8 @@ jobs:
           name: build-artifacts
           path: |
             dist/
-            frontend/node_modules/
             go.sum
+            go.mod
           retention-days: 1
           compression-level: 6  # Balance between speed and size
           
@@ -172,35 +164,32 @@ jobs:
         with:
           name: build-artifacts
           
-      # Setup Go with caching and proper version specification
+      # Setup Go with explicit version to avoid toolchain conflicts
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.24.x'  # Use explicit version compatible with toolchain
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true  # Ensure latest available version is used
+          check-latest: true
           
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '20.x'  # Use LTS version for better stability
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
           check-latest: true
-          
-      - name: Setup Python with caching
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-          check-latest: true
+      # Install frontend dependencies for tests
+      - name: Install frontend dependencies
+        run: |
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+            cd frontend && npm ci
+          fi
           
       # Run tests with increased timeout and better error handling
       - name: Run tests
@@ -228,35 +217,33 @@ jobs:
         with:
           name: build-artifacts
 
-      # Setup Go with caching and proper version specification
+      # Setup Go with explicit version to avoid toolchain conflicts
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.24.x'  # Use explicit version compatible with toolchain
           cache: true
           cache-dependency-path: |
             go.sum
             go.mod
-          check-latest: true  # Ensure latest available version is used
+          check-latest: true
 
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '20.x'  # Use LTS version for better stability
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
           check-latest: true
           
-      - name: Setup Python with caching
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-          check-latest: true
+      # Install dependencies for deployment
+      - name: Install dependencies for deployment
+        run: |
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+            cd frontend && npm ci
+          fi
           
       # Deploy with increased timeout and better error handling
       - name: Deploy application
