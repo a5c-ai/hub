@@ -78,6 +78,24 @@ spec:
             configMapKeyRef:
               name: hub-config
               key: GIT_DATA_PATH
+        - name: DISTRIBUTED_STORAGE_ENABLED
+          value: "true"
+        - name: DISTRIBUTED_STORAGE_NODE_ID
+          value: "backend-$(POD_NAME)"
+        - name: DISTRIBUTED_STORAGE_REPLICATION_COUNT
+          value: "3"
+        - name: DISTRIBUTED_STORAGE_CONSISTENT_HASHING
+          value: "true"
+        - name: DISTRIBUTED_STORAGE_HEALTH_CHECK_INTERVAL
+          value: "30s"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         resources:
           requests:
             memory: "256Mi"

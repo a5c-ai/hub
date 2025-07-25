@@ -1,0 +1,364 @@
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: hub-git-storage-monitor
+  namespace: hub
+  labels:
+    app: hub-git-storage
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: git-storage
+spec:
+  selector:
+    matchLabels:
+      app: hub-git-storage
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+    tlsConfig:
+      insecureSkipVerify: true
+  - port: grpc
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hub-git-storage-grafana-dashboard
+  namespace: hub
+  labels:
+    app: hub-git-storage
+    grafana_dashboard: "1"
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Hub Git Storage Cluster",
+        "tags": ["hub", "git", "storage"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Git Storage Node Health",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(up{job=\"hub-git-storage\"})",
+                "legendFormat": "Healthy Nodes"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 2},
+                    {"color": "green", "value": 3}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Repository Distribution",
+            "type": "bargauge",
+            "targets": [
+              {
+                "expr": "hub_git_storage_repositories_count by (node_id)",
+                "legendFormat": "{{node_id}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Git Operations Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(hub_git_operations_total[5m]) by (operation_type, node_id)",
+                "legendFormat": "{{operation_type}} - {{node_id}}"
+              }
+            ],
+            "yAxes": [
+              {"label": "Ops/sec", "unit": "ops"}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Storage Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "hub_git_storage_bytes_used by (node_id)",
+                "legendFormat": "Used - {{node_id}}"
+              },
+              {
+                "expr": "hub_git_storage_bytes_total by (node_id)",
+                "legendFormat": "Total - {{node_id}}"
+              }
+            ],
+            "yAxes": [
+              {"label": "Bytes", "unit": "bytes"}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          },
+          {
+            "id": 5,
+            "title": "Replication Status",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "hub_git_replication_lag_seconds by (repository, source_node, target_node)",
+                "format": "table",
+                "instant": true
+              }
+            ],
+            "transformations": [
+              {
+                "id": "organize",
+                "options": {
+                  "excludeByName": {"Time": true, "__name__": true},
+                  "renameByName": {
+                    "repository": "Repository",
+                    "source_node": "Source Node",
+                    "target_node": "Target Node",
+                    "Value": "Lag (seconds)"
+                  }
+                }
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+          },
+          {
+            "id": 6,
+            "title": "Lock Contention",
+            "type": "heatmap",
+            "targets": [
+              {
+                "expr": "increase(hub_git_lock_wait_duration_seconds_bucket[5m]) by (lock_type, le)",
+                "format": "heatmap",
+                "legendFormat": "{{le}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+          },
+          {
+            "id": 7,
+            "title": "Error Rate by Operation",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(hub_git_operations_errors_total[5m]) by (operation_type, error_type)",
+                "legendFormat": "{{operation_type}} - {{error_type}}"
+              }
+            ],
+            "yAxes": [
+              {"label": "Errors/sec", "unit": "ops"}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+---
+apiVersion: logging.coreos.com/v1
+kind: ClusterLogForwarder
+metadata:
+  name: hub-git-storage-logs
+  namespace: hub
+spec:
+  outputs:
+  - name: git-storage-logs
+    type: "elasticsearch"
+    url: "https://elasticsearch.logging.svc.cluster.local:9200"
+    elasticsearch:
+      index: "hub-git-storage-{YYYY.MM.dd}"
+  - name: git-audit-logs
+    type: "elasticsearch"
+    url: "https://elasticsearch.logging.svc.cluster.local:9200"
+    elasticsearch:
+      index: "hub-git-audit-{YYYY.MM.dd}"
+  pipelines:
+  - name: git-storage-pipeline
+    inputRefs:
+    - application
+    filterRefs:
+    - git-storage-filter
+    outputRefs:
+    - git-storage-logs
+  - name: git-audit-pipeline
+    inputRefs:
+    - audit
+    filterRefs:
+    - git-audit-filter
+    outputRefs:
+    - git-audit-logs
+---
+apiVersion: logging.coreos.com/v1
+kind: ClusterLogFilter
+metadata:
+  name: git-storage-filter
+  namespace: hub
+spec:
+  type: "json"
+  json:
+    javascript: |
+      const log = record.log;
+      if (log && log.component === "git-storage") {
+        // Enrich with cluster information
+        record.cluster_name = "hub-production";
+        record.service_type = "git-storage";
+        
+        // Parse git operation details
+        if (log.operation_type) {
+          record.git_operation = log.operation_type;
+          record.repository_path = log.repository_path;
+          record.node_id = log.node_id;
+        }
+        
+        // Add severity mapping
+        const level = log.level || "info";
+        record.severity = level.toUpperCase();
+        
+        return record;
+      }
+      return null;
+---
+apiVersion: logging.coreos.com/v1
+kind: ClusterLogFilter
+metadata:
+  name: git-audit-filter
+  namespace: hub
+spec:
+  type: "json"
+  json:
+    javascript: |
+      const log = record.log;
+      if (log && (log.audit === true || log.component === "git-audit")) {
+        // Security and compliance enrichment
+        record.audit_category = "git_operations";
+        record.compliance_scope = "repository_access";
+        
+        // User and authorization context
+        if (log.user_id) {
+          record.actor = {
+            user_id: log.user_id,
+            username: log.username,
+            organization: log.organization
+          };
+        }
+        
+        // Resource and action details
+        if (log.repository_path) {
+          record.resource = {
+            type: "git_repository",
+            path: log.repository_path,
+            organization: log.repository_org
+          };
+        }
+        
+        record.action = log.action || log.operation_type;
+        record.outcome = log.success ? "success" : "failure";
+        
+        return record;
+      }
+      return null;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-git-storage-metrics
+  namespace: hub
+  labels:
+    app: hub-git-storage
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: git-storage-metrics
+spec:
+  selector:
+    app: hub-git-storage
+  ports:
+  - name: metrics
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hub-git-storage-alerts
+  namespace: hub
+  labels:
+    app: hub-git-storage
+data:
+  alerts.yaml: |
+    groups:
+    - name: hub-git-storage
+      rules:
+      - alert: GitStorageNodeDown
+        expr: up{job="hub-git-storage"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: git-storage
+        annotations:
+          summary: "Git storage node is down"
+          description: "Git storage node {{ $labels.instance }} has been down for more than 1 minute"
+      
+      - alert: GitStorageHighErrorRate
+        expr: rate(hub_git_operations_errors_total[5m]) / rate(hub_git_operations_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: git-storage
+        annotations:
+          summary: "High error rate in git operations"
+          description: "Git storage error rate is {{ $value | humanizePercentage }} for node {{ $labels.node_id }}"
+      
+      - alert: GitStorageReplicationLag
+        expr: hub_git_replication_lag_seconds > 300
+        for: 2m
+        labels:
+          severity: warning
+          service: git-storage
+        annotations:
+          summary: "Git replication lag detected"
+          description: "Replication lag of {{ $value }}s detected for repository {{ $labels.repository }} from {{ $labels.source_node }} to {{ $labels.target_node }}"
+      
+      - alert: GitStorageDiskSpaceHigh
+        expr: (hub_git_storage_bytes_used / hub_git_storage_bytes_total) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: git-storage
+        annotations:
+          summary: "Git storage disk space usage high"
+          description: "Disk usage is {{ $value | humanizePercentage }} on node {{ $labels.node_id }}"
+      
+      - alert: GitStorageLockContention
+        expr: rate(hub_git_lock_wait_duration_seconds_sum[5m]) / rate(hub_git_lock_wait_duration_seconds_count[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: git-storage
+        annotations:
+          summary: "High lock contention detected"
+          description: "Average lock wait time is {{ $value }}s for {{ $labels.lock_type }} locks"
