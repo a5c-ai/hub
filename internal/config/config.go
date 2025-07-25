@@ -9,6 +9,7 @@ type Config struct {
 	LogLevel      int           `mapstructure:"log_level"`
 	Server        Server        `mapstructure:"server"`
 	Database      Database      `mapstructure:"database"`
+	Redis         Redis         `mapstructure:"redis"`
 	JWT           JWT           `mapstructure:"jwt"`
 	CORS          CORS          `mapstructure:"cors"`
 	Storage       Storage       `mapstructure:"storage"`
@@ -33,6 +34,16 @@ type Database struct {
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
 	SSLMode  string `mapstructure:"sslmode"`
+}
+
+type Redis struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	Host       string `mapstructure:"host"`
+	Port       int    `mapstructure:"port"`
+	Password   string `mapstructure:"password"`
+	DB         int    `mapstructure:"db"`
+	MaxRetries int    `mapstructure:"max_retries"`
+	PoolSize   int    `mapstructure:"pool_size"`
 }
 
 type JWT struct {
@@ -176,6 +187,13 @@ func Load() (*Config, error) {
 	viper.SetDefault("database.password", "password")
 	viper.SetDefault("database.dbname", "hub")
 	viper.SetDefault("database.sslmode", "disable")
+	viper.SetDefault("redis.enabled", false)
+	viper.SetDefault("redis.host", "localhost")
+	viper.SetDefault("redis.port", 6379)
+	viper.SetDefault("redis.password", "")
+	viper.SetDefault("redis.db", 0)
+	viper.SetDefault("redis.max_retries", 3)
+	viper.SetDefault("redis.pool_size", 10)
 	viper.SetDefault("jwt.secret", "your-secret-key")
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
@@ -213,6 +231,13 @@ func Load() (*Config, error) {
 	viper.BindEnv("database.password", "DB_PASSWORD")
 	viper.BindEnv("database.dbname", "DB_NAME")
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
+	viper.BindEnv("redis.enabled", "REDIS_ENABLED")
+	viper.BindEnv("redis.host", "REDIS_HOST")
+	viper.BindEnv("redis.port", "REDIS_PORT")
+	viper.BindEnv("redis.password", "REDIS_PASSWORD")
+	viper.BindEnv("redis.db", "REDIS_DB")
+	viper.BindEnv("redis.max_retries", "REDIS_MAX_RETRIES")
+	viper.BindEnv("redis.pool_size", "REDIS_POOL_SIZE")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.expiration_hour", "JWT_EXPIRATION_HOUR")
 	viper.BindEnv("oauth.github.client_id", "GITHUB_CLIENT_ID")
