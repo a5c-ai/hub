@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuthStore } from '@/store/auth';
 import api from '@/lib/api';
 
@@ -62,8 +63,8 @@ export default function SettingsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-2">Manage your account settings and preferences</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -76,8 +77,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-primary/10 text-primary border-r-2 border-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   <span className="mr-3">{tab.icon}</span>
@@ -93,11 +94,11 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Profile Information</h3>
                     
                     {/* Avatar */}
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Profile Picture
                       </label>
                       <div className="flex items-center space-x-4">
@@ -114,7 +115,7 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Full Name
                         </label>
                         <Input
@@ -125,7 +126,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Username
                         </label>
                         <Input
@@ -136,7 +137,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Email
                         </label>
                         <Input
@@ -148,7 +149,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Bio
                         </label>
                         <textarea
@@ -156,12 +157,12 @@ export default function SettingsPage() {
                           onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                           placeholder="Tell us about yourself..."
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Website
                         </label>
                         <Input
@@ -172,7 +173,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Location
                         </label>
                         <Input
@@ -183,7 +184,7 @@ export default function SettingsPage() {
                       </div>
                       
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Company
                         </label>
                         <Input
@@ -208,40 +209,55 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Account Settings</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Account Type</h4>
-                          <p className="text-sm text-gray-600">Free account with basic features</p>
+                          <h4 className="font-medium text-foreground">Account Type</h4>
+                          <p className="text-sm text-muted-foreground">Free account with basic features</p>
                         </div>
                         <Button size="sm" variant="outline">Upgrade</Button>
                       </div>
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Account Status</h4>
-                          <p className="text-sm text-gray-600">Active since {new Date(user?.created_at || '').toLocaleDateString()}</p>
+                          <h4 className="font-medium text-foreground">Account Status</h4>
+                          <p className="text-sm text-muted-foreground">Active since {new Date(user?.created_at || '').toLocaleDateString()}</p>
                         </div>
-                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        <span className="px-2 py-1 text-xs font-medium bg-success text-success-foreground rounded-full">
                           Active
                         </span>
                       </div>
                     </div>
                   </div>
                 </Card>
-                
-                <Card className="border-red-200">
+
+                <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-red-900 mb-4">Danger Zone</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Appearance</h3>
                     <div className="space-y-4">
-                      <div className="border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                        <div>
+                          <h4 className="font-medium text-foreground">Theme</h4>
+                          <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
+                        </div>
+                        <ThemeToggle />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="border-destructive/20">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-destructive mb-4">Danger Zone</h3>
+                    <div className="space-y-4">
+                      <div className="border border-destructive/20 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium text-red-900">Delete Account</h4>
-                            <p className="text-sm text-red-600">Permanently delete your account and all associated data</p>
+                            <h4 className="font-medium text-destructive">Delete Account</h4>
+                            <p className="text-sm text-destructive/80">Permanently delete your account and all associated data</p>
                           </div>
-                          <Button variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-50">
+                          <Button variant="outline" size="sm" className="border-destructive/30 text-destructive hover:bg-destructive/10">
                             Delete Account
                           </Button>
                         </div>
@@ -256,24 +272,24 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Password & Authentication</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Password & Authentication</h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Current Password
                         </label>
                         <Input type="password" placeholder="Enter current password" />
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           New Password
                         </label>
                         <Input type="password" placeholder="Enter new password" />
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Confirm New Password
                         </label>
                         <Input type="password" placeholder="Confirm new password" />
@@ -286,20 +302,20 @@ export default function SettingsPage() {
                 
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Two-Factor Authentication</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">Authenticator App</h4>
-                          <p className="text-sm text-gray-600">Use an authenticator app to generate verification codes</p>
+                          <h4 className="font-medium text-foreground">Authenticator App</h4>
+                          <p className="text-sm text-muted-foreground">Use an authenticator app to generate verification codes</p>
                         </div>
                         <Button size="sm">Enable</Button>
                       </div>
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
-                          <h4 className="font-medium text-gray-900">SMS Authentication</h4>
-                          <p className="text-sm text-gray-600">Receive verification codes via text message</p>
+                          <h4 className="font-medium text-foreground">SMS Authentication</h4>
+                          <p className="text-sm text-muted-foreground">Receive verification codes via text message</p>
                         </div>
                         <Button size="sm" variant="outline">Enable</Button>
                       </div>
@@ -313,30 +329,30 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Email Notifications</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-gray-900">Issues and Pull Requests</h4>
-                          <p className="text-sm text-gray-600">Notifications about issues and pull requests you're involved in</p>
+                          <h4 className="font-medium text-foreground">Issues and Pull Requests</h4>
+                          <p className="text-sm text-muted-foreground">Notifications about issues and pull requests you&apos;re involved in</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-gray-900">Repository Updates</h4>
-                          <p className="text-sm text-gray-600">Notifications about repositories you're watching</p>
+                          <h4 className="font-medium text-foreground">Repository Updates</h4>
+                          <p className="text-sm text-muted-foreground">Notifications about repositories you&apos;re watching</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-gray-900">Security Alerts</h4>
-                          <p className="text-sm text-gray-600">Notifications about security vulnerabilities</p>
+                          <h4 className="font-medium text-foreground">Security Alerts</h4>
+                          <p className="text-sm text-muted-foreground">Notifications about security vulnerabilities</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                     </div>
                   </div>
@@ -344,12 +360,12 @@ export default function SettingsPage() {
                 
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Web Notifications</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Web Notifications</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-gray-900">Browser Notifications</h4>
-                          <p className="text-sm text-gray-600">Show notifications in your browser</p>
+                          <h4 className="font-medium text-foreground">Browser Notifications</h4>
+                          <p className="text-sm text-muted-foreground">Show notifications in your browser</p>
                         </div>
                         <Button size="sm" variant="outline">Enable</Button>
                       </div>
@@ -363,27 +379,27 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Information</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Billing Information</h3>
                     <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">Current Plan</h4>
-                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                          <h4 className="font-medium text-foreground">Current Plan</h4>
+                          <span className="px-2 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
                             Free
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Free plan with unlimited public repositories
                         </p>
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Upgrade Options</h4>
+                        <h4 className="font-medium text-foreground mb-3">Upgrade Options</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="border border-gray-200 rounded-lg p-4">
-                            <h5 className="font-medium text-gray-900 mb-2">Pro</h5>
-                            <div className="text-2xl font-bold text-gray-900 mb-2">$4<span className="text-sm font-normal text-gray-600">/month</span></div>
-                            <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                            <h5 className="font-medium text-foreground mb-2">Pro</h5>
+                            <div className="text-2xl font-bold text-foreground mb-2">$4<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+                            <ul className="text-sm text-muted-foreground space-y-1 mb-4">
                               <li>• Unlimited private repositories</li>
                               <li>• Advanced collaboration features</li>
                               <li>• Priority support</li>
@@ -392,9 +408,9 @@ export default function SettingsPage() {
                           </div>
                           
                           <div className="border border-gray-200 rounded-lg p-4">
-                            <h5 className="font-medium text-gray-900 mb-2">Team</h5>
-                            <div className="text-2xl font-bold text-gray-900 mb-2">$4<span className="text-sm font-normal text-gray-600">/user/month</span></div>
-                            <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                            <h5 className="font-medium text-foreground mb-2">Team</h5>
+                            <div className="text-2xl font-bold text-foreground mb-2">$4<span className="text-sm font-normal text-muted-foreground">/user/month</span></div>
+                            <ul className="text-sm text-muted-foreground space-y-1 mb-4">
                               <li>• Everything in Pro</li>
                               <li>• Team management</li>
                               <li>• Advanced security features</li>
