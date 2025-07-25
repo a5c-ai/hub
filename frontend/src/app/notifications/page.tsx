@@ -193,7 +193,7 @@ export default function NotificationsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-4">Error: {error}</div>
-            <Button onClick={fetchNotifications} disabled={loading}>
+            <Button onClick={() => fetchNotifications()} disabled={loading}>
               {loading ? 'Retrying...' : 'Try Again'}
             </Button>
           </div>
