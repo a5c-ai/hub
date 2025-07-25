@@ -26,7 +26,7 @@ interface CustomRole {
   id: string;
   name: string;
   description: string;
-  permissions: Record<string, any>;
+  permissions: Record<string, boolean>;
   color: string;
   is_default: boolean;
   created_at: string;
@@ -39,7 +39,7 @@ interface Policy {
   description: string;
   enabled: boolean;
   enforcement: string;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   created_at: string;
 }
 
@@ -113,7 +113,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
       setCustomRoles(rolesResponse.data.roles || []);
       setPolicies(policiesResponse.data.policies || []);
       setSettings(settingsResponse.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to fetch advanced settings');
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
       setCustomRoles([...customRoles, response.data]);
       setShowCreateRole(false);
       setNewRole({ name: '', description: '', permissions: {}, color: '#6b7280' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to create custom role');
     }
   };
@@ -135,7 +135,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
     try {
       await api.delete(`/organizations/${orgName}/roles/${roleId}`);
       setCustomRoles(customRoles.filter(role => role.id !== roleId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to delete custom role');
     }
   };
@@ -153,7 +153,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
         enforcement: 'warn',
         configuration: {}
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to create policy');
     }
   };
@@ -164,7 +164,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
       setPolicies(policies.map(policy => 
         policy.id === policyId ? { ...policy, enabled } : policy
       ));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to update policy');
     }
   };
@@ -173,7 +173,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
     try {
       const response = await api.put(`/organizations/${orgName}/settings`, updatedSettings);
       setSettings(response.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.message || 'Failed to update settings');
     }
   };
@@ -218,7 +218,7 @@ export function OrganizationAdvancedSettings({ orgName }: OrganizationSettingsPr
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'roles' | 'policies' | 'templates' | 'workflows')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
