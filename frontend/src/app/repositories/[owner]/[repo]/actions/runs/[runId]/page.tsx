@@ -15,6 +15,7 @@ interface WorkflowRun {
   head_sha: string;
   head_branch?: string;
   event: string;
+  duration?: number;
   created_at: string;
   started_at?: string;
   completed_at?: string;
@@ -214,7 +215,7 @@ export default function WorkflowRunDetailPage() {
           
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Duration</span>
-            <span className="text-sm font-medium">{formatDuration(run.duration)}</span>
+            <span className="text-sm font-medium">{formatDuration(run.duration?.toString())}</span>
           </div>
           
           <div className="flex items-center justify-between">

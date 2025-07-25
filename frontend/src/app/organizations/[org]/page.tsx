@@ -121,16 +121,20 @@ export default function OrganizationOverviewPage() {
               )}
               
               <div className="flex items-center text-sm text-muted-foreground space-x-4 mb-4">
-                <div className="flex items-center">
-                  <MapPinIcon className="w-4 h-4 mr-1" />
-                  {organization.location}
-                </div>
-                <div className="flex items-center">
-                  <LinkIcon className="w-4 h-4 mr-1" />
-                  <a href={organization.blog} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                    {organization.blog}
-                  </a>
-                </div>
+                {organization.location && (
+                  <div className="flex items-center">
+                    <MapPinIcon className="w-4 h-4 mr-1" />
+                    {organization.location}
+                  </div>
+                )}
+                {organization.blog && (
+                  <div className="flex items-center">
+                    <LinkIcon className="w-4 h-4 mr-1" />
+                    <a href={organization.blog} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                      {organization.blog}
+                    </a>
+                  </div>
+                )}
                 <div className="flex items-center">
                   <CalendarIcon className="w-4 h-4 mr-1" />
                   Joined {new Date(organization.created_at).toLocaleDateString()}
@@ -266,7 +270,7 @@ export default function OrganizationOverviewPage() {
                               )}
                               <div className="flex items-center">
                                 <StarIcon className="w-4 h-4 mr-1" />
-                                {repository.stars_count}
+                                {repository.stargazers_count}
                               </div>
                               <div className="flex items-center">
                                 <ShareIcon className="w-4 h-4 mr-1" />

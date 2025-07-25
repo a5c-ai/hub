@@ -11,6 +11,7 @@ import { apiClient } from '@/lib/api';
 interface Workflow {
   id: string;
   name: string;
+  description?: string;
   path: string;
   enabled: boolean;
   created_at: string;

@@ -38,7 +38,9 @@ export interface Organization {
   avatar_url?: string;
   location?: string;
   website?: string;
+  blog?: string;
   public_repos: number;
+  public_members?: number;
   followers: number;
   following: number;
   created_at: string;
