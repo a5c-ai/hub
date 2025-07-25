@@ -24,13 +24,13 @@ type RepositoryService interface {
 	Update(ctx context.Context, id uuid.UUID, req UpdateRepositoryRequest) (*models.Repository, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, filters RepositoryFilters) ([]*models.Repository, int64, error)
-	
+
 	// Repository operations
 	Fork(ctx context.Context, id uuid.UUID, req ForkRequest) (*models.Repository, error)
 	Transfer(ctx context.Context, id uuid.UUID, req TransferRequest) error
 	Archive(ctx context.Context, id uuid.UUID) error
 	Unarchive(ctx context.Context, id uuid.UUID) error
-	
+
 	// Git operations
 	InitializeGitRepository(ctx context.Context, repoID uuid.UUID) error
 	GetRepositoryPath(ctx context.Context, repoID uuid.UUID) (string, error)
@@ -39,46 +39,46 @@ type RepositoryService interface {
 
 // CreateRepositoryRequest represents a request to create a repository
 type CreateRepositoryRequest struct {
-	OwnerID               uuid.UUID           `json:"owner_id"`
-	OwnerType             models.OwnerType    `json:"owner_type"`
-	Name                  string              `json:"name"`
-	Description           string              `json:"description,omitempty"`
-	DefaultBranch         string              `json:"default_branch,omitempty"`
-	Visibility            models.Visibility   `json:"visibility"`
-	IsTemplate            bool                `json:"is_template,omitempty"`
-	HasIssues             bool                `json:"has_issues"`
-	HasProjects           bool                `json:"has_projects"`
-	HasWiki               bool                `json:"has_wiki"`
-	HasDownloads          bool                `json:"has_downloads"`
-	AllowMergeCommit      bool                `json:"allow_merge_commit"`
-	AllowSquashMerge      bool                `json:"allow_squash_merge"`
-	AllowRebaseMerge      bool                `json:"allow_rebase_merge"`
-	DeleteBranchOnMerge   bool                `json:"delete_branch_on_merge"`
-	AutoInit              bool                `json:"auto_init"` // Initialize with README
+	OwnerID             uuid.UUID         `json:"owner_id"`
+	OwnerType           models.OwnerType  `json:"owner_type"`
+	Name                string            `json:"name"`
+	Description         string            `json:"description,omitempty"`
+	DefaultBranch       string            `json:"default_branch,omitempty"`
+	Visibility          models.Visibility `json:"visibility"`
+	IsTemplate          bool              `json:"is_template,omitempty"`
+	HasIssues           bool              `json:"has_issues"`
+	HasProjects         bool              `json:"has_projects"`
+	HasWiki             bool              `json:"has_wiki"`
+	HasDownloads        bool              `json:"has_downloads"`
+	AllowMergeCommit    bool              `json:"allow_merge_commit"`
+	AllowSquashMerge    bool              `json:"allow_squash_merge"`
+	AllowRebaseMerge    bool              `json:"allow_rebase_merge"`
+	DeleteBranchOnMerge bool              `json:"delete_branch_on_merge"`
+	AutoInit            bool              `json:"auto_init"` // Initialize with README
 }
 
 // UpdateRepositoryRequest represents a request to update a repository
 type UpdateRepositoryRequest struct {
-	Name                  *string             `json:"name,omitempty"`
-	Description           *string             `json:"description,omitempty"`
-	DefaultBranch         *string             `json:"default_branch,omitempty"`
-	Visibility            *models.Visibility  `json:"visibility,omitempty"`
-	IsTemplate            *bool               `json:"is_template,omitempty"`
-	HasIssues             *bool               `json:"has_issues,omitempty"`
-	HasProjects           *bool               `json:"has_projects,omitempty"`
-	HasWiki               *bool               `json:"has_wiki,omitempty"`
-	HasDownloads          *bool               `json:"has_downloads,omitempty"`
-	AllowMergeCommit      *bool               `json:"allow_merge_commit,omitempty"`
-	AllowSquashMerge      *bool               `json:"allow_squash_merge,omitempty"`
-	AllowRebaseMerge      *bool               `json:"allow_rebase_merge,omitempty"`
-	DeleteBranchOnMerge   *bool               `json:"delete_branch_on_merge,omitempty"`
+	Name                *string            `json:"name,omitempty"`
+	Description         *string            `json:"description,omitempty"`
+	DefaultBranch       *string            `json:"default_branch,omitempty"`
+	Visibility          *models.Visibility `json:"visibility,omitempty"`
+	IsTemplate          *bool              `json:"is_template,omitempty"`
+	HasIssues           *bool              `json:"has_issues,omitempty"`
+	HasProjects         *bool              `json:"has_projects,omitempty"`
+	HasWiki             *bool              `json:"has_wiki,omitempty"`
+	HasDownloads        *bool              `json:"has_downloads,omitempty"`
+	AllowMergeCommit    *bool              `json:"allow_merge_commit,omitempty"`
+	AllowSquashMerge    *bool              `json:"allow_squash_merge,omitempty"`
+	AllowRebaseMerge    *bool              `json:"allow_rebase_merge,omitempty"`
+	DeleteBranchOnMerge *bool              `json:"delete_branch_on_merge,omitempty"`
 }
 
 // ForkRequest represents a request to fork a repository
 type ForkRequest struct {
-	Name         string           `json:"name,omitempty"` // New name for the fork
-	OwnerID      uuid.UUID        `json:"owner_id"`       // New owner
-	OwnerType    models.OwnerType `json:"owner_type"`
+	Name      string           `json:"name,omitempty"` // New name for the fork
+	OwnerID   uuid.UUID        `json:"owner_id"`       // New owner
+	OwnerType models.OwnerType `json:"owner_type"`
 }
 
 // TransferRequest represents a request to transfer a repository
@@ -97,7 +97,7 @@ type RepositoryFilters struct {
 	IsFork     *bool              `json:"is_fork,omitempty"`
 	Search     string             `json:"search,omitempty"` // Search in name and description
 	Language   string             `json:"language,omitempty"`
-	Sort       string             `json:"sort,omitempty"`   // name, created, updated, pushed, stars, forks
+	Sort       string             `json:"sort,omitempty"`      // name, created, updated, pushed, stars, forks
 	Direction  string             `json:"direction,omitempty"` // asc, desc
 	Page       int                `json:"page,omitempty"`
 	PerPage    int                `json:"per_page,omitempty"`
@@ -105,9 +105,9 @@ type RepositoryFilters struct {
 
 // repositoryService implements the RepositoryService interface
 type repositoryService struct {
-	db         *gorm.DB
-	gitService git.GitService
-	logger     *logrus.Logger
+	db           *gorm.DB
+	gitService   git.GitService
+	logger       *logrus.Logger
 	repoBasePath string // Base path where repositories are stored
 }
 
@@ -124,10 +124,10 @@ func NewRepositoryService(db *gorm.DB, gitService git.GitService, logger *logrus
 // Create creates a new repository
 func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequest) (*models.Repository, error) {
 	s.logger.WithFields(logrus.Fields{
-		"owner_id":    req.OwnerID,
-		"owner_type":  req.OwnerType,
-		"name":        req.Name,
-		"visibility":  req.Visibility,
+		"owner_id":   req.OwnerID,
+		"owner_type": req.OwnerType,
+		"name":       req.Name,
+		"visibility": req.Visibility,
 	}).Info("Creating repository")
 
 	// Validate request
@@ -151,21 +151,21 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 
 	// Create repository model
 	repo := &models.Repository{
-		OwnerID:               req.OwnerID,
-		OwnerType:             req.OwnerType,
-		Name:                  req.Name,
-		Description:           req.Description,
-		DefaultBranch:         req.DefaultBranch,
-		Visibility:            req.Visibility,
-		IsTemplate:            req.IsTemplate,
-		HasIssues:             req.HasIssues,
-		HasProjects:           req.HasProjects,
-		HasWiki:               req.HasWiki,
-		HasDownloads:          req.HasDownloads,
-		AllowMergeCommit:      req.AllowMergeCommit,
-		AllowSquashMerge:      req.AllowSquashMerge,
-		AllowRebaseMerge:      req.AllowRebaseMerge,
-		DeleteBranchOnMerge:   req.DeleteBranchOnMerge,
+		OwnerID:             req.OwnerID,
+		OwnerType:           req.OwnerType,
+		Name:                req.Name,
+		Description:         req.Description,
+		DefaultBranch:       req.DefaultBranch,
+		Visibility:          req.Visibility,
+		IsTemplate:          req.IsTemplate,
+		HasIssues:           req.HasIssues,
+		HasProjects:         req.HasProjects,
+		HasWiki:             req.HasWiki,
+		HasDownloads:        req.HasDownloads,
+		AllowMergeCommit:    req.AllowMergeCommit,
+		AllowSquashMerge:    req.AllowSquashMerge,
+		AllowRebaseMerge:    req.AllowRebaseMerge,
+		DeleteBranchOnMerge: req.DeleteBranchOnMerge,
 	}
 
 	// Create in database
@@ -195,6 +195,7 @@ func (s *repositoryService) Get(ctx context.Context, owner, name string) (*model
 	// First, resolve the owner name to owner ID and type
 	var ownerID uuid.UUID
 	var ownerType models.OwnerType
+	var ownerEntity *models.OwnerEntity
 
 	// Try to find a user with this username
 	var user models.User
@@ -202,6 +203,15 @@ func (s *repositoryService) Get(ctx context.Context, owner, name string) (*model
 	if err == nil {
 		ownerID = user.ID
 		ownerType = models.OwnerTypeUser
+		ownerEntity = &models.OwnerEntity{
+			ID:        user.ID,
+			Username:  user.Username,
+			Name:      user.FullName,
+			AvatarURL: user.AvatarURL,
+			Type:      models.OwnerTypeUser,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}
 	} else if err == gorm.ErrRecordNotFound {
 		// Try to find an organization with this name
 		var org models.Organization
@@ -209,6 +219,15 @@ func (s *repositoryService) Get(ctx context.Context, owner, name string) (*model
 		if err == nil {
 			ownerID = org.ID
 			ownerType = models.OwnerTypeOrganization
+			ownerEntity = &models.OwnerEntity{
+				ID:        org.ID,
+				Username:  org.Name,
+				Name:      org.DisplayName,
+				AvatarURL: org.AvatarURL,
+				Type:      models.OwnerTypeOrganization,
+				CreatedAt: org.CreatedAt,
+				UpdatedAt: org.UpdatedAt,
+			}
 		} else if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("repository not found")
 		} else {
@@ -228,6 +247,9 @@ func (s *repositoryService) Get(ctx context.Context, owner, name string) (*model
 		return nil, fmt.Errorf("failed to get repository: %w", err)
 	}
 
+	// Populate the owner relationship
+	repo.Owner = ownerEntity
+
 	return &repo, nil
 }
 
@@ -241,6 +263,41 @@ func (s *repositoryService) GetByID(ctx context.Context, id uuid.UUID) (*models.
 		}
 		return nil, fmt.Errorf("failed to get repository: %w", err)
 	}
+
+	// Load the owner information
+	var ownerEntity *models.OwnerEntity
+	if repo.OwnerType == models.OwnerTypeUser {
+		var user models.User
+		err = s.db.Where("id = ?", repo.OwnerID).First(&user).Error
+		if err == nil {
+			ownerEntity = &models.OwnerEntity{
+				ID:        user.ID,
+				Username:  user.Username,
+				Name:      user.FullName,
+				AvatarURL: user.AvatarURL,
+				Type:      models.OwnerTypeUser,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+			}
+		}
+	} else if repo.OwnerType == models.OwnerTypeOrganization {
+		var org models.Organization
+		err = s.db.Where("id = ?", repo.OwnerID).First(&org).Error
+		if err == nil {
+			ownerEntity = &models.OwnerEntity{
+				ID:        org.ID,
+				Username:  org.Name,
+				Name:      org.DisplayName,
+				AvatarURL: org.AvatarURL,
+				Type:      models.OwnerTypeOrganization,
+				CreatedAt: org.CreatedAt,
+				UpdatedAt: org.UpdatedAt,
+			}
+		}
+	}
+
+	// Populate the owner relationship
+	repo.Owner = ownerEntity
 
 	return &repo, nil
 }
@@ -367,7 +424,7 @@ func (s *repositoryService) List(ctx context.Context, filters RepositoryFilters)
 		if filters.Direction == "asc" {
 			direction = "ASC"
 		}
-		
+
 		switch filters.Sort {
 		case "name":
 			orderBy = fmt.Sprintf("name %s", direction)
@@ -392,7 +449,7 @@ func (s *repositoryService) List(ctx context.Context, filters RepositoryFilters)
 	if filters.Page < 0 {
 		filters.Page = 0
 	}
-	
+
 	offset := filters.Page * filters.PerPage
 	query = query.Offset(offset).Limit(filters.PerPage)
 
@@ -521,7 +578,7 @@ func (s *repositoryService) SyncCommits(ctx context.Context, repoID uuid.UUID) e
 // setupRepositoryHooks sets up Git hooks for the repository
 func (s *repositoryService) setupRepositoryHooks(ctx context.Context, repoPath string) error {
 	hooksDir := filepath.Join(repoPath, "hooks")
-	
+
 	// Create hooks directory if it doesn't exist
 	if err := os.MkdirAll(hooksDir, 0755); err != nil {
 		return fmt.Errorf("failed to create hooks directory: %w", err)
@@ -532,7 +589,7 @@ func (s *repositoryService) setupRepositoryHooks(ctx context.Context, repoPath s
 	// - Commit validation
 	// - Webhook notifications
 	// - Database synchronization
-	
+
 	s.logger.WithField("hooks_dir", hooksDir).Debug("Repository hooks directory created")
 	return nil
 }
@@ -540,39 +597,39 @@ func (s *repositoryService) setupRepositoryHooks(ctx context.Context, repoPath s
 // CleanupRepositoryStorage removes orphaned repository directories
 func (s *repositoryService) CleanupRepositoryStorage(ctx context.Context) error {
 	s.logger.Info("Starting repository storage cleanup")
-	
+
 	// Walk through the repository base path and check for orphaned directories
 	err := filepath.Walk(s.repoBasePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Skip if not a .git directory
 		if !info.IsDir() || !strings.HasSuffix(path, ".git") {
 			return nil
 		}
-		
+
 		// Extract repository info from path
 		relPath, err := filepath.Rel(s.repoBasePath, path)
 		if err != nil {
 			return nil // Skip this path
 		}
-		
+
 		parts := strings.Split(relPath, string(filepath.Separator))
 		if len(parts) != 3 { // owner_type/owner_id/repo_name.git
 			return nil // Skip malformed paths
 		}
-		
+
 		ownerType := parts[0]
 		ownerIDStr := parts[1]
 		repoName := strings.TrimSuffix(parts[2], ".git")
-		
+
 		// Parse owner ID
 		ownerID, err := uuid.Parse(ownerIDStr)
 		if err != nil {
 			return nil // Skip invalid UUIDs
 		}
-		
+
 		// Check if repository exists in database
 		var count int64
 		err = s.db.Model(&models.Repository{}).
@@ -582,7 +639,7 @@ func (s *repositoryService) CleanupRepositoryStorage(ctx context.Context) error 
 			s.logger.WithError(err).Warn("Failed to check repository existence")
 			return nil
 		}
-		
+
 		// Remove orphaned directory
 		if count == 0 {
 			s.logger.WithField("path", path).Info("Removing orphaned repository directory")
@@ -590,14 +647,14 @@ func (s *repositoryService) CleanupRepositoryStorage(ctx context.Context) error 
 				s.logger.WithError(err).Error("Failed to remove orphaned directory")
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to cleanup repository storage: %w", err)
 	}
-	
+
 	s.logger.Info("Repository storage cleanup completed")
 	return nil
 }
@@ -608,7 +665,7 @@ func (s *repositoryService) GetRepositorySize(ctx context.Context, repoID uuid.U
 	if err != nil {
 		return 0, err
 	}
-	
+
 	var size int64
 	err = filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -619,10 +676,10 @@ func (s *repositoryService) GetRepositorySize(ctx context.Context, repoID uuid.U
 		}
 		return nil
 	})
-	
+
 	if err != nil {
 		return 0, fmt.Errorf("failed to calculate repository size: %w", err)
 	}
-	
+
 	return size, nil
 }

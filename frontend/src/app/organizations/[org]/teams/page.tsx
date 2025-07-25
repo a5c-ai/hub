@@ -7,7 +7,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Avatar } from '@/components/ui/Avatar';
 import api from '@/lib/api';
 
 interface Team {
@@ -35,8 +34,11 @@ export default function OrganizationTeamsPage() {
         setLoading(true);
         const response = await api.get(`/organizations/${org}/teams`);
         setTeams(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch teams');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch teams'
+        );
       } finally {
         setLoading(false);
       }

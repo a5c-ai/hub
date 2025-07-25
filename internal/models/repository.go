@@ -22,6 +22,17 @@ const (
 	VisibilityInternal Visibility = "internal"
 )
 
+// OwnerEntity represents the polymorphic owner (User or Organization)
+type OwnerEntity struct {
+	ID        uuid.UUID `json:"id"`
+	Username  string    `json:"username"`
+	Name      string    `json:"name"`
+	AvatarURL string    `json:"avatar_url"`
+	Type      OwnerType `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type Repository struct {
 	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -51,6 +62,9 @@ type Repository struct {
 	ForksCount          int        `json:"forks_count" gorm:"default:0"`
 	WatchersCount       int        `json:"watchers_count" gorm:"default:0"`
 	PushedAt            *time.Time `json:"pushed_at"`
+
+	// Owner relationship (polymorphic)
+	Owner *OwnerEntity `json:"owner,omitempty" gorm:"-"`
 
 	// Relationships
 	Parent                *Repository              `json:"parent,omitempty" gorm:"foreignKey:ParentID"`

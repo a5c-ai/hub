@@ -27,8 +27,11 @@ export default function PullRequestDetailPage() {
         setLoading(true);
         const response = await api.get(`/repositories/${owner}/${repo}/pulls/${number}`);
         setPullRequest(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch pull request');
+      } catch (err: unknown) {
+        setError(
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to fetch pull request'
+        );
       } finally {
         setLoading(false);
       }

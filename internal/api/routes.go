@@ -54,6 +54,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize search service
 	searchService := services.NewSearchService(database.DB)
 
+	// Initialize analytics service
+	analyticsService := services.NewAnalyticsService(database.DB, logger)
+
 	// Initialize Actions services
 	workflowService := services.NewWorkflowService(database.DB, logger)
 	jobQueueService := services.NewJobQueueService(database.DB, logger)
@@ -63,13 +66,13 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	
 	// Initialize secret service with encryption key from config
 	secretService := services.NewSecretService(database.DB, logger, cfg.Security.EncryptionKey)
-	
 	// Set job executor and secret service on workflow service to avoid circular dependencies
+	// Set job executor on workflow service to avoid circular dependencies
 	workflowService.SetJobExecutor(jobExecutorService)
 	workflowService.SetSecretService(secretService)
 
 	// Initialize handlers
-	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger)
+	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	searchHandlers := NewSearchHandlers(searchService, logger)
@@ -83,6 +86,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
 	hooksHandlers := NewHooksHandlers(repositoryService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
+	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -185,6 +189,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/users/:username", userHandlers.GetUserProfile)
 		v1.GET("/users/:username/repositories", userHandlers.GetUserRepositories)
 		v1.GET("/users/:username/organizations", userHandlers.GetUserOrganizations)
+		v1.GET("/users/:username/analytics/public", analyticsHandlers.GetPublicUserAnalytics)
 
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
@@ -235,18 +240,30 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			// User's organizations
 			protected.GET("/user/organizations", orgController.GetUserOrganizations)
 
+			// User analytics endpoints
+			protected.GET("/user/analytics/activity", analyticsHandlers.GetUserAnalytics)
+			protected.GET("/user/analytics/contributions", analyticsHandlers.GetUserContributions)
+			protected.GET("/user/analytics/repositories", analyticsHandlers.GetUserRepositories)
+
 			admin := protected.Group("/admin")
 			admin.Use(middleware.AdminMiddleware())
 			{
 				admin.GET("/users", func(c *gin.Context) {
 					c.JSON(http.StatusNotImplemented, gin.H{"message": "Admin users endpoint - to be implemented"})
 				})
+
+				// Admin analytics endpoints
+				admin.GET("/analytics/platform", analyticsHandlers.GetPlatformAnalytics)
+				admin.GET("/analytics/usage", analyticsHandlers.GetUsageAnalytics)
+				admin.GET("/analytics/performance", analyticsHandlers.GetPerformanceAnalytics)
+				admin.GET("/analytics/costs", analyticsHandlers.GetCostAnalytics)
+				admin.GET("/analytics/export", analyticsHandlers.ExportAnalytics)
 			}
 
-			// Protected repository endpoints  
+			// Protected repository endpoints
 			// Repository creation endpoint (without group to avoid trailing slash issues)
 			protected.POST("/repositories", repoHandlers.CreateRepository)
-			
+
 			repos := protected.Group("/repositories")
 			{
 				repos.PATCH("/:owner/:repo", repoHandlers.UpdateRepository)
@@ -269,8 +286,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/activity", activityHandlers.GetRepositoryActivity)
 
 				// Branch comparison
-				repos.GET("/:owner/:repo/compare/:base...:head", repoHandlers.CompareBranches)
-				repos.GET("/:owner/:repo/compare/:base...HEAD", repoHandlers.GetMergeBase)
+				repos.GET("/:owner/:repo/compare/:base/:head", repoHandlers.CompareBranches)
+				repos.GET("/:owner/:repo/compare/:base/head", repoHandlers.GetMergeBase)
 
 				// Branch protection
 				repos.GET("/:owner/:repo/branches/:branch/protection", branchProtectionHandlers.GetBranchProtection)
@@ -374,6 +391,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 				// Actions job operations (require authentication)
 				repos.GET("/:owner/:repo/actions/jobs/:job_id/logs", actionsHandlers.GetJobLogs)
+				// Repository analytics endpoints (require authentication)
+				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)
+				repos.GET("/:owner/:repo/analytics/code-stats", analyticsHandlers.GetRepositoryCodeStats)
+				repos.GET("/:owner/:repo/analytics/contributors", analyticsHandlers.GetRepositoryContributors)
+				repos.GET("/:owner/:repo/analytics/activity", analyticsHandlers.GetRepositoryActivity)
+				repos.GET("/:owner/:repo/analytics/performance", analyticsHandlers.GetRepositoryPerformance)
+				repos.GET("/:owner/:repo/analytics/issues", analyticsHandlers.GetRepositoryIssues)
+				repos.GET("/:owner/:repo/analytics/pulls", analyticsHandlers.GetRepositoryPulls)
 			}
 
 			// Admin-only operations
@@ -432,6 +457,21 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 				// User teams in organization
 				orgs.GET("/:org/members/:username/teams", teamController.GetUserTeams)
+
+				// Organization analytics endpoints
+				orgs.GET("/:org/analytics/overview", analyticsHandlers.GetOrganizationAnalytics)
+				orgs.GET("/:org/analytics/members", analyticsHandlers.GetOrganizationMembers)
+				orgs.GET("/:org/analytics/repositories", analyticsHandlers.GetOrganizationRepositories)
+				orgs.GET("/:org/analytics/teams", analyticsHandlers.GetOrganizationTeams)
+				orgs.GET("/:org/analytics/security", analyticsHandlers.GetOrganizationSecurity)
+			}
+
+			// Internal analytics recording endpoints (for system use)
+			analytics := protected.Group("/analytics")
+			{
+				analytics.POST("/events", analyticsHandlers.RecordEvent)
+				analytics.POST("/metrics", analyticsHandlers.RecordMetric)
+				analytics.POST("/performance", analyticsHandlers.RecordPerformanceLog)
 			}
 		}
 	}

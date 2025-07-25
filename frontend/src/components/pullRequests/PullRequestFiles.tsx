@@ -12,7 +12,7 @@ interface PullRequestFilesProps {
   number: number
 }
 
-export function PullRequestFiles({ files, owner, repo, number }: PullRequestFilesProps) {
+export function PullRequestFiles({ files }: PullRequestFilesProps) {
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set())
 
   const toggleFileExpansion = (fileId: string) => {
@@ -65,14 +65,11 @@ export function PullRequestFiles({ files, owner, repo, number }: PullRequestFile
     const lines = patch.split('\n')
     return lines.map((line, index) => {
       let className = 'font-mono text-sm px-4 py-1 '
-      let prefix = ''
 
       if (line.startsWith('+')) {
         className += 'bg-green-50 text-green-900'
-        prefix = '+'
       } else if (line.startsWith('-')) {
         className += 'bg-red-50 text-red-900'
-        prefix = '-'
       } else if (line.startsWith('@@')) {
         className += 'bg-blue-50 text-blue-900 font-medium'
       } else {
@@ -133,7 +130,6 @@ export function PullRequestFiles({ files, owner, repo, number }: PullRequestFile
         {files.map((file) => {
           const isExpanded = expandedFiles.has(file.id)
           const filename = file.filename
-          const extension = filename.split('.').pop()?.toLowerCase()
 
           return (
             <Card key={file.id} className="overflow-hidden">

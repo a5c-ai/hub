@@ -32,7 +32,7 @@ interface RepositoryActions {
   resetRepositories: () => void;
 }
 
-export const useRepositoryStore = create<RepositoryState & RepositoryActions>((set, get) => ({
+export const useRepositoryStore = create<RepositoryState & RepositoryActions>((set) => ({
   // State
   repositories: [],
   currentRepository: null,
