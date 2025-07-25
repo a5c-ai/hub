@@ -20,6 +20,9 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - **`repository-security.spec.ts`** - Repository security, secrets, and access control tests
 - **`repository-integrations.spec.ts`** - Repository webhooks, deploy keys, and integrations tests
 - **`issues.spec.ts`** - Issue management and workflow tests
+- **`pull-requests.spec.ts`** - Pull request management and creation tests
+- **`pull-request-review.spec.ts`** - Pull request review and collaboration workflow tests
+- **`pull-request-files.spec.ts`** - Pull request file diff and code review tests
 - **`user-profile.spec.ts`** - User profile management and public profile tests
 - **`user-security.spec.ts`** - Security settings, password, SSH keys, and 2FA tests
 - **`user-preferences.spec.ts`** - Notifications, appearance, accessibility, and privacy tests
@@ -43,6 +46,21 @@ The e2e tests are designed to test the application from a user's perspective, ve
 - Navigation to other sections
 - Responsive design on mobile
 - Empty state handling
+
+#### Pull Request Tests
+- List pull requests with different states (open/closed/merged)
+- Filter pull requests by state, author, and labels
+- Create new pull request with form validation
+- Navigate to pull request details
+- Display pull request metadata and statistics
+- Review workflow (approve, request changes, comment)
+- Merge pull request with different merge strategies
+- Close and reopen pull requests
+- Convert draft to ready for review
+- View and navigate changed files with diff display
+- Add inline comments on code lines
+- Resolve and unresolve comment conversations
+- Mobile responsiveness for all PR workflows
 
 #### Navigation Tests
 - Header and sidebar navigation elements
