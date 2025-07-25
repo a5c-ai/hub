@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.5
 
 require (
+	github.com/elastic/go-elasticsearch/v8 v8.18.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/golang-jwt/jwt/v5 v5.2.3
@@ -34,6 +35,7 @@ require (
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
@@ -43,6 +45,7 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
@@ -90,6 +93,9 @@ require (
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	go.opentelemetry.io/otel v1.29.0 // indirect
+	go.opentelemetry.io/otel/metric v1.29.0 // indirect
+	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.18.0 // indirect

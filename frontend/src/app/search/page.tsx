@@ -6,7 +6,7 @@ import { Card, Input, Button } from '@/components/ui';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { searchApi } from '@/lib/api';
 
-type SearchType = 'all' | 'repositories' | 'issues' | 'users' | 'commits';
+type SearchType = 'all' | 'repositories' | 'issues' | 'users' | 'commits' | 'code';
 
 interface SearchResult {
   users: User[];
@@ -14,6 +14,7 @@ interface SearchResult {
   issues: Issue[];
   organizations: Organization[];
   commits: Commit[];
+  code: CodeResult[];
   total_count: number;
 }
 
@@ -75,6 +76,19 @@ interface Commit {
   repository_id: string;
 }
 
+interface CodeResult {
+  id: string;
+  repository_id: string;
+  repository_name: string;
+  file_path: string;
+  file_name: string;
+  language: string;
+  content: string;
+  line_count: number;
+  branch: string;
+  highlighted_content?: string;
+}
+
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
@@ -89,6 +103,7 @@ function SearchPageContent() {
     { key: 'issues', label: 'Issues' },
     { key: 'users', label: 'Users' },
     { key: 'commits', label: 'Commits' },
+    { key: 'code', label: 'Code' },
   ];
 
   const performSearch = async (searchQuery: string, searchType: SearchType) => {
@@ -173,6 +188,7 @@ function SearchPageContent() {
                   {searchType.key === 'issues' && results.issues.length}
                   {searchType.key === 'users' && results.users.length}
                   {searchType.key === 'commits' && results.commits.length}
+                  {searchType.key === 'code' && results.code?.length}
                   {searchType.key === 'all' && results.total_count}
                 </span>
               )}
@@ -333,6 +349,51 @@ function SearchPageContent() {
                           <p className="text-sm text-muted-foreground mt-1">
                             by {commit.author_name} on {new Date(commit.committer_date).toLocaleDateString()}
                           </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Code Results */}
+            {(type === 'all' || type === 'code') && results.code && results.code.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">
+                  Code
+                  {type === 'all' && ` (${results.code.length})`}
+                </h2>
+                <div className="space-y-3">
+                  {results.code.map((code) => (
+                    <Card key={code.id} className="p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-medium text-primary">
+                              <a href={`/repositories/${code.repository_name}/blob/${code.branch}/${code.file_path}`} className="hover:underline">
+                                {code.file_name}
+                              </a>
+                            </h3>
+                            {code.language && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {code.language}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            in <a href={`/repositories/${code.repository_name}`} className="text-primary hover:underline">
+                              {code.repository_name}
+                            </a> • {code.file_path}
+                          </p>
+                          <div className="bg-gray-50 p-3 rounded border">
+                            <pre className="text-sm overflow-x-auto">
+                              <code>
+                                {code.highlighted_content || code.content.substring(0, 300)}
+                                {code.content.length > 300 && !code.highlighted_content && '...'}
+                              </code>
+                            </pre>
+                          </div>
                         </div>
                       </div>
                     </Card>

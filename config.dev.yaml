@@ -22,11 +22,11 @@ cors:
     - http://localhost:3001
 
 elasticsearch:
-  enabled: false
+  enabled: true
   addresses:
     - http://localhost:9200
   username: ""
   password: ""
   cloud_id: ""
   api_key: ""
-  index_prefix: "hub"
+  index_prefix: "hub_dev"
