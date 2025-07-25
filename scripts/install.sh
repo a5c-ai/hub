@@ -47,10 +47,10 @@ if [[ -f "go.mod" ]]; then
     export GOTIMEOUT=15m
     export GOMAXPROCS=2  # Reduced from 4 to prevent resource exhaustion
     
-    # Download with retry logic and timeout
+    # Download with retry logic and optimized timeout
     for i in {1..3}; do
         echo "Attempt $i: Downloading Go modules..."
-        if timeout 25m go mod download -x; then
+        if timeout 15m go mod download; then  # Removed -x for less verbose output, reduced timeout
             echo "✅ Go modules downloaded successfully"
             break
         else
@@ -60,7 +60,7 @@ if [[ -f "go.mod" ]]; then
                 exit 1
             fi
             # Exponential backoff
-            sleep $((i * 15))
+            sleep $((i * 10))  # Reduced sleep time
         fi
     done
     
