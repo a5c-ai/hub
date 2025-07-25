@@ -6,11 +6,14 @@ import (
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type SearchService struct {
-	db *gorm.DB
+	db             *gorm.DB
+	elasticsearch  *ElasticsearchService
+	logger         *logrus.Logger
 }
 
 // SearchResults represents the aggregated search results
@@ -70,16 +73,18 @@ type IssueSearchFilter struct {
 	IsPR         *bool      `json:"is_pr,omitempty"`
 }
 
-func NewSearchService(db *gorm.DB) *SearchService {
-	return &SearchService{db: db}
+func NewSearchService(db *gorm.DB, elasticsearch *ElasticsearchService, logger *logrus.Logger) *SearchService {
+	return &SearchService{
+		db:            db,
+		elasticsearch: elasticsearch,
+		logger:        logger,
+	}
 }
 
 // GlobalSearch performs a search across all searchable content
 func (s *SearchService) GlobalSearch(filter SearchFilter) (*SearchResults, error) {
-	results := &SearchResults{}
-	
 	if filter.Query == "" {
-		return results, fmt.Errorf("search query cannot be empty")
+		return &SearchResults{}, fmt.Errorf("search query cannot be empty")
 	}
 
 	// Set defaults
@@ -90,6 +95,106 @@ func (s *SearchService) GlobalSearch(filter SearchFilter) (*SearchResults, error
 		filter.PerPage = 30
 	}
 
+	// Try Elasticsearch first if enabled
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.searchWithElasticsearch(filter)
+	}
+
+	// Fallback to PostgreSQL search
+	return s.searchWithPostgreSQL(filter)
+}
+
+// searchWithElasticsearch uses Elasticsearch for advanced search
+func (s *SearchService) searchWithElasticsearch(filter SearchFilter) (*SearchResults, error) {
+	// Build Elasticsearch request
+	req := SearchRequest{
+		Query: filter.Query,
+		Size:  filter.PerPage,
+		From:  (filter.Page - 1) * filter.PerPage,
+	}
+
+	// Add type-specific indices
+	if filter.Type != "" {
+		switch filter.Type {
+		case "user":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexUsers)}
+		case "repository":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexRepositories)}
+		case "issue":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexIssues)}
+		case "commit":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexCommits)}
+		case "organization":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexOrganizations)}
+		case "code":
+			req.Indices = []string{s.elasticsearch.getIndexName(IndexCode)}
+		}
+	}
+
+	// Add filters
+	filters := make(map[string]interface{})
+	
+	// Permission filtering for repositories and issues
+	if filter.UserID != nil {
+		// For repositories: public or owned by user
+		if filter.Type == "repository" || filter.Type == "" {
+			// This would need more complex query building in practice
+		}
+	} else {
+		// Only public content for unauthenticated users
+		if filter.Type == "repository" || filter.Type == "" {
+			filters["visibility"] = "public"
+		}
+	}
+
+	if len(filters) > 0 {
+		req.Filters = filters
+	}
+
+	// Add sorting
+	if filter.Sort != "" {
+		switch filter.Sort {
+		case "created":
+			order := "desc"
+			if filter.Direction == "asc" {
+				order = "asc"
+			}
+			req.Sort = []map[string]interface{}{
+				{"created_at": map[string]string{"order": order}},
+			}
+		case "updated":
+			order := "desc"
+			if filter.Direction == "asc" {
+				order = "asc"
+			}
+			req.Sort = []map[string]interface{}{
+				{"updated_at": map[string]string{"order": order}},
+			}
+		case "stars":
+			order := "desc"
+			if filter.Direction == "asc" {
+				order = "asc"
+			}
+			req.Sort = []map[string]interface{}{
+				{"stars_count": map[string]string{"order": order}},
+			}
+		}
+	}
+
+	// Execute search
+	response, err := s.elasticsearch.Search(req)
+	if err != nil {
+		s.logger.WithError(err).Error("Elasticsearch search failed, falling back to PostgreSQL")
+		return s.searchWithPostgreSQL(filter)
+	}
+
+	// Convert results
+	return s.elasticsearch.ConvertSearchResults(response, filter)
+}
+
+// searchWithPostgreSQL uses PostgreSQL for fallback search
+func (s *SearchService) searchWithPostgreSQL(filter SearchFilter) (*SearchResults, error) {
+	results := &SearchResults{}
 	offset := (filter.Page - 1) * filter.PerPage
 
 	// Search across different types based on filter
@@ -159,6 +264,319 @@ func (s *SearchService) GlobalSearch(filter SearchFilter) (*SearchResults, error
 	results.TotalCount = int64(len(results.Users) + len(results.Repositories) + len(results.Issues) + len(results.Organizations) + len(results.Commits))
 
 	return results, nil
+}
+
+// Indexing methods for automatic document indexing
+func (s *SearchService) IndexUser(user *models.User) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexUser(user)
+	}
+	return nil
+}
+
+func (s *SearchService) IndexRepository(repo *models.Repository) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexRepository(repo)
+	}
+	return nil
+}
+
+func (s *SearchService) IndexIssue(issue *models.Issue) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexIssue(issue)
+	}
+	return nil
+}
+
+func (s *SearchService) IndexCommit(commit *models.Commit) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexCommit(commit)
+	}
+	return nil
+}
+
+func (s *SearchService) IndexOrganization(org *models.Organization) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexOrganization(org)
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteUser(userID uuid.UUID) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.DeleteDocument(IndexUsers, userID.String())
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteRepository(repoID uuid.UUID) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.DeleteDocument(IndexRepositories, repoID.String())
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteIssue(issueID uuid.UUID) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.DeleteDocument(IndexIssues, issueID.String())
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteCommit(commitID uuid.UUID) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.DeleteDocument(IndexCommits, commitID.String())
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteOrganization(orgID uuid.UUID) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.DeleteDocument(IndexOrganizations, orgID.String())
+	}
+	return nil
+}
+
+// Code search methods
+func (s *SearchService) SearchCode(query string, repoID *uuid.UUID, language string, page, perPage int) (*SearchResults, error) {
+	if s.elasticsearch == nil || !s.elasticsearch.IsEnabled() {
+		return &SearchResults{}, fmt.Errorf("code search requires Elasticsearch")
+	}
+
+	req := SearchRequest{
+		Query:   query,
+		Indices: []string{s.elasticsearch.getIndexName(IndexCode)},
+		Size:    perPage,
+		From:    (page - 1) * perPage,
+	}
+
+	filters := make(map[string]interface{})
+	if repoID != nil {
+		filters["repository_id"] = repoID.String()
+	}
+	if language != "" {
+		filters["language"] = language
+	}
+
+	if len(filters) > 0 {
+		req.Filters = filters
+	}
+
+	response, err := s.elasticsearch.Search(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// For code search, we'll return a simplified result structure
+	// In practice, you might want a separate CodeSearchResult type
+	results := &SearchResults{
+		TotalCount: int64(response.Hits.Total.Value),
+	}
+
+	return results, nil
+}
+
+func (s *SearchService) IndexCodeFile(repoID uuid.UUID, repoName, filePath, content, language, branch, sha string) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		return s.elasticsearch.IndexCode(repoID, repoName, filePath, content, language, branch, sha)
+	}
+	return nil
+}
+
+func (s *SearchService) DeleteCodeFile(repoID uuid.UUID, branch, filePath string) error {
+	if s.elasticsearch != nil && s.elasticsearch.IsEnabled() {
+		documentID := fmt.Sprintf("%s:%s:%s", repoID.String(), branch, filePath)
+		return s.elasticsearch.DeleteDocument(IndexCode, documentID)
+	}
+	return nil
+}
+
+// Bulk indexing for initial data import
+func (s *SearchService) BulkIndexUsers(users []models.User) error {
+	if s.elasticsearch == nil || !s.elasticsearch.IsEnabled() {
+		return nil
+	}
+
+	operations := make([]map[string]interface{}, 0, len(users)*2)
+	for _, user := range users {
+		// Index operation metadata
+		operations = append(operations, map[string]interface{}{
+			"index": map[string]interface{}{
+				"_index": s.elasticsearch.getIndexName(IndexUsers),
+				"_id":    user.ID.String(),
+			},
+		})
+		
+		// Document data
+		doc := UserDocument{
+			ID:        user.ID.String(),
+			Username:  user.Username,
+			FullName:  user.FullName,
+			Email:     user.Email,
+			Bio:       user.Bio,
+			Company:   user.Company,
+			Location:  user.Location,
+			Website:   user.Website,
+			AvatarURL: user.AvatarURL,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}
+		operations = append(operations, map[string]interface{}(map[string]interface{}{
+			"id":         doc.ID,
+			"username":   doc.Username,
+			"full_name":  doc.FullName,
+			"email":      doc.Email,
+			"bio":        doc.Bio,
+			"company":    doc.Company,
+			"location":   doc.Location,
+			"website":    doc.Website,
+			"avatar_url": doc.AvatarURL,
+			"created_at": doc.CreatedAt,
+			"updated_at": doc.UpdatedAt,
+		}))
+	}
+
+	return s.elasticsearch.BulkIndex(operations)
+}
+
+func (s *SearchService) BulkIndexRepositories(repos []models.Repository) error {
+	if s.elasticsearch == nil || !s.elasticsearch.IsEnabled() {
+		return nil
+	}
+
+	operations := make([]map[string]interface{}, 0, len(repos)*2)
+	for _, repo := range repos {
+		// Index operation metadata
+		operations = append(operations, map[string]interface{}{
+			"index": map[string]interface{}{
+				"_index": s.elasticsearch.getIndexName(IndexRepositories),
+				"_id":    repo.ID.String(),
+			},
+		})
+		
+		// Document data
+		doc := RepositoryDocument{
+			ID:              repo.ID.String(),
+			Name:            repo.Name,
+			FullName:        fmt.Sprintf("%s/%s", repo.Owner.Username, repo.Name),
+			Description:     repo.Description,
+			OwnerID:         repo.OwnerID.String(),
+			OwnerUsername:   repo.Owner.Username,
+			OwnerType:       repo.OwnerType,
+			Visibility:      repo.Visibility,
+			PrimaryLanguage: repo.PrimaryLanguage,
+			StarsCount:      repo.StarsCount,
+			ForksCount:      repo.ForksCount,
+			WatchersCount:   repo.WatchersCount,
+			Size:            repo.Size,
+			DefaultBranch:   repo.DefaultBranch,
+			CreatedAt:       repo.CreatedAt,
+			UpdatedAt:       repo.UpdatedAt,
+			PushedAt:        repo.PushedAt,
+			IsTemplate:      repo.IsTemplate,
+			IsArchived:      repo.IsArchived,
+			IsFork:          repo.IsFork,
+			HasIssues:       repo.HasIssues,
+			HasWiki:         repo.HasWiki,
+			HasPages:        repo.HasPages,
+		}
+		
+		operations = append(operations, map[string]interface{}(map[string]interface{}{
+			"id":               doc.ID,
+			"name":             doc.Name,
+			"full_name":        doc.FullName,
+			"description":      doc.Description,
+			"owner_id":         doc.OwnerID,
+			"owner_username":   doc.OwnerUsername,
+			"owner_type":       doc.OwnerType,
+			"visibility":       doc.Visibility,
+			"primary_language": doc.PrimaryLanguage,
+			"stars_count":      doc.StarsCount,
+			"forks_count":      doc.ForksCount,
+			"watchers_count":   doc.WatchersCount,
+			"size":             doc.Size,
+			"default_branch":   doc.DefaultBranch,
+			"created_at":       doc.CreatedAt,
+			"updated_at":       doc.UpdatedAt,
+			"pushed_at":        doc.PushedAt,
+			"is_template":      doc.IsTemplate,
+			"is_archived":      doc.IsArchived,
+			"is_fork":          doc.IsFork,
+			"has_issues":       doc.HasIssues,
+			"has_wiki":         doc.HasWiki,
+			"has_pages":        doc.HasPages,
+		}))
+	}
+
+	return s.elasticsearch.BulkIndex(operations)
+}
+
+// Reindex all data from database to Elasticsearch
+func (s *SearchService) ReindexAll() error {
+	if s.elasticsearch == nil || !s.elasticsearch.IsEnabled() {
+		return fmt.Errorf("Elasticsearch is not enabled")
+	}
+
+	s.logger.Info("Starting full reindex of search data")
+
+	// Reindex users
+	var users []models.User
+	if err := s.db.Find(&users).Error; err != nil {
+		return fmt.Errorf("failed to fetch users: %w", err)
+	}
+	if err := s.BulkIndexUsers(users); err != nil {
+		return fmt.Errorf("failed to reindex users: %w", err)
+	}
+	s.logger.WithField("count", len(users)).Info("Reindexed users")
+
+	// Reindex repositories
+	var repos []models.Repository
+	if err := s.db.Preload("Owner").Find(&repos).Error; err != nil {
+		return fmt.Errorf("failed to fetch repositories: %w", err)
+	}
+	if err := s.BulkIndexRepositories(repos); err != nil {
+		return fmt.Errorf("failed to reindex repositories: %w", err)
+	}
+	s.logger.WithField("count", len(repos)).Info("Reindexed repositories")
+
+	// Reindex issues
+	var issues []models.Issue
+	if err := s.db.Preload("User").Preload("Repository").Preload("Labels").Preload("Assignee").Find(&issues).Error; err != nil {
+		return fmt.Errorf("failed to fetch issues: %w", err)
+	}
+	for _, issue := range issues {
+		if err := s.IndexIssue(&issue); err != nil {
+			s.logger.WithError(err).WithField("issue_id", issue.ID).Warn("Failed to index issue")
+		}
+	}
+	s.logger.WithField("count", len(issues)).Info("Reindexed issues")
+
+	// Reindex organizations
+	var orgs []models.Organization
+	if err := s.db.Find(&orgs).Error; err != nil {
+		return fmt.Errorf("failed to fetch organizations: %w", err)
+	}
+	for _, org := range orgs {
+		if err := s.IndexOrganization(&org); err != nil {
+			s.logger.WithError(err).WithField("org_id", org.ID).Warn("Failed to index organization")
+		}
+	}
+	s.logger.WithField("count", len(orgs)).Info("Reindexed organizations")
+
+	// Reindex commits
+	var commits []models.Commit
+	if err := s.db.Preload("Repository").Find(&commits).Error; err != nil {
+		return fmt.Errorf("failed to fetch commits: %w", err)
+	}
+	for _, commit := range commits {
+		if err := s.IndexCommit(&commit); err != nil {
+			s.logger.WithError(err).WithField("commit_id", commit.ID).Warn("Failed to index commit")
+		}
+	}
+	s.logger.WithField("count", len(commits)).Info("Reindexed commits")
+
+	s.logger.Info("Completed full reindex of search data")
+	return nil
 }
 
 // searchUsers searches for users using PostgreSQL full-text search

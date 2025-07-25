@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -14,19 +15,23 @@ import (
 
 // ActionsHandlers handles Actions-related HTTP requests
 type ActionsHandlers struct {
-	workflowService   *services.WorkflowService
-	runnerService     *services.RunnerService
-	repositoryService services.RepositoryService
-	logger            *logrus.Logger
+	workflowService     *services.WorkflowService
+	runnerService       *services.RunnerService
+	repositoryService   services.RepositoryService
+	logStreamingService *services.LogStreamingService
+	webhookService      *services.WebhookService
+	logger              *logrus.Logger
 }
 
 // NewActionsHandlers creates a new actions handlers instance
-func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logger *logrus.Logger) *ActionsHandlers {
+func NewActionsHandlers(workflowService *services.WorkflowService, runnerService *services.RunnerService, repositoryService services.RepositoryService, logStreamingService *services.LogStreamingService, webhookService *services.WebhookService, logger *logrus.Logger) *ActionsHandlers {
 	return &ActionsHandlers{
-		workflowService:   workflowService,
-		runnerService:     runnerService,
-		repositoryService: repositoryService,
-		logger:            logger,
+		workflowService:     workflowService,
+		runnerService:       runnerService,
+		repositoryService:   repositoryService,
+		logStreamingService: logStreamingService,
+		webhookService:      webhookService,
+		logger:              logger,
 	}
 }
 
@@ -594,6 +599,156 @@ func (h *ActionsHandlers) GetJobLogs(c *gin.Context) {
 	c.Header("Content-Type", "text/plain")
 	c.String(http.StatusOK, logs)
 }
+
+// StreamJobLogs handles GET /api/v1/repos/{owner}/{repo}/actions/jobs/{job_id}/logs/stream
+func (h *ActionsHandlers) StreamJobLogs(c *gin.Context) {
+	jobID, err := uuid.Parse(c.Param("job_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	// Check if client accepts Server-Sent Events
+	if c.GetHeader("Accept") != "text/event-stream" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This endpoint requires Accept: text/event-stream"})
+		return
+	}
+
+	subscriberID := uuid.New().String()
+	ctx := c.Request.Context()
+
+	// Set up SSE headers
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Access-Control-Allow-Origin", "*")
+
+	// Get SSE channel
+	sseCh, err := h.logStreamingService.StreamJobLogsSSE(ctx, jobID, subscriberID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to start log stream")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start log stream"})
+		return
+	}
+
+	// Stream logs
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case msg, ok := <-sseCh:
+			if !ok {
+				return false
+			}
+			c.SSEvent("log", msg)
+			return true
+		}
+	})
+}
+
+// GetHistoricalJobLogs handles GET /api/v1/repos/{owner}/{repo}/actions/jobs/{job_id}/logs/history
+func (h *ActionsHandlers) GetHistoricalJobLogs(c *gin.Context) {
+	jobID, err := uuid.Parse(c.Param("job_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job ID"})
+		return
+	}
+
+	limit := h.parseIntQuery(c, "limit", 100)
+	offset := h.parseIntQuery(c, "offset", 0)
+
+	logs, err := h.logStreamingService.GetJobLogs(c.Request.Context(), jobID, limit, offset)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get historical job logs")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get job logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"logs": logs})
+}
+
+// GetStepLogs handles GET /api/v1/repos/{owner}/{repo}/actions/steps/{step_id}/logs
+func (h *ActionsHandlers) GetStepLogs(c *gin.Context) {
+	stepID, err := uuid.Parse(c.Param("step_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid step ID"})
+		return
+	}
+
+	logs, err := h.logStreamingService.GetStepLogs(c.Request.Context(), stepID)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to get step logs")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get step logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"logs": logs})
+}
+
+// Webhook Endpoints
+
+// HandleWebhook handles POST /api/webhooks/{repository_id}
+func (h *ActionsHandlers) HandleWebhook(c *gin.Context) {
+	body, err := c.GetRawData()
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to read webhook body")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		return
+	}
+
+	if err := h.webhookService.ProcessWebhook(c.Request.Context(), c.Request.Header, body); err != nil {
+		h.logger.WithError(err).Error("Failed to process webhook")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Webhook processed successfully"})
+}
+
+// CreateWebhookURL handles GET /api/v1/repos/{owner}/{repo}/actions/webhooks/url
+func (h *ActionsHandlers) CreateWebhookURL(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get base URL from request
+	scheme := "https"
+	if c.Request.TLS == nil {
+		scheme = "http"
+	}
+	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+
+	webhookURL := h.webhookService.CreateWebhookURL(repositoryID, baseURL)
+	
+	c.JSON(http.StatusOK, gin.H{
+		"webhook_url": webhookURL,
+		"events": []string{
+			"push", "pull_request", "issues", "issue_comment",
+			"release", "create", "delete", "fork", "watch",
+		},
+		"content_type": "application/json",
+	})
+}
+
+// TestWebhook handles POST /api/v1/repos/{owner}/{repo}/actions/webhooks/test
+func (h *ActionsHandlers) TestWebhook(c *gin.Context) {
+	repositoryID, err := h.getRepositoryID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.webhookService.TestWebhook(c.Request.Context(), repositoryID); err != nil {
+		h.logger.WithError(err).Error("Failed to send test webhook")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send test webhook"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Test webhook sent successfully"})
+}
+
 
 // Helper methods
 

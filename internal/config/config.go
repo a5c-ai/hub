@@ -5,18 +5,19 @@ import (
 )
 
 type Config struct {
-	Environment string   `mapstructure:"environment"`
-	LogLevel    int      `mapstructure:"log_level"`
-	Server      Server   `mapstructure:"server"`
-	Database    Database `mapstructure:"database"`
-	JWT         JWT      `mapstructure:"jwt"`
-	CORS        CORS     `mapstructure:"cors"`
-	Storage     Storage  `mapstructure:"storage"`
-	Security    Security `mapstructure:"security"`
-	OAuth       OAuth    `mapstructure:"oauth"`
-	SAML        SAML     `mapstructure:"saml"`
-	LDAP        LDAP     `mapstructure:"ldap"`
-	SSH         SSH      `mapstructure:"ssh"`
+	Environment   string        `mapstructure:"environment"`
+	LogLevel      int           `mapstructure:"log_level"`
+	Server        Server        `mapstructure:"server"`
+	Database      Database      `mapstructure:"database"`
+	JWT           JWT           `mapstructure:"jwt"`
+	CORS          CORS          `mapstructure:"cors"`
+	Storage       Storage       `mapstructure:"storage"`
+	Security      Security      `mapstructure:"security"`
+	OAuth         OAuth         `mapstructure:"oauth"`
+	SAML          SAML          `mapstructure:"saml"`
+	LDAP          LDAP          `mapstructure:"ldap"`
+	SSH           SSH           `mapstructure:"ssh"`
+	Elasticsearch Elasticsearch `mapstructure:"elasticsearch"`
 }
 
 type Server struct {
@@ -100,6 +101,16 @@ type SSH struct {
 	HostKeyPath string `mapstructure:"host_key_path"`
 }
 
+type Elasticsearch struct {
+	Enabled    bool     `mapstructure:"enabled"`
+	Addresses  []string `mapstructure:"addresses"`
+	Username   string   `mapstructure:"username"`
+	Password   string   `mapstructure:"password"`
+	CloudID    string   `mapstructure:"cloud_id"`
+	APIKey     string   `mapstructure:"api_key"`
+	IndexPrefix string  `mapstructure:"index_prefix"`
+}
+
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -123,6 +134,9 @@ func Load() (*Config, error) {
 	viper.SetDefault("ssh.enabled", true)
 	viper.SetDefault("ssh.port", 2222)
 	viper.SetDefault("ssh.host_key_path", "./ssh_host_key")
+	viper.SetDefault("elasticsearch.enabled", false)
+	viper.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
+	viper.SetDefault("elasticsearch.index_prefix", "hub")
 
 	viper.AutomaticEnv()
 
@@ -146,6 +160,13 @@ func Load() (*Config, error) {
 	viper.BindEnv("ssh.enabled", "SSH_ENABLED")
 	viper.BindEnv("ssh.port", "SSH_PORT")
 	viper.BindEnv("ssh.host_key_path", "SSH_HOST_KEY_PATH")
+	viper.BindEnv("elasticsearch.enabled", "ELASTICSEARCH_ENABLED")
+	viper.BindEnv("elasticsearch.addresses", "ELASTICSEARCH_ADDRESSES")
+	viper.BindEnv("elasticsearch.username", "ELASTICSEARCH_USERNAME")
+	viper.BindEnv("elasticsearch.password", "ELASTICSEARCH_PASSWORD")
+	viper.BindEnv("elasticsearch.cloud_id", "ELASTICSEARCH_CLOUD_ID")
+	viper.BindEnv("elasticsearch.api_key", "ELASTICSEARCH_API_KEY")
+	viper.BindEnv("elasticsearch.index_prefix", "ELASTICSEARCH_INDEX_PREFIX")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

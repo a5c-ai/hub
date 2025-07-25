@@ -41,10 +41,32 @@ if [[ -f "go.mod" ]]; then
     GO_VERSION=$(go version | cut -d' ' -f3 | sed 's/go//')
     log "Found Go version: $GO_VERSION"
     
-    # Download and verify Go modules
-    go mod download
-    go mod verify
-    go mod tidy
+    # Download and verify Go modules with better timeout handling
+    export GOPROXY=https://proxy.golang.org,direct
+    export GOSUMDB=sum.golang.org
+    export GOTIMEOUT=15m
+    export GOMAXPROCS=4
+    
+    # Download with retry logic and timeout
+    for i in {1..5}; do
+        echo "Attempt $i: Downloading Go modules..."
+        if timeout 20m go mod download -x; then
+            echo "✅ Go modules downloaded successfully"
+            break
+        else
+            echo "❌ Attempt $i failed, retrying..."
+            if [ $i -eq 5 ]; then
+                echo "🚨 All Go download attempts failed"
+                exit 1
+            fi
+            # Exponential backoff
+            sleep $((i * 10))
+        fi
+    done
+    
+    # Verify and tidy modules
+    timeout 5m go mod verify
+    timeout 5m go mod tidy
     
     log "✅ Go dependencies installed successfully"
 else
@@ -75,12 +97,30 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     log "Found Node.js version: $NODE_VERSION"
     log "Found npm version: $NPM_VERSION"
     
-    # Clean install for reproducible builds with optimizations
-    if [[ -f "package-lock.json" ]]; then
-        npm ci --prefer-offline --no-audit --no-fund
-    else
-        npm install --prefer-offline --no-audit --no-fund
-    fi
+    # Clean install for reproducible builds with optimizations and retry logic
+    for i in {1..3}; do
+        echo "Attempt $i: Installing frontend dependencies..."
+        if [[ -f "package-lock.json" ]]; then
+            if timeout 20m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
+                echo "✅ Frontend dependencies installed successfully"
+                break
+            fi
+        else
+            if timeout 20m npm install --prefer-offline --no-audit --no-fund --progress=false; then
+                echo "✅ Frontend dependencies installed successfully"
+                break
+            fi
+        fi
+        
+        echo "❌ Attempt $i failed, retrying..."
+        if [ $i -eq 3 ]; then
+            echo "🚨 All frontend installation attempts failed"
+            exit 1
+        fi
+        # Clean npm cache and retry
+        npm cache clean --force 2>/dev/null || true
+        sleep $((i * 10))
+    done
     
     log "✅ Frontend dependencies installed successfully"
     
