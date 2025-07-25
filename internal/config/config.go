@@ -16,6 +16,7 @@ type Config struct {
 	OAuth         OAuth         `mapstructure:"oauth"`
 	SAML          SAML          `mapstructure:"saml"`
 	LDAP          LDAP          `mapstructure:"ldap"`
+	SMTP          SMTP          `mapstructure:"smtp"`
 	SSH           SSH           `mapstructure:"ssh"`
 	Elasticsearch Elasticsearch `mapstructure:"elasticsearch"`
 }
@@ -54,6 +55,7 @@ type OAuth struct {
 	GitHub    GitHubOAuth    `mapstructure:"github"`
 	Google    GoogleOAuth    `mapstructure:"google"`
 	Microsoft MicrosoftOAuth `mapstructure:"microsoft"`
+	GitLab    GitLabOAuth    `mapstructure:"gitlab"`
 }
 
 type GitHubOAuth struct {
@@ -73,6 +75,13 @@ type MicrosoftOAuth struct {
 	ClientSecret string `mapstructure:"client_secret"`
 	RedirectURL  string `mapstructure:"redirect_url"`
 	TenantID     string `mapstructure:"tenant_id"`
+}
+
+type GitLabOAuth struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	RedirectURL  string `mapstructure:"redirect_url"`
+	BaseURL      string `mapstructure:"base_url"`
 }
 
 type SAML struct {
@@ -99,6 +108,15 @@ type SSH struct {
 	Enabled     bool   `mapstructure:"enabled"`
 	Port        int    `mapstructure:"port"`
 	HostKeyPath string `mapstructure:"host_key_path"`
+}
+
+type SMTP struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`
+	UseTLS   bool   `mapstructure:"use_tls"`
 }
 
 type Elasticsearch struct {
@@ -134,6 +152,12 @@ func Load() (*Config, error) {
 	viper.SetDefault("ssh.enabled", true)
 	viper.SetDefault("ssh.port", 2222)
 	viper.SetDefault("ssh.host_key_path", "./ssh_host_key")
+	viper.SetDefault("smtp.host", "")
+	viper.SetDefault("smtp.port", "587")
+	viper.SetDefault("smtp.username", "")
+	viper.SetDefault("smtp.password", "")
+	viper.SetDefault("smtp.from", "noreply@localhost")
+	viper.SetDefault("smtp.use_tls", true)
 	viper.SetDefault("elasticsearch.enabled", false)
 	viper.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
 	viper.SetDefault("elasticsearch.index_prefix", "hub")
@@ -155,11 +179,23 @@ func Load() (*Config, error) {
 	viper.BindEnv("oauth.github.client_secret", "GITHUB_CLIENT_SECRET")
 	viper.BindEnv("oauth.google.client_id", "GOOGLE_CLIENT_ID")
 	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("oauth.microsoft.client_id", "MICROSOFT_CLIENT_ID")
+	viper.BindEnv("oauth.microsoft.client_secret", "MICROSOFT_CLIENT_SECRET")
+	viper.BindEnv("oauth.microsoft.tenant_id", "MICROSOFT_TENANT_ID")
+	viper.BindEnv("oauth.gitlab.client_id", "GITLAB_CLIENT_ID")
+	viper.BindEnv("oauth.gitlab.client_secret", "GITLAB_CLIENT_SECRET")
+	viper.BindEnv("oauth.gitlab.base_url", "GITLAB_BASE_URL")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
 	viper.BindEnv("security.encryption_key", "ENCRYPTION_KEY")
 	viper.BindEnv("ssh.enabled", "SSH_ENABLED")
 	viper.BindEnv("ssh.port", "SSH_PORT")
 	viper.BindEnv("ssh.host_key_path", "SSH_HOST_KEY_PATH")
+	viper.BindEnv("smtp.host", "SMTP_HOST")
+	viper.BindEnv("smtp.port", "SMTP_PORT")
+	viper.BindEnv("smtp.username", "SMTP_USERNAME")
+	viper.BindEnv("smtp.password", "SMTP_PASSWORD")
+	viper.BindEnv("smtp.from", "SMTP_FROM")
+	viper.BindEnv("smtp.use_tls", "SMTP_USE_TLS")
 	viper.BindEnv("elasticsearch.enabled", "ELASTICSEARCH_ENABLED")
 	viper.BindEnv("elasticsearch.addresses", "ELASTICSEARCH_ADDRESSES")
 	viper.BindEnv("elasticsearch.username", "ELASTICSEARCH_USERNAME")
