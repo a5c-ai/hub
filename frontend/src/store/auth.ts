@@ -49,9 +49,19 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             responseKeys: Object.keys(response)
           });
           
-          // Handle direct AuthResponse from backend (not wrapped)
-          if (response && response.user && response.access_token) {
-            const authData = response as AuthUser;
+          // Handle both wrapped ApiResponse and direct AuthResponse from backend
+          let authData: AuthUser | null = null;
+          
+          // Check if response is wrapped in ApiResponse format
+          if (response && 'success' in response && 'data' in response && response.success && response.data) {
+            authData = response.data as AuthUser;
+          }
+          // Check if response is a direct AuthUser object
+          else if (response && 'user' in response && 'access_token' in response) {
+            authData = response as unknown as AuthUser;
+          }
+          
+          if (authData && authData.user && authData.access_token) {
             console.log('AuthStore: Setting auth state...', { user: authData.user.username });
             
             // Store tokens in localStorage FIRST
@@ -83,9 +93,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             console.log('AuthStore: Login completed successfully');
           } else {
             console.error('AuthStore: Response does not have expected structure', {
-              hasUser: !!response?.user,
-              hasAccessToken: !!response?.access_token,
-              responseKeys: response ? Object.keys(response) : 'no response'
+              hasAuthData: !!authData,
+              responseKeys: response ? Object.keys(response) : 'no response',
+              responseType: response && 'success' in response ? 'ApiResponse' : 'direct'
             });
             set({
               isLoading: false,
