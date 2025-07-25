@@ -54,10 +54,20 @@ LDFLAGS="$LDFLAGS -X main.GitCommit=$GIT_COMMIT"
 
 debug "Building with flags: $LDFLAGS"
 
-# Build the main server binary
-go build \
+# Build the main server binary with optimizations
+export CGO_ENABLED=0
+export GOOS=linux
+export GOARCH=amd64
+export GOCACHE=/tmp/go-build-cache
+export GOMAXPROCS=4
+export GOGC=50
+export GOFLAGS="-p=4 -buildvcs=false"
+
+timeout 25m go build \
     -ldflags "$LDFLAGS" \
     -trimpath \
+    -tags netgo \
+    -installsuffix netgo \
     -o "$OUTPUT_DIR/$BINARY_NAME" \
     ./cmd/server
 
@@ -77,20 +87,23 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     # Install frontend dependencies if not already installed
     if [[ ! -d "node_modules" ]]; then
         log "Installing frontend dependencies..."
-        # Use npm ci with optimizations for CI
-        npm ci --production=false --prefer-offline --no-audit --no-fund
+        # Use npm ci with optimizations for CI and timeout
+        timeout 20m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
     fi
     
     # Set environment variables for build
     export NODE_ENV=$BUILD_ENV
     export NEXT_TELEMETRY_DISABLED=1
-    export NODE_OPTIONS="--max-old-space-size=4096"
+    export NODE_OPTIONS="--max-old-space-size=8192"
     
     # Build the frontend with optimizations and timeout prevention
     export DISABLE_COLLECT_BUILD_TRACES=1
     export NEXT_TELEMETRY_DISABLED=1
     export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
-    npm run build
+    export NEXT_PARALLEL=false
+    
+    # Build with timeout and better error handling
+    timeout 30m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
