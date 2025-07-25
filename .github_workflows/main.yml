@@ -91,7 +91,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # Increased timeout to handle slow dependency downloads
+    timeout-minutes: 30  # Reduced timeout with optimized scripts
     strategy:
       matrix:
         node-version: [22] 
@@ -118,34 +118,34 @@ jobs:
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
           
-      # Optimize Go module download with parallel processing and retries
+      # Optimize Go module download with better caching
       - name: Download Go modules
-        timeout-minutes: 15
+        timeout-minutes: 10  # Reduced timeout
         run: |
           # Enable module proxy and set timeout
           export GOPROXY=https://proxy.golang.org,direct
           export GOSUMDB=sum.golang.org
-          export GOTIMEOUT=10m
+          export GOTIMEOUT=8m
           
-          # Download with retry logic
-          for i in {1..3}; do
+          # Download with optimized retry logic
+          for i in {1..2}; do  # Reduced retry attempts
             echo "Attempt $i: Downloading Go modules..."
             if go mod download && go mod verify; then
               echo "✅ Go modules downloaded successfully"
               break
             else
               echo "❌ Attempt $i failed, retrying..."
-              if [ $i -eq 3 ]; then
+              if [ $i -eq 2 ]; then
                 echo "🚨 All attempts failed"
                 exit 1
               fi
-              sleep 10
+              sleep 5  # Reduced sleep time
             fi
           done
           
-      # Build with increased timeout and better error handling
+      # Build with optimized timeout and better resource management
       - name: Build application
-        timeout-minutes: 45  # Increased timeout for slow builds
+        timeout-minutes: 25  # Reduced timeout with optimized scripts
         run: |
           # Set build optimization flags
           export CGO_ENABLED=0
@@ -154,14 +154,14 @@ jobs:
           export GOCACHE=/tmp/go-build-cache
           
           # Optimize for faster builds
-          export GOMAXPROCS=4
+          export GOMAXPROCS=2  # Reduced to prevent resource exhaustion
           export GOGC=100
           
-          # Next.js build optimizations to prevent timeouts
+          # Next.js build optimizations for performance
           export DISABLE_COLLECT_BUILD_TRACES=1
           export NEXT_TELEMETRY_DISABLED=1
-          export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
-          export NODE_OPTIONS="--max-old-space-size=8192"
+          export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=false  # Re-enable for better performance
+          export NODE_OPTIONS="--max-old-space-size=4096"  # Balanced memory allocation
           
           # Run build with optimizations
           ./scripts/build.sh

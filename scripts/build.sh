@@ -46,7 +46,7 @@ BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 VERSION=${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo "dev")}
 
-# Set build flags for Go
+# Set build flags for Go with aggressive optimization
 LDFLAGS="-s -w"
 LDFLAGS="$LDFLAGS -X main.Version=$VERSION"
 LDFLAGS="$LDFLAGS -X main.BuildTime=$BUILD_DATE"
@@ -54,20 +54,21 @@ LDFLAGS="$LDFLAGS -X main.GitCommit=$GIT_COMMIT"
 
 debug "Building with flags: $LDFLAGS"
 
-# Build the main server binary with conservative settings to prevent timeouts
+# Build the main server binary with aggressive optimization for CI
 export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
 export GOCACHE=/tmp/go-build-cache
-export GOMAXPROCS=2  # Reduced from 4 to prevent resource exhaustion
-export GOGC=100     # Increased from 50 to reduce GC pressure
-export GOFLAGS="-p=2 -buildvcs=false"  # Reduced parallelism
+export GOMAXPROCS=4  # Increased back to 4 for faster compilation
+export GOGC=off      # Disable GC during compilation for speed
+export GOFLAGS="-p=4 -buildvcs=false"  # Increased parallelism for speed
 
-# Use longer timeout but with progress monitoring
-log "Starting Go build with conservative resource settings..."
-timeout 30m go build \
+# Use shorter timeout with progress monitoring and optimized flags
+log "Starting Go build with aggressive optimization settings..."
+timeout 10m go build \
     -ldflags "$LDFLAGS" \
-    -a \
+    -trimpath \
+    -v \
     -o "$OUTPUT_DIR/$BINARY_NAME" \
     ./cmd/server
 
@@ -91,21 +92,21 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
         timeout 20m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
     fi
     
-    # Set environment variables for build with conservative memory settings
+    # Set environment variables for build with optimized memory settings
     export NODE_ENV=$BUILD_ENV
     export NEXT_TELEMETRY_DISABLED=1
-    export NODE_OPTIONS="--max-old-space-size=4096"  # Reduced from 8192
+    export NODE_OPTIONS="--max-old-space-size=2048"  # Reduced further for efficiency
     
-    # Build the frontend with conservative settings to prevent timeouts
+    # Build the frontend with optimized settings to prevent timeouts
     export DISABLE_COLLECT_BUILD_TRACES=1
     export NEXT_TELEMETRY_DISABLED=1
-    export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
-    export NEXT_PARALLEL=false
-    export NEXT_BUILD_WORKERS=1  # Limit build workers
+    export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=false  # Re-enable for better performance
+    export NEXT_PARALLEL=true  # Re-enable parallel processing for speed
+    export NEXT_BUILD_WORKERS=2  # Optimize workers for CI
     
-    # Build with timeout and better error handling
-    log "Starting frontend build with conservative resource settings..."
-    timeout 35m npm run build
+    # Build with shorter timeout and better error handling
+    log "Starting frontend build with optimized resource settings..."
+    timeout 20m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
