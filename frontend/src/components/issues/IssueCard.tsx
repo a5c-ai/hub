@@ -5,6 +5,7 @@ import { Issue } from '@/types';
 import { IssueStateButton } from './IssueStateButton';
 import { LabelBadge } from '@/components/labels/LabelBadge';
 import { formatRelativeTime } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 interface IssueCardProps {
   issue: Issue;
@@ -56,20 +57,11 @@ export function IssueCard({ issue, repositoryOwner, repositoryName }: IssueCardP
           </div>
         </div>
         
-        <div className="flex items-center text-sm text-gray-500 ml-4">
-          {issue.comments_count > 0 && (
-            <div className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
-                />
-              </svg>
-              {issue.comments_count}
-            </div>
-          )}
+        <div className="flex items-center text-sm text-muted-foreground ml-4">
+          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+          </svg>
+          {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
         </div>
       </div>
     </div>

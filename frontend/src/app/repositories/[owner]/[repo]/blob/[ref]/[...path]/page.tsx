@@ -197,26 +197,26 @@ export default function BlobPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link 
             href="/repositories" 
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Repositories
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">blob</span>
+          <span className="text-foreground font-medium">blob</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{ref}</span>
+          <span className="text-foreground font-medium">{ref}</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{filePath}</span>
+          <span className="text-foreground font-medium">{filePath}</span>
         </nav>
 
         {/* Repository Header */}
@@ -227,8 +227,8 @@ export default function BlobPage() {
             size="md"
           />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {repository.owner?.username || owner}/{repository.name}
+            <h1 className="text-2xl font-bold text-foreground">
+              {repository?.name || repo}
             </h1>
             <div className="flex items-center space-x-2">
               <Badge variant={repository.private ? 'secondary' : 'default'}>
@@ -240,11 +240,11 @@ export default function BlobPage() {
 
         {/* File Content */}
         <Card>
-          <div className="border-b border-gray-200 px-6 py-4">
+          <div className="border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-gray-900">{file.name}</h2>
-                <span className="text-sm text-gray-500">{formatFileSize(file.size)}</span>
+                <h2 className="text-lg font-semibold text-foreground">{file.name}</h2>
+                <span className="text-sm text-muted-foreground">{formatFileSize(file.size)}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Link 
@@ -275,12 +275,12 @@ export default function BlobPage() {
           </div>
           <div className="p-6">
             {file.encoding === 'base64' ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="text-center py-8 text-muted-foreground">
+                <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                 </svg>
-                <p className="text-lg font-medium">Binary file cannot be displayed</p>
-                <p className="text-sm mt-2">Use the download button to save the file</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Binary file cannot be displayed</h3>
+                <p className="text-muted-foreground">Use the download button to save the file</p>
               </div>
             ) : file.name.endsWith('.md') ? (
               <div className="prose dark:prose-invert max-w-none">

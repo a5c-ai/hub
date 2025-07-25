@@ -122,8 +122,8 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
       <Card className="p-6">
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load insights</h3>
-          <p className="text-gray-500">{error}</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Failed to load insights</h3>
+          <p className="text-muted-foreground">{error}</p>
         </div>
       </Card>
     );
@@ -133,9 +133,9 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
     return (
       <Card className="p-6">
         <div className="text-center">
-          <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No insights available</h3>
-          <p className="text-gray-500">Insights will appear here once there's activity in this repository.</p>
+          <DocumentTextIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No insights available</h3>
+          <p className="text-muted-foreground">Insights will appear here once there's activity in this repository.</p>
         </div>
       </Card>
     );
@@ -153,23 +153,23 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {owner}/{repo} Insights
         </h1>
         {data.repository.description && (
-          <p className="text-gray-600 mt-2">{data.repository.description}</p>
+          <p className="text-muted-foreground mt-2">{data.repository.description}</p>
         )}
         <div className="flex items-center space-x-4 mt-4">
           <Badge variant="secondary">{data.repository.language}</Badge>
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <StarIcon className="h-4 w-4" />
             <span>{formatNumber(data.repository.starsCount)}</span>
           </div>
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <DocumentDuplicateIcon className="h-4 w-4" />
             <span>{formatNumber(data.repository.forksCount)}</span>
           </div>
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <EyeIcon className="h-4 w-4" />
             <span>{formatNumber(data.repository.watchersCount)}</span>
           </div>
@@ -232,20 +232,20 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
       {activeTab === 'code' && (
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Language Breakdown</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Language Breakdown</h3>
             <div className="space-y-3">
               {Object.entries(data.codeStats.languageBreakdown).map(([language, percentage]) => (
                 <div key={language} className="flex items-center">
-                  <div className="w-20 text-sm text-gray-600">{language}</div>
+                  <div className="w-20 text-sm text-muted-foreground">{language}</div>
                   <div className="flex-1 mx-4">
-                    <div className="bg-gray-200 rounded-full h-2">
+                    <div className="bg-muted rounded-full h-2">
                       <div
                         className="bg-blue-500 h-2 rounded-full"
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
                   </div>
-                  <div className="w-12 text-sm text-gray-600 text-right">{percentage.toFixed(1)}%</div>
+                  <div className="w-12 text-sm text-muted-foreground text-right">{percentage.toFixed(1)}%</div>
                 </div>
               ))}
             </div>
@@ -256,15 +256,15 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
       {activeTab === 'activity' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Repository Activity</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Views</span>
-                <span className="font-medium">{formatNumber(data.activityStats.totalViews)}</span>
+            <h3 className="text-lg font-medium text-foreground mb-4">Repository Activity</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{data.activityStats.totalViews}</div>
+                <span className="text-sm text-muted-foreground">Total Views</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Clones</span>
-                <span className="font-medium">{formatNumber(data.activityStats.totalClones)}</span>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{data.activityStats.totalClones}</div>
+                <span className="text-sm text-muted-foreground">Total Clones</span>
               </div>
             </div>
           </Card>
@@ -289,15 +289,15 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
           </div>
           
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Top Contributors</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Top Contributors</h3>
             <div className="space-y-3">
               {data.contributorStats.topContributors.slice(0, 10).map((contributor, index) => (
                 <div key={contributor.username} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-500 w-6">#{index + 1}</span>
-                    <span className="font-medium">{contributor.username}</span>
+                    <span className="text-sm text-muted-foreground w-6">#{index + 1}</span>
+                    <span className="font-medium text-foreground">{contributor.username}</span>
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span>{formatNumber(contributor.commitCount)} commits</span>
                     <span className="text-green-600">+{formatNumber(contributor.linesAdded)}</span>
                     <span className="text-red-600">-{formatNumber(contributor.linesDeleted)}</span>
@@ -340,36 +340,36 @@ export const RepositoryInsights: React.FC<RepositoryInsightsProps> = ({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Issue Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Resolution Rate</span>
-                  <span className="font-medium">
+              <h3 className="text-lg font-medium text-foreground mb-4">Issue Stats</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
                     {((data.issueStats.closedIssues / data.issueStats.totalIssues) * 100).toFixed(1)}%
-                  </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">Resolution Rate</span>
                 </div>
                 {data.issueStats.avgTimeToClose && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg Time to Close</span>
-                    <span className="font-medium">{formatDuration(data.issueStats.avgTimeToClose)}</span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{formatDuration(data.issueStats.avgTimeToClose)}</div>
+                    <span className="text-sm text-muted-foreground">Avg Time to Close</span>
                   </div>
                 )}
               </div>
             </Card>
             
             <Card className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">PR Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Merge Rate</span>
-                  <span className="font-medium">
+              <h3 className="text-lg font-medium text-foreground mb-4">PR Stats</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
                     {((data.pullRequestStats.mergedPullRequests / data.pullRequestStats.totalPullRequests) * 100).toFixed(1)}%
-                  </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">Merge Rate</span>
                 </div>
                 {data.pullRequestStats.avgTimeToMerge && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg Time to Merge</span>
-                    <span className="font-medium">{formatDuration(data.pullRequestStats.avgTimeToMerge)}</span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{formatDuration(data.pullRequestStats.avgTimeToMerge)}</div>
+                    <span className="text-sm text-muted-foreground">Avg Time to Merge</span>
                   </div>
                 )}
               </div>
@@ -405,8 +405,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, color
           <Icon className={`h-8 w-8 ${colorClasses[color]}`} />
         </div>
         <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
         </div>
       </div>
     </Card>

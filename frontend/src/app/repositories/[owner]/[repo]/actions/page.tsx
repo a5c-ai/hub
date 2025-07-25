@@ -151,9 +151,9 @@ export default function ActionsPage() {
         
         {workflows.length === 0 ? (
           <Card className="p-8 text-center">
-            <h3 className="text-lg font-medium mb-2">Get started with GitHub Actions</h3>
-            <p className="text-gray-600 mb-4">
-              Automate your workflow from idea to production with GitHub Actions.
+            <h3 className="text-lg font-medium mb-2">Get started with Hub Actions</h3>
+            <p className="text-muted-foreground mb-4">
+              Workflows help you automate your software development workflows with CI/CD.
             </p>
             <Link href={`/repositories/${owner}/${repo}/actions/new`}>
               <Button>Set up a workflow yourself</Button>
@@ -175,7 +175,7 @@ export default function ActionsPage() {
                       >
                         {workflow.name}
                       </Link>
-                      <p className="text-sm text-gray-500">{workflow.path}</p>
+                      <p className="text-sm text-muted-foreground">{workflow.path}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -184,6 +184,16 @@ export default function ActionsPage() {
                     </Badge>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{new Date(workflow.created_at).toLocaleDateString()}</span>
+                  {workflow.updated_at !== workflow.created_at && (
+                    <span>• Updated {new Date(workflow.updated_at).toLocaleDateString()}</span>
+                  )}
+                </div>
+                
+                <p className="text-sm text-muted-foreground mt-1">
+                  {workflow.description || 'No description available'}
+                </p>
               </Card>
             ))}
           </div>
@@ -218,7 +228,7 @@ export default function ActionsPage() {
                       >
                         #{run.number}
                       </Link>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{run.event}</span>
                         <span>•</span>
                         <span>{run.head_branch}</span>
@@ -231,7 +241,7 @@ export default function ActionsPage() {
                     <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
                       {run.conclusion || run.status}
                     </Badge>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {new Date(run.created_at).toLocaleDateString()}
                     </p>
                   </div>

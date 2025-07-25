@@ -115,8 +115,8 @@ export default function EditPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+            <div className="h-64 bg-muted rounded"></div>
           </div>
         </div>
       </AppLayout>
@@ -142,26 +142,26 @@ export default function EditPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link 
             href="/repositories" 
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Repositories
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">edit</span>
+          <span className="text-foreground font-medium">edit</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{ref}</span>
+          <span className="text-foreground font-medium">{ref}</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{filePath}</span>
+          <span className="text-foreground font-medium">{filePath}</span>
         </nav>
 
         {/* Repository Header */}
@@ -172,8 +172,8 @@ export default function EditPage() {
             size="md"
           />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {repository.owner?.username || owner}/{repository.name}
+            <h1 className="text-2xl font-bold text-foreground">
+              Edit {filePath}
             </h1>
             <div className="flex items-center space-x-2">
               <Badge variant={repository.private ? 'secondary' : 'default'}>
@@ -187,13 +187,13 @@ export default function EditPage() {
         <div className="space-y-6">
           {/* File Editor */}
           <Card>
-            <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+            <div className="border-b border-border px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Editing {file.name}
                   </h2>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     on branch {ref}
                   </span>
                 </div>
@@ -216,7 +216,7 @@ export default function EditPage() {
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full h-96 p-4 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm resize-y bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-96 p-4 border border-input rounded-md font-mono text-sm resize-y bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring placeholder:text-muted-foreground"
                 placeholder="Enter file content..."
                 style={{ minHeight: '400px' }}
               />
@@ -226,7 +226,7 @@ export default function EditPage() {
           {/* Commit Form */}
           <Card>
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Commit changes
               </h3>
               <div className="space-y-4">

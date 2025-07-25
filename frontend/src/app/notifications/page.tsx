@@ -134,7 +134,7 @@ export default function NotificationsPage() {
         );
       default:
         return (
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5c-1.5-1.5-3.5-3.5-5-5z" />
           </svg>
         );
@@ -299,7 +299,7 @@ export default function NotificationsPage() {
                   type="checkbox"
                   checked={selectedNotifications.length === notifications.length}
                   onChange={selectAllNotifications}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
                 <span className="ml-2 text-sm text-foreground">
                   Select all {notifications.length} notifications
@@ -326,7 +326,7 @@ export default function NotificationsPage() {
                       type="checkbox"
                       checked={selectedNotifications.includes(notification.id)}
                       onChange={() => toggleNotificationSelection(notification.id)}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border rounded"
                     />
                     
                     <div className="flex items-start space-x-3 flex-1">
@@ -407,7 +407,7 @@ export default function NotificationsPage() {
         ) : (
           <Card>
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5c-1.5-1.5-3.5-3.5-5-5z" />
               </svg>
                         <h3 className="text-lg font-medium text-foreground mb-2">All caught up!</h3>

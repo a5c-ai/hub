@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { formatDistanceToNow } from 'date-fns';
 
 interface WorkflowRun {
   id: string;
@@ -170,25 +171,23 @@ export default function WorkflowRunsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+          className="px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground"
         >
-          <option value="all">All statuses</option>
-          <option value="queued">Queued</option>
-          <option value="in_progress">In progress</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">All statuses</option>
+          <option value="success">Success</option>
+          <option value="failure">Failure</option>
+          <option value="pending">Pending</option>
         </select>
         
         <select
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+          className="px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground"
         >
-          <option value="all">All events</option>
+          <option value="">All events</option>
           <option value="push">Push</option>
-          <option value="pull_request">Pull request</option>
+          <option value="pull_request">Pull Request</option>
           <option value="schedule">Schedule</option>
-          <option value="workflow_dispatch">Manual</option>
         </select>
       </div>
 
@@ -196,10 +195,8 @@ export default function WorkflowRunsPage() {
       {filteredRuns.length === 0 ? (
         <Card className="p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No workflow runs found</h3>
-          <p className="text-gray-600">
-            {searchQuery || statusFilter !== 'all' || eventFilter !== 'all'
-              ? 'Try adjusting your filters to see workflow runs.'
-              : 'No workflows have been run yet.'}
+          <p className="text-muted-foreground">
+            Track the status of your workflow runs and see detailed logs
           </p>
         </Card>
       ) : (
@@ -220,10 +217,10 @@ export default function WorkflowRunsPage() {
                       >
                         {run.workflow.name}
                       </Link>
-                      <span className="text-gray-500">#{run.number}</span>
+                      <span className="text-muted-foreground">#{run.number}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                       <Badge variant="outline" className="px-2 py-0 text-xs">
                         {run.event}
                       </Badge>
@@ -250,7 +247,7 @@ export default function WorkflowRunsPage() {
                     {run.conclusion || run.status}
                   </Badge>
                   
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-muted-foreground mt-1">
                     <div>{formatDuration(run.started_at, run.completed_at)}</div>
                     <div>{new Date(run.created_at).toLocaleString()}</div>
                   </div>

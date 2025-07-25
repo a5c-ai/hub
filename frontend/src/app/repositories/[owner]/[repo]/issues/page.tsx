@@ -18,24 +18,24 @@ export default function IssuesPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+              <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
                 <Link 
                   href="/repositories" 
-                  className="hover:text-gray-700 transition-colors"
+                  className="hover:text-foreground transition-colors"
                 >
                   Repositories
                 </Link>
                 <span>/</span>
                 <Link 
                   href={`/repositories/${owner}/${repo}`}
-                  className="hover:text-gray-700 transition-colors"
+                  className="hover:text-foreground transition-colors"
                 >
                   {owner}/{repo}
                 </Link>
                 <span>/</span>
-                <span className="text-gray-900 font-medium">Issues</span>
+                <span className="text-foreground font-medium">Issues</span>
               </nav>
-              <h1 className="text-2xl font-bold text-gray-900">Issues</h1>
+              <h1 className="text-2xl font-bold text-foreground">Issues</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Link href={`/repositories/${owner}/${repo}/issues/labels`}>

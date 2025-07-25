@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/lib/api';
 import { Organization, Repository, User } from '@/types';
+import { MapPinIcon, LinkIcon, CalendarIcon, StarIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function OrganizationOverviewPage() {
   const params = useParams();
@@ -93,7 +95,7 @@ export default function OrganizationOverviewPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="text-gray-500 text-lg">Organization not found</div>
+            <div className="text-muted-foreground text-lg">Organization not found</div>
           </div>
         </div>
       </AppLayout>
@@ -112,36 +114,26 @@ export default function OrganizationOverviewPage() {
               size="2xl"
             />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{organization.name}</h1>
-              <p className="text-xl text-gray-600 mb-2">@{organization.login}</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{organization.name}</h1>
+              <p className="text-xl text-muted-foreground mb-2">@{organization.login}</p>
               {organization.description && (
-                <p className="text-gray-600 mb-4">{organization.description}</p>
+                <p className="text-muted-foreground mb-4">{organization.description}</p>
               )}
-              <div className="flex items-center text-sm text-gray-500 space-x-4 mb-4">
-                {organization.location && (
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {organization.location}
-                  </div>
-                )}
-                {organization.website && (
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    <a href={organization.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                      {organization.website}
-                    </a>
-                  </div>
-                )}
+              
+              <div className="flex items-center text-sm text-muted-foreground space-x-4 mb-4">
                 <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m0 0V7a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2m0 0V7a2 2 0 012-2h4a2 2 0 012 2v4" />
-                  </svg>
-                  Created {new Date(organization.created_at).toLocaleDateString()}
+                  <MapPinIcon className="w-4 h-4 mr-1" />
+                  {organization.location}
+                </div>
+                <div className="flex items-center">
+                  <LinkIcon className="w-4 h-4 mr-1" />
+                  <a href={organization.blog} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                    {organization.blog}
+                  </a>
+                </div>
+                <div className="flex items-center">
+                  <CalendarIcon className="w-4 h-4 mr-1" />
+                  Joined {new Date(organization.created_at).toLocaleDateString()}
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -225,13 +217,13 @@ export default function OrganizationOverviewPage() {
                     <input
                       type="text"
                       placeholder="Search repositories..."
-                      className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
                     />
-                    <select className="px-3 py-2 border border-gray-300 rounded-md">
-                      <option>All repositories</option>
-                      <option>Public</option>
-                      <option>Private</option>
-                      <option>Forks</option>
+                    <select className="px-3 py-2 border border-input rounded-md bg-background text-foreground">
+                      <option value="">All languages</option>
+                      <option value="javascript">JavaScript</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
                     </select>
                   </div>
                   <Button>
@@ -263,28 +255,24 @@ export default function OrganizationOverviewPage() {
                               )}
                             </div>
                             {repository.description && (
-                              <p className="text-gray-600 mb-3">{repository.description}</p>
+                              <p className="text-muted-foreground mb-3">{repository.description}</p>
                             )}
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                               {repository.language && (
                                 <div className="flex items-center">
-                                  <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
                                   {repository.language}
                                 </div>
                               )}
                               <div className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                                </svg>
-                                {repository.stargazers_count}
+                                <StarIcon className="w-4 h-4 mr-1" />
+                                {repository.stars_count}
                               </div>
                               <div className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                                </svg>
+                                <ShareIcon className="w-4 h-4 mr-1" />
                                 {repository.forks_count}
                               </div>
-                              <span>Updated {new Date(repository.updated_at).toLocaleDateString()}</span>
+                              <span>{formatDistanceToNow(new Date(repository.updated_at), { addSuffix: true })}</span>
                             </div>
                           </div>
                           <Button size="sm" variant="outline">
@@ -300,11 +288,11 @@ export default function OrganizationOverviewPage() {
                 ) : (
                   <Card>
                     <div className="p-12 text-center">
-                      <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 7a2 2 0 012-2h10a2 2 0 012 2v2M7 7h10" />
                       </svg>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No repositories yet</h3>
-                      <p className="text-gray-600 mb-4">This organization hasn&apos;t created any repositories yet.</p>
+                      <h3 className="text-lg font-medium text-foreground mb-2">No repositories yet</h3>
+                      <p className="text-muted-foreground mb-4">This organization hasn&apos;t created any repositories yet.</p>
                       <Button>Create your first repository</Button>
                     </div>
                   </Card>
@@ -319,7 +307,7 @@ export default function OrganizationOverviewPage() {
                     <input
                       type="text"
                       placeholder="Search members..."
-                      className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
                   <Button>
@@ -341,8 +329,8 @@ export default function OrganizationOverviewPage() {
                             size="lg"
                             className="mx-auto mb-4"
                           />
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
-                          <p className="text-gray-600 mb-3">@{member.username}</p>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">{member.name}</h3>
+                          <p className="text-muted-foreground mb-3">@{member.username}</p>
                           <Link href={`/users/${member.username}`}>
                             <Button size="sm" variant="outline" className="w-full">
                               View Profile
@@ -355,11 +343,11 @@ export default function OrganizationOverviewPage() {
                 ) : (
                   <Card>
                     <div className="p-12 text-center">
-                      <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                       </svg>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No members yet</h3>
-                      <p className="text-gray-600 mb-4">Invite people to join this organization.</p>
+                      <h3 className="text-lg font-medium text-foreground mb-2">No members yet</h3>
+                      <p className="text-muted-foreground mb-4">Invite people to join this organization.</p>
                       <Button>Invite your first member</Button>
                     </div>
                   </Card>
@@ -373,23 +361,23 @@ export default function OrganizationOverviewPage() {
             {/* Quick Stats */}
             <Card>
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Public repositories</span>
-                    <span className="font-medium">{organization.public_repos}</span>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Organization Stats</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{organization.public_repos}</div>
+                    <span className="text-muted-foreground">Public repositories</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Members</span>
-                    <span className="font-medium">{members.length}</span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{organization.public_members || 0}</div>
+                    <span className="text-muted-foreground">Members</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Followers</span>
-                    <span className="font-medium">{organization.followers}</span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{organization.followers}</div>
+                    <span className="text-muted-foreground">Followers</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Following</span>
-                    <span className="font-medium">{organization.following}</span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{organization.following}</div>
+                    <span className="text-muted-foreground">Following</span>
                   </div>
                 </div>
               </div>
@@ -398,12 +386,12 @@ export default function OrganizationOverviewPage() {
             {/* Recent Activity */}
             <Card>
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
                 <div className="text-center py-4">
-                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <svg className="w-8 h-8 mx-auto mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm text-gray-600">No recent activity</p>
+                  <p className="text-sm text-muted-foreground">No recent activity</p>
                 </div>
               </div>
             </Card>

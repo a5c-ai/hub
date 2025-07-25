@@ -76,13 +76,13 @@ export default function RepositorySettingsPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               <div>
-                <div className="h-64 bg-gray-200 rounded"></div>
+                <div className="h-64 bg-muted rounded"></div>
               </div>
               <div className="lg:col-span-3">
-                <div className="h-96 bg-gray-200 rounded"></div>
+                <div className="h-96 bg-muted rounded"></div>
               </div>
             </div>
           </div>
@@ -198,7 +198,7 @@ export default function RepositorySettingsPage() {
                           id="private"
                           checked={formData.private}
                           onChange={(e) => setFormData({ ...formData, private: e.target.checked })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                         />
                         <label htmlFor="private" className="ml-2 block text-sm text-foreground">
                           Make this repository private
@@ -303,9 +303,9 @@ export default function RepositorySettingsPage() {
                           <input
                             type="checkbox"
                             id="actions-enabled"
-                            defaultChecked
-                            title="Enable GitHub Actions"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            checked={formData.actions_enabled}
+                            onChange={(e) => setFormData(prev => ({ ...prev, actions_enabled: e.target.checked }))}
+                            className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                           />
                           <label htmlFor="actions-enabled" className="ml-3 block text-sm font-medium text-foreground">
                             Enable GitHub Actions for this repository
@@ -363,7 +363,7 @@ export default function RepositorySettingsPage() {
                           <h4 className="font-medium text-foreground">Vulnerability Alerts</h4>
                           <p className="text-sm text-muted-foreground">Get notified about security vulnerabilities</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                       
                       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -371,7 +371,7 @@ export default function RepositorySettingsPage() {
                           <h4 className="font-medium text-foreground">Dependency Graph</h4>
                           <p className="text-sm text-muted-foreground">Understand your dependencies</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                        <input type="checkbox" defaultChecked className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
                       </div>
                     </div>
                   </div>

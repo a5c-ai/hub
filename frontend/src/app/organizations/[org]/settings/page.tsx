@@ -68,13 +68,13 @@ export default function OrganizationSettingsPage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               <div>
-                <div className="h-64 bg-gray-200 rounded"></div>
+                <div className="h-64 bg-muted rounded"></div>
               </div>
               <div className="lg:col-span-3">
-                <div className="h-96 bg-gray-200 rounded"></div>
+                <div className="h-96 bg-muted rounded"></div>
               </div>
             </div>
           </div>
@@ -96,18 +96,19 @@ export default function OrganizationSettingsPage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href={`/organizations/${org}`} className="hover:text-gray-700 transition-colors">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link href={`/organizations/${org}`} className="hover:text-foreground transition-colors">
             {org}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Settings</span>
+          <span className="text-foreground font-medium">Settings</span>
         </nav>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Organization Settings</h1>
-          <p className="text-gray-600 mt-2">Manage organization configuration and access</p>
+        
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Organization Settings</h1>
+            <p className="text-muted-foreground mt-2">Manage organization configuration and access</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -137,11 +138,11 @@ export default function OrganizationSettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Profile</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Organization Profile</h3>
                     
                     {/* Avatar */}
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Organization Avatar
                       </label>
                       <div className="flex items-center space-x-4">
@@ -158,7 +159,7 @@ export default function OrganizationSettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Organization Name
                         </label>
                         <Input
@@ -169,7 +170,7 @@ export default function OrganizationSettingsPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Username
                         </label>
                         <Input
@@ -180,7 +181,7 @@ export default function OrganizationSettingsPage() {
                       </div>
                       
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Description
                         </label>
                         <textarea
@@ -188,12 +189,12 @@ export default function OrganizationSettingsPage() {
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           placeholder="Brief description of your organization"
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-vertical bg-background text-foreground placeholder:text-muted-foreground"
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Website
                         </label>
                         <Input
@@ -204,7 +205,7 @@ export default function OrganizationSettingsPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Location
                         </label>
                         <Input
@@ -215,7 +216,7 @@ export default function OrganizationSettingsPage() {
                       </div>
                       
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Contact Email
                         </label>
                         <Input
@@ -242,7 +243,7 @@ export default function OrganizationSettingsPage() {
                 <Card>
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Organization Members</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Organization Members</h3>
                       <Button size="sm">
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -261,8 +262,8 @@ export default function OrganizationSettingsPage() {
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Pending Invitations</h4>
-                        <div className="text-center py-4 text-gray-500">
+                        <h4 className="font-medium text-foreground mb-3">Pending Invitations</h4>
+                        <div className="text-center py-4 text-muted-foreground">
                           <p className="text-sm">No pending invitations</p>
                         </div>
                       </div>
@@ -277,7 +278,7 @@ export default function OrganizationSettingsPage() {
                 <Card>
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Teams</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Teams</h3>
                       <Link href={`/organizations/${org}/teams`}>
                         <Button size="sm">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +289,7 @@ export default function OrganizationSettingsPage() {
                       </Link>
                     </div>
                     
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
@@ -304,7 +305,7 @@ export default function OrganizationSettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Security Settings</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                         <div>
@@ -339,29 +340,29 @@ export default function OrganizationSettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Information</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Billing Information</h3>
                     <div className="space-y-4">
                       <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">Current Plan</h4>
+                          <h4 className="font-medium text-foreground">Current Plan</h4>
                           <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                             Team
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Team plan for organizations with advanced features
                         </p>
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Usage</h4>
+                        <h4 className="font-medium text-foreground mb-3">Usage</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Seats used</span>
+                            <span className="text-muted-foreground">Seats used</span>
                             <span className="font-medium">0 / 5</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Private repositories</span>
+                            <span className="text-muted-foreground">Private repositories</span>
                             <span className="font-medium">Unlimited</span>
                           </div>
                         </div>

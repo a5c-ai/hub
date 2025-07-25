@@ -15,31 +15,31 @@ export default function NewIssuePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
             <Link 
               href="/repositories" 
-              className="hover:text-gray-700 transition-colors"
+              className="hover:text-foreground transition-colors"
             >
               Repositories
             </Link>
             <span>/</span>
             <Link 
               href={`/repositories/${owner}/${repo}`}
-              className="hover:text-gray-700 transition-colors"
+              className="hover:text-foreground transition-colors"
             >
               {owner}/{repo}
             </Link>
             <span>/</span>
             <Link 
               href={`/repositories/${owner}/${repo}/issues`}
-              className="hover:text-gray-700 transition-colors"
+              className="hover:text-foreground transition-colors"
             >
               Issues
             </Link>
             <span>/</span>
-            <span className="text-gray-900 font-medium">New Issue</span>
+            <span className="text-foreground font-medium">New Issue</span>
           </nav>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Issue</h1>
+          <h1 className="text-2xl font-bold text-foreground">Create New Issue</h1>
         </div>
 
         {/* Issue form */}

@@ -206,34 +206,28 @@ export default function WorkflowRunDetailPage() {
       <Card className="p-4 mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <span className="text-sm text-gray-500">Status</span>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={getStatusColor(run.status, run.conclusion) as any}>
-                {run.conclusion || run.status}
-              </Badge>
+            <span className="text-sm text-muted-foreground">Status</span>
+            <Badge className={getStatusColor(run.conclusion || run.status)}>
+              {run.conclusion || run.status}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Duration</span>
+            <span className="text-sm font-medium">{formatDuration(run.duration)}</span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Event</span>
+            <span className="text-sm font-medium">{run.event}</span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Commit</span>
+            <div className="flex items-center space-x-2">
+              <code className="text-xs bg-muted px-1 rounded">{run.head_sha.substring(0, 7)}</code>
+              <span className="ml-2 text-muted-foreground">on {run.head_branch}</span>
             </div>
-          </div>
-          
-          <div>
-            <span className="text-sm text-gray-500">Duration</span>
-            <p className="mt-1">{formatDuration(run.started_at, run.completed_at)}</p>
-          </div>
-          
-          <div>
-            <span className="text-sm text-gray-500">Event</span>
-            <p className="mt-1">
-              <Badge variant="outline">{run.event}</Badge>
-            </p>
-          </div>
-          
-          <div>
-            <span className="text-sm text-gray-500">Commit</span>
-            <p className="mt-1 font-mono text-sm">
-              {run.head_sha.substring(0, 7)}
-              {run.head_branch && (
-                <span className="ml-2 text-gray-500">on {run.head_branch}</span>
-              )}
-            </p>
           </div>
         </div>
       </Card>
@@ -260,7 +254,7 @@ export default function WorkflowRunDetailPage() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{job.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {formatDuration(job.started_at, job.completed_at)}
                   </p>
                 </div>
@@ -297,12 +291,12 @@ export default function WorkflowRunDetailPage() {
                           </span>
                           <div>
                             <p className="font-medium">{step.name}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                               Step {step.number}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right text-sm text-gray-500">
+                        <div className="text-right text-sm text-muted-foreground">
                           {formatDuration(step.started_at, step.completed_at)}
                         </div>
                       </div>
@@ -318,19 +312,16 @@ export default function WorkflowRunDetailPage() {
                 </div>
                 <div className="p-4">
                   {logs[selectedJob] ? (
-                    <pre className="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto">
-                      {logs[selectedJob]}
+                    <pre className="bg-card text-foreground p-4 rounded text-sm overflow-x-auto">
+                      {selectedJob?.logs || 'No logs available'}
                     </pre>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Click "View logs" to see the build output</p>
-                      <Button
-                        variant="outline"
-                        className="mt-2"
-                        onClick={() => fetchJobLogs(selectedJob!)}
-                      >
-                        View logs
-                      </Button>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-foreground mb-2">Select a job</h3>
+                      <p className="text-muted-foreground">Select a job to view details</p>
                     </div>
                   )}
                 </div>
@@ -338,7 +329,7 @@ export default function WorkflowRunDetailPage() {
             </div>
           ) : (
             <Card className="p-8 text-center">
-              <p className="text-gray-500">Select a job to view details</p>
+              <p className="text-muted-foreground">Select a job to view details</p>
             </Card>
           )}
         </div>

@@ -91,7 +91,7 @@ export default function OrganizationMembersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <Link href={`/organizations/${org}`} className="hover:text-gray-700 transition-colors">
+          <Link href={`/organizations/${org}`} className="hover:text-foreground transition-colors">
             {org}
           </Link>
           <span>/</span>
@@ -164,14 +164,14 @@ export default function OrganizationMembersPage() {
               <input
                 type="text"
                 placeholder="Search members..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
               />
             </div>
-            <select className="px-3 py-2 border border-gray-300 rounded-md">
-              <option>All roles</option>
-              <option>Owner</option>
-              <option>Admin</option>
-              <option>Member</option>
+            <select className="px-3 py-2 border border-input rounded-md bg-background text-foreground">
+              <option value="all">All roles</option>
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+              <option value="member">Member</option>
             </select>
           </div>
         </div>

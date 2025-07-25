@@ -106,8 +106,8 @@ export default function RepositoryInsightsPage() {
       <Card className="p-6">
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Invalid Repository</h3>
-          <p className="text-gray-500">The repository owner or name is missing from the URL.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Invalid Repository</h3>
+          <p className="text-muted-foreground">The repository owner or name is missing from the URL.</p>
         </div>
       </Card>
     );

@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ActivityItem {
   id: string;
@@ -30,6 +31,8 @@ interface ActivityItem {
     number?: number;
     title?: string;
     target?: { username: string };
+    action?: string;
+    ref?: string;
   };
   created_at: string;
 }
@@ -63,8 +66,8 @@ export default function ActivityPage() {
     switch (type) {
       case 'push':
         return (
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
       case 'pull_request':
@@ -105,7 +108,7 @@ export default function ActivityPage() {
         );
       default:
         return (
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         );
@@ -249,8 +252,8 @@ export default function ActivityPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Activity Feed</h1>
-          <p className="text-gray-600 mt-2">Stay up to date with what&apos;s happening across your repositories and network</p>
+          <h1 className="text-3xl font-bold text-foreground">Activity Feed</h1>
+          <p className="text-muted-foreground mt-2">Stay up to date with what&apos;s happening across your repositories and network</p>
         </div>
 
         {/* Filter Tabs */}
@@ -260,8 +263,8 @@ export default function ActivityPage() {
               onClick={() => setFilter('all')}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,8 +277,8 @@ export default function ActivityPage() {
               onClick={() => setFilter('own')}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'own'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,8 +291,8 @@ export default function ActivityPage() {
               onClick={() => setFilter('following')}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 filter === 'following'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,25 +319,25 @@ export default function ActivityPage() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         {getActivityIcon(activity.type)}
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-foreground">
                           {formatActivityMessage(activity)}
                         </div>
                       </div>
                       
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {new Date(activity.created_at).toLocaleString()}
                       </div>
                       
                       {/* Additional payload information */}
                       {activity.payload.title && (
-                        <div className="mt-2 text-sm text-gray-700">
+                        <div className="mt-2 text-sm text-foreground">
                           &quot;{activity.payload.title}&quot;
                         </div>
                       )}
                       
                       {activity.type === 'push' && activity.payload.commits && (
                         <div className="mt-2">
-                          <div className="text-xs text-gray-500 mb-1">
+                          <div className="text-xs text-muted-foreground mb-1">
                             {activity.payload.commits.length} commit{activity.payload.commits.length !== 1 ? 's' : ''}
                           </div>
                           <div className="space-y-1">
@@ -345,7 +348,7 @@ export default function ActivityPage() {
                               </div>
                             ))}
                             {activity.payload.commits.length > 3 && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-muted-foreground">
                                 ...and {activity.payload.commits.length - 3} more commits
                               </div>
                             )}
@@ -354,7 +357,7 @@ export default function ActivityPage() {
                       )}
                     </div>
                     
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       {new Date(activity.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -365,11 +368,11 @@ export default function ActivityPage() {
         ) : (
           <Card>
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-foreground mb-2">No activity yet</h3>
+              <p className="text-muted-foreground mb-4">
                 {filter === 'all' && "There&apos;s no activity to show yet."}
                 {filter === 'own' && "You haven&apos;t performed any activities yet."}
                 {filter === 'following' && "Follow users to see their activity here."}

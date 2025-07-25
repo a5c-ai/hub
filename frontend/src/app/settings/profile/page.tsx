@@ -95,7 +95,7 @@ export default function ProfileEditPage() {
               <h3 className="text-lg font-semibold text-foreground mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -107,7 +107,7 @@ export default function ProfileEditPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Username <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -116,13 +116,13 @@ export default function ProfileEditPage() {
                     placeholder="Your username"
                     required
                   />
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     This will be your unique identifier on the platform
                   </p>
                 </div>
                 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -138,63 +138,50 @@ export default function ProfileEditPage() {
 
             {/* Profile Details */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Details</h3>
-              <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Profile Details</h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Bio
                   </label>
                   <textarea
                     value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Tell people a little bit about yourself..."
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    maxLength={160}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none bg-background text-foreground placeholder:text-muted-foreground"
+                    placeholder="Tell us about yourself..."
                   />
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-sm text-gray-500">
-                      A short bio to help others understand your work and interests
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formData.bio.length}/160
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Website
-                    </label>
-                    <Input
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      placeholder="https://yourwebsite.com"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <Input
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="City, Country"
-                    />
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Maximum 160 characters
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    This will be displayed on your public profile
+                  </p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Company
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="Your company or organization"
+                    onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
+                    placeholder="Company name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
+                    placeholder="City, Country"
                   />
                 </div>
               </div>
@@ -202,36 +189,36 @@ export default function ProfileEditPage() {
 
             {/* Social Links */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Social Links</h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Twitter
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Twitter Username
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">@</span>
-                    </div>
+                    <span className="text-muted-foreground sm:text-sm">@</span>
                     <input
                       type="text"
+                      value={formData.twitter}
+                      onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                      className="pl-8 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
                       placeholder="username"
-                      className="pl-8 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    LinkedIn
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    LinkedIn URL
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">linkedin.com/in/</span>
-                    </div>
+                    <span className="text-muted-foreground sm:text-sm">linkedin.com/in/</span>
                     <input
                       type="text"
+                      value={formData.linkedin}
+                      onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                      className="pl-24 w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
                       placeholder="username"
-                      className="pl-24 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -240,7 +227,7 @@ export default function ProfileEditPage() {
 
             {/* Privacy Settings */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy Settings</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Privacy Settings</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div>

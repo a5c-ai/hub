@@ -63,7 +63,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
   if (loading && pullRequests.length === 0) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     )
   }

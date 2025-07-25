@@ -262,15 +262,15 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
               <h3 className="text-lg font-medium text-foreground mb-4">Contribution Summary</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Pull Requests</span>
+                  <span className="text-sm text-muted-foreground">Pull Requests</span>
                   <span className="font-medium">{formatNumber(data.contributionStats.totalPullRequests)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Issues Created</span>
+                  <span className="text-sm text-muted-foreground">Issues Created</span>
                   <span className="font-medium">{formatNumber(data.contributionStats.totalIssues)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Stars Received</span>
+                  <span className="text-sm text-muted-foreground">Stars Received</span>
                   <span className="font-medium">{formatNumber(data.repositoryStats.totalStars)}</span>
                 </div>
               </div>
@@ -303,9 +303,9 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
           </div>
 
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Activity Trend</h3>
-            <div className="h-64 flex items-center justify-center text-gray-500">
-              <p>Activity trend chart would go here</p>
+            <h3 className="text-lg font-medium text-foreground mb-4">Activity Trend</h3>
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <p>Activity chart would be displayed here</p>
             </div>
           </Card>
         </div>
@@ -341,9 +341,9 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
           </div>
 
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Contribution Activity</h3>
-            <div className="h-64 flex items-center justify-center text-gray-500">
-              <p>Contribution activity chart would go here</p>
+            <h3 className="text-lg font-medium text-foreground mb-4">Contribution Activity</h3>
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <p>Contribution calendar would be displayed here</p>
             </div>
           </Card>
         </div>
@@ -373,9 +373,9 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
           </div>
 
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Repository Growth</h3>
-            <div className="h-64 flex items-center justify-center text-gray-500">
-              <p>Repository growth chart would go here</p>
+            <h3 className="text-lg font-medium text-foreground mb-4">Repository Growth</h3>
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <p>Repository growth chart would be displayed here</p>
             </div>
           </Card>
         </div>
@@ -408,8 +408,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, color
           <Icon className={`h-8 w-8 ${colorClasses[color]}`} />
         </div>
         <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
         </div>
       </div>
     </Card>

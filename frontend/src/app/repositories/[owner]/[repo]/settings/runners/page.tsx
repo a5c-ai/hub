@@ -122,8 +122,8 @@ export default function RunnersPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Runners</h1>
-          <p className="text-muted-foreground mt-2">
-            Self-hosted runners for this repository. Kubernetes runners are managed automatically.
+          <p className="text-muted-foreground mb-4">
+            Configure self-hosted runners to run actions on your own infrastructure.
           </p>
         </div>
         <Button onClick={generateRegistrationToken}>
@@ -199,7 +199,7 @@ export default function RunnersPage() {
                         </Badge>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                         {runner.os && (
                           <span>{runner.os} {runner.architecture}</span>
                         )}

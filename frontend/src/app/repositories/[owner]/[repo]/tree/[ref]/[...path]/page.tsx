@@ -53,8 +53,8 @@ export default function TreePage() {
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3 mb-8"></div>
+            <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-muted rounded w-2/3 mb-8"></div>
           </div>
         </div>
       </AppLayout>
@@ -92,28 +92,28 @@ export default function TreePage() {
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link 
             href="/repositories" 
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Repositories
           </Link>
           <span>/</span>
           <Link 
             href={`/repositories/${owner}/${repo}`}
-            className="hover:text-gray-700 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             {owner}/{repo}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">tree</span>
+          <span className="text-foreground font-medium">tree</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{ref}</span>
+          <span className="text-foreground font-medium">{ref}</span>
           {currentPath && (
             <>
               <span>/</span>
-              <span className="text-gray-900 font-medium">{currentPath}</span>
+              <span className="text-foreground font-medium">{currentPath}</span>
             </>
           )}
         </nav>
