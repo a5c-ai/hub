@@ -11,87 +11,87 @@ on:
     branches:
       - main
 env:
-    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-    NEXTAUTH_URL: http://localhost:4002
-    NEXTAUTH_SECRET: secret
-    NEXTAUTH_SESSION_STRATEGY: database
-    AUTH_PROVIDERS: github,credentials,saml,idp-initiated
-    FEATURE_TEAM_SSO: true
-    FEATURE_TEAM_DSYNC: true
-    FEATURE_TEAM_AUDIT_LOG: true
-    FEATURE_TEAM_WEBHOOK: false
-    FEATURE_TEAM_API_KEY: true
-    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    FEATURE_TEAM_DELETION: true
-    FEATURE_TEAM_PAYMENTS: true
-    CONFIRM_EMAIL: false
-    HIDE_LANDING_PAGE: false
-    GROUP_PREFIX: a5c-
-    DISABLE_NON_BUSINESS_EMAIL_SIGNUP: false
-    APP_URL: http://localhost:4002
-    JACKSON_PRODUCT_ID: a5c
-    JACKSON_WEBHOOK_SECRET: your-webhook-secret
-    JACKSON_API_KEY: secret
-    DEBUG: pw:webserver
-    CI: true
-    # vercel credentials
-    VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
-    VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || '' }}
-    VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID || '' }}      
-    # supabase credentials
-    SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
-    SUPABASE_ORG_ID: ${{ vars.SUPABASE_ORG_ID || '' }}
-    SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || '' }}
-    SUPABASE_PROJECT_URL:  ${{ vars.SUPABASE_PROJECT_URL || '' }}
-    SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD || '' }}
-    # slack credentials
-    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
-    SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET || '' }}
-    SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
-    # discord credentials
-    DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
-    DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}      
-    # access key for stripe api for management
-    STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || '' }}
-    # access key for stripe api for payments
-    STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY || '' }}
-    # webhook secret for stripe
-    STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || '' }}
-    # webhook url for stripe
-    STRIPE_WEBHOOK_URL: ${{ vars.STRIPE_WEBHOOK_URL || '' }}
-    # webhook id for stripe
-    STRIPE_WEBHOOK_ID: ${{ vars.STRIPE_WEBHOOK_ID || '' }}
-    # aws credentials 
-    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || '' }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
-    AWS_REGION: ${{ vars.AWS_REGION || '' }}
-    # gcloud credentials
-    GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '' }}
-    # azure credentials
-    AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || '' }}
-    AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET || '' }}
-    AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || '' }}
-    AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || '' }}
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+  NEXTAUTH_URL: http://localhost:4002
+  NEXTAUTH_SECRET: secret
+  NEXTAUTH_SESSION_STRATEGY: database
+  AUTH_PROVIDERS: github,credentials,saml,idp-initiated
+  FEATURE_TEAM_SSO: true
+  FEATURE_TEAM_DSYNC: true
+  FEATURE_TEAM_AUDIT_LOG: true
+  FEATURE_TEAM_WEBHOOK: false
+  FEATURE_TEAM_API_KEY: true
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  FEATURE_TEAM_DELETION: true
+  FEATURE_TEAM_PAYMENTS: true
+  CONFIRM_EMAIL: false
+  HIDE_LANDING_PAGE: false
+  GROUP_PREFIX: a5c-
+  DISABLE_NON_BUSINESS_EMAIL_SIGNUP: false
+  APP_URL: http://localhost:4002
+  JACKSON_PRODUCT_ID: a5c
+  JACKSON_WEBHOOK_SECRET: your-webhook-secret
+  JACKSON_API_KEY: secret
+  DEBUG: pw:webserver
+  CI: true
+  # vercel credentials
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || '' }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID || '' }}      
+  # supabase credentials
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
+  SUPABASE_ORG_ID: ${{ vars.SUPABASE_ORG_ID || '' }}
+  SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || '' }}
+  SUPABASE_PROJECT_URL:  ${{ vars.SUPABASE_PROJECT_URL || '' }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD || '' }}
+  # slack credentials
+  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
+  SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET || '' }}
+  SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
+  # discord credentials
+  DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
+  DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}      
+  # access key for stripe api for management
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || '' }}
+  # access key for stripe api for payments
+  STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY || '' }}
+  # webhook secret for stripe
+  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || '' }}
+  # webhook url for stripe
+  STRIPE_WEBHOOK_URL: ${{ vars.STRIPE_WEBHOOK_URL || '' }}
+  # webhook id for stripe
+  STRIPE_WEBHOOK_ID: ${{ vars.STRIPE_WEBHOOK_ID || '' }}
+  # aws credentials 
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || '' }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
+  AWS_REGION: ${{ vars.AWS_REGION || '' }}
+  # gcloud credentials
+  GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '' }}
+  # azure credentials
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || '' }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET || '' }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || '' }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || '' }}
 
-    # auth credentials
-    GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || '' }}
-    GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || '' }}
-    AUTH_GITHUB_CLIENT_ID: ${{ secrets.AUTH_GITHUB_CLIENT_ID || '' }}
-    AUTH_GITHUB_CLIENT_SECRET: ${{ secrets.AUTH_GITHUB_CLIENT_SECRET || '' }}
-    AUTH_GITHUB_ORG_ID: ${{ vars.AUTH_GITHUB_ORG_ID || '' }}
-    AUTH_GITHUB_ORG_NAME: ${{ vars.AUTH_GITHUB_ORG_NAME || '' }}
-    AUTH_GITHUB_ORG_DESCRIPTION: ${{ vars.AUTH_GITHUB_ORG_DESCRIPTION || '' }}
+  # auth credentials
+  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || '' }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || '' }}
+  AUTH_GITHUB_CLIENT_ID: ${{ secrets.AUTH_GITHUB_CLIENT_ID || '' }}
+  AUTH_GITHUB_CLIENT_SECRET: ${{ secrets.AUTH_GITHUB_CLIENT_SECRET || '' }}
+  AUTH_GITHUB_ORG_ID: ${{ vars.AUTH_GITHUB_ORG_ID || '' }}
+  AUTH_GITHUB_ORG_NAME: ${{ vars.AUTH_GITHUB_ORG_NAME || '' }}
+  AUTH_GITHUB_ORG_DESCRIPTION: ${{ vars.AUTH_GITHUB_ORG_DESCRIPTION || '' }}
 
-    # other credentials
-    HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY || '' }}
-    HEROKU_APP_NAME: ${{ vars.HEROKU_APP_NAME || '' }}
-    HEROKU_APP_ID: ${{ vars.HEROKU_APP_ID || '' }}
-    HEROKU_APP_URL: ${{ vars.HEROKU_APP_URL || '' }}
+  # other credentials
+  HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY || '' }}
+  HEROKU_APP_NAME: ${{ vars.HEROKU_APP_NAME || '' }}
+  HEROKU_APP_ID: ${{ vars.HEROKU_APP_ID || '' }}
+  HEROKU_APP_URL: ${{ vars.HEROKU_APP_URL || '' }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45  # Increased timeout to handle slow dependency downloads
+    timeout-minutes: 60  # Increased overall timeout
     strategy:
       matrix:
         node-version: [22] 
@@ -102,7 +102,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.23'  # Use stable version instead of go.mod
           cache: true
           cache-dependency-path: |
             go.sum
@@ -118,53 +118,116 @@ jobs:
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
           
-      # Optimize Go module download with parallel processing and retries
-      - name: Download Go modules
-        timeout-minutes: 15
+      # Install Go dependencies separately with optimizations
+      - name: Install Go dependencies
+        timeout-minutes: 10
         run: |
           # Enable module proxy and set timeout
           export GOPROXY=https://proxy.golang.org,direct
           export GOSUMDB=sum.golang.org
-          export GOTIMEOUT=10m
+          export GOTIMEOUT=5m
           
-          # Download with retry logic
-          for i in {1..3}; do
-            echo "Attempt $i: Downloading Go modules..."
-            if go mod download && go mod verify; then
-              echo "✅ Go modules downloaded successfully"
-              break
-            else
-              echo "❌ Attempt $i failed, retrying..."
-              if [ $i -eq 3 ]; then
-                echo "🚨 All attempts failed"
-                exit 1
-              fi
-              sleep 10
-            fi
-          done
+          echo "📦 Downloading Go modules..."
+          go mod download
+          echo "🔍 Verifying Go modules..."
+          go mod verify
+          echo "🧹 Tidying Go modules..."
+          go mod tidy
+          echo "✅ Go dependencies ready"
           
-      # Build with increased timeout and better error handling
-      - name: Build application
-        timeout-minutes: 35  # Increased timeout for slow builds
+      # Install frontend dependencies separately
+      - name: Install frontend dependencies
+        timeout-minutes: 10
+        working-directory: ./frontend
         run: |
+          echo "📦 Installing frontend dependencies..."
+          # Use npm ci for faster, reproducible builds
+          npm ci --prefer-offline --no-audit --no-fund --silent
+          echo "✅ Frontend dependencies ready"
+          
+      # Build Go backend only
+      - name: Build Go backend
+        timeout-minutes: 15
+        run: |
+          echo "🔨 Building Go backend..."
+          
           # Set build optimization flags
           export CGO_ENABLED=0
           export GOOS=linux
           export GOARCH=amd64
-          export GOCACHE=/tmp/go-build-cache
           
-          # Optimize for faster builds
-          export GOMAXPROCS=4
-          export GOGC=100
+          # Build information
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+          VERSION=${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo "dev")}
+          
+          # Set build flags for Go
+          LDFLAGS="-s -w"
+          LDFLAGS="$LDFLAGS -X main.Version=$VERSION"
+          LDFLAGS="$LDFLAGS -X main.BuildTime=$BUILD_DATE"
+          LDFLAGS="$LDFLAGS -X main.GitCommit=$GIT_COMMIT"
+          
+          # Create output directory
+          mkdir -p ./dist
+          
+          # Build the main server binary
+          echo "Building binary with flags: $LDFLAGS"
+          go build \
+            -ldflags "$LDFLAGS" \
+            -trimpath \
+            -o ./dist/hub \
+            ./cmd/server
+            
+          # Verify binary was created
+          if [[ ! -f "./dist/hub" ]]; then
+            echo "❌ Failed to create backend binary"
+            exit 1
+          fi
+          
+          echo "✅ Go backend built successfully"
+          ls -lh ./dist/hub
+        
+      # Build frontend separately
+      - name: Build frontend
+        timeout-minutes: 25
+        working-directory: ./frontend
+        run: |
+          echo "🔨 Building frontend..."
+          
+          # Set environment variables for build
+          export NODE_ENV=production
+          export NEXT_TELEMETRY_DISABLED=1
+          export NODE_OPTIONS="--max-old-space-size=6144"
           
           # Next.js build optimizations to prevent timeouts
           export DISABLE_COLLECT_BUILD_TRACES=1
-          export NEXT_TELEMETRY_DISABLED=1
           export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=true
-          export NODE_OPTIONS="--max-old-space-size=6144"
           
-          # Run build with optimizations
-          ./scripts/build.sh
+          # Build the frontend
+          npm run build
+          
+          echo "✅ Frontend built successfully"
+          
+      # Copy frontend build artifacts
+      - name: Prepare build artifacts
+        run: |
+          echo "📦 Preparing build artifacts..."
+          
+          # Copy frontend build to output directory
+          if [[ -d "frontend/.next" ]]; then
+            echo "Copying frontend build artifacts..."
+            cp -r frontend/.next ./dist/frontend-build
+            cp -r frontend/public ./dist/frontend-public 2>/dev/null || true
+            cp frontend/package.json ./dist/frontend-package.json
+          fi
+          
+          # Build summary
+          echo "🎉 Build completed successfully!"
+          echo "Artifacts:"
+          echo "  Backend binary: ./dist/hub"
+          if [[ -d "./dist/frontend-build" ]]; then
+            echo "  Frontend build: ./dist/frontend-build"
+          fi
         
       # Upload build artifacts for other jobs with compression
       - name: Upload build artifacts
@@ -173,7 +236,6 @@ jobs:
           name: build-artifacts
           path: |
             dist/
-            frontend/.next/
             go.sum
             go.mod
           retention-days: 1
@@ -197,7 +259,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.23'  # Use stable version instead of go.mod
           cache: true
           cache-dependency-path: |
             go.sum
@@ -242,7 +304,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          go-version: '1.23'  # Use stable version instead of go.mod
           cache: true
           cache-dependency-path: |
             go.sum
