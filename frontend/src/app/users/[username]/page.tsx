@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/lib/api';
 import { User, Repository } from '@/types';
+import { createErrorHandler } from '@/lib/utils';
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -20,26 +21,25 @@ export default function UserProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'repositories' | 'activity'>('repositories');
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        const [userResponse, reposResponse] = await Promise.all([
-          api.get(`/users/${username}`),
-          api.get(`/users/${username}/repositories`)
-        ]);
-        setUser(userResponse.data);
-        setRepositories(reposResponse.data);
-      } catch (err: unknown) {
-        setError(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Failed to fetch user data'
-        );
-      } finally {
-        setLoading(false);
-      }
+  const fetchUserData = async () => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
+      const [userResponse, reposResponse] = await Promise.all([
+        api.get(`/users/${username}`),
+        api.get(`/users/${username}/repositories`)
+      ]);
+      return { user: userResponse.data, repositories: reposResponse.data };
     };
 
+    const result = await handleError(operation);
+    if (result) {
+      setUser(result.user);
+      setRepositories(result.repositories);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
   }, [username]);
 
@@ -76,8 +76,8 @@ export default function UserProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-4">Error: {error}</div>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
+            <Button onClick={fetchUserData} disabled={loading}>
+              {loading ? 'Retrying...' : 'Try Again'}
             </Button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { createErrorHandler } from '@/lib/utils';
 
 interface Notification {
   id: string;
@@ -41,23 +42,22 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'participating'>('unread');
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/notifications?filter=${filter}`);
-        setNotifications(response.data);
-      } catch (err: unknown) {
-        setError(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Failed to fetch notifications'
-        );
-      } finally {
-        setLoading(false);
-      }
+  const fetchNotifications = async (currentFilter = filter) => {
+    const handleError = createErrorHandler(setError, setLoading);
+    
+    const operation = async () => {
+      const response = await api.get(`/notifications?filter=${currentFilter}`);
+      return response.data;
     };
 
-    fetchNotifications();
+    const result = await handleError(operation);
+    if (result) {
+      setNotifications(result);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications(filter);
   }, [filter]);
 
   const markAsRead = async (notificationId?: string) => {
@@ -193,8 +193,8 @@ export default function NotificationsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-4">Error: {error}</div>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
+            <Button onClick={fetchNotifications} disabled={loading}>
+              {loading ? 'Retrying...' : 'Try Again'}
             </Button>
           </div>
         </div>
