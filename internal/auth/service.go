@@ -119,7 +119,8 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 		}
 		
 		// Verify MFA code using MFA service
-		mfaService := NewMFAService(s.db)
+		emailService := NewSMTPEmailService(s.config)
+		mfaService := NewMFAServiceWithEmail(s.db, emailService)
 		valid, err := mfaService.VerifyMFACode(user.ID, req.MFACode)
 		if err != nil {
 			return nil, fmt.Errorf("MFA verification failed: %w", err)

@@ -19,6 +19,7 @@ type Config struct {
 	SMTP          SMTP          `mapstructure:"smtp"`
 	SSH           SSH           `mapstructure:"ssh"`
 	Elasticsearch Elasticsearch `mapstructure:"elasticsearch"`
+	Application   Application   `mapstructure:"application"`
 }
 
 type Server struct {
@@ -129,6 +130,11 @@ type Elasticsearch struct {
 	IndexPrefix string  `mapstructure:"index_prefix"`
 }
 
+type Application struct {
+	BaseURL string `mapstructure:"base_url"`
+	Name    string `mapstructure:"name"`
+}
+
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -161,6 +167,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("elasticsearch.enabled", false)
 	viper.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
 	viper.SetDefault("elasticsearch.index_prefix", "hub")
+	viper.SetDefault("application.base_url", "http://localhost:3000")
+	viper.SetDefault("application.name", "A5C Hub")
 
 	viper.AutomaticEnv()
 
@@ -203,6 +211,8 @@ func Load() (*Config, error) {
 	viper.BindEnv("elasticsearch.cloud_id", "ELASTICSEARCH_CLOUD_ID")
 	viper.BindEnv("elasticsearch.api_key", "ELASTICSEARCH_API_KEY")
 	viper.BindEnv("elasticsearch.index_prefix", "ELASTICSEARCH_INDEX_PREFIX")
+	viper.BindEnv("application.base_url", "BASE_URL")
+	viper.BindEnv("application.name", "APPLICATION_NAME")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
