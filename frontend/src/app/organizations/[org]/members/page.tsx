@@ -116,7 +116,7 @@ export default function OrganizationMembersPage() {
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
+        <div className="border-b border-border mb-8">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('members')}

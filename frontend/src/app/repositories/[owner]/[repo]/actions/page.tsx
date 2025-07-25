@@ -48,16 +48,9 @@ export default function ActionsPage() {
 
   const fetchWorkflows = async () => {
     try {
-      console.log('Fetching workflows for:', { owner, repo });
       const data = await apiClient.get(`/repositories/${owner}/${repo}/actions/workflows`);
-      console.log('Workflows response:', data);
       setWorkflows(data.workflows || []);
     } catch (err: any) {
-      console.error('Workflow fetch error:', err);
-      console.error('Error response:', err.response);
-      console.error('Error status:', err.response?.status);
-      console.error('Error data:', err.response?.data);
-      
       if (err.response?.status === 401) {
         setError('Please log in to access GitHub Actions');
       } else if (err.response?.status === 404) {

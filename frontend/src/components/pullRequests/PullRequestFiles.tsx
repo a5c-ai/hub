@@ -192,7 +192,7 @@ export function PullRequestFiles({ files }: PullRequestFilesProps) {
               {isExpanded && (
                 <div className="overflow-x-auto">
                   {file.patch ? (
-                    <div className="border-l-4 border-gray-200">
+                    <div className="border-l-4 border-border">
                       {formatPatch(file.patch)}
                     </div>
                   ) : (

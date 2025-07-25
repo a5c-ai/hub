@@ -153,10 +153,10 @@ export default function RepositorySettingsPage() {
               <div className="space-y-6">
                 <Card>
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Repository Details</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Repository Details</h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Repository Name
                         </label>
                         <Input
@@ -167,7 +167,7 @@ export default function RepositorySettingsPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Description
                         </label>
                         <textarea
@@ -175,12 +175,12 @@ export default function RepositorySettingsPage() {
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           placeholder="Short description of your repository"
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Default Branch
                         </label>
                         <Input
@@ -198,7 +198,7 @@ export default function RepositorySettingsPage() {
                           onChange={(e) => setFormData({ ...formData, private: e.target.checked })}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <label htmlFor="private" className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor="private" className="ml-2 block text-sm text-foreground">
                           Make this repository private
                         </label>
                       </div>
@@ -296,7 +296,7 @@ export default function RepositorySettingsPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions Settings</h3>
                     <div className="space-y-4">
-                      <div className="p-3 border border-gray-200 rounded-lg">
+                      <div className="p-3 border border-border rounded-lg bg-card">
                         <div className="flex items-center">
                           <input
                             type="checkbox"
@@ -309,37 +309,37 @@ export default function RepositorySettingsPage() {
                             Enable GitHub Actions for this repository
                           </label>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2 ml-7">
+                        <p className="text-xs text-muted-foreground mt-2 ml-7">
                           Allow workflows to run on this repository
                         </p>
                       </div>
                       
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Workflow Permissions</h4>
+                        <h4 className="font-medium text-foreground mb-3">Workflow Permissions</h4>
                         <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <label className="flex items-center cursor-pointer p-3 border border-border rounded-lg hover:bg-muted bg-card">
                             <input 
                               type="radio" 
                               name="workflow-permissions" 
                               defaultChecked 
                               aria-label="Read repository contents and metadata permissions"
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
+                              className="h-4 w-4 text-primary focus:ring-primary border-border mr-3"
                             />
                             <div>
-                              <span className="text-sm font-medium text-gray-900">Read repository contents and metadata permissions</span>
-                              <p className="text-xs text-gray-500 mt-1">Actions can read repository contents and metadata</p>
+                              <span className="text-sm font-medium text-foreground">Read repository contents and metadata permissions</span>
+                              <p className="text-xs text-muted-foreground mt-1">Actions can read repository contents and metadata</p>
                             </div>
                           </label>
-                          <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <label className="flex items-center cursor-pointer p-3 border border-border rounded-lg hover:bg-muted bg-card">
                             <input 
                               type="radio" 
                               name="workflow-permissions" 
                               aria-label="Read and write permissions"
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
+                              className="h-4 w-4 text-primary focus:ring-primary border-border mr-3"
                             />
                             <div>
-                              <span className="text-sm font-medium text-gray-900">Read and write permissions</span>
-                              <p className="text-xs text-gray-500 mt-1">Actions can read and write to the repository</p>
+                              <span className="text-sm font-medium text-foreground">Read and write permissions</span>
+                              <p className="text-xs text-muted-foreground mt-1">Actions can read and write to the repository</p>
                             </div>
                           </label>
                         </div>

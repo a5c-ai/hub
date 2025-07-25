@@ -99,7 +99,7 @@ export function IssueForm({
       </div>
 
       {/* Form actions */}
-      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-6 border-t border-border">
         <div>
           {operationError && (
             <p className="text-sm text-red-600">{operationError}</p>

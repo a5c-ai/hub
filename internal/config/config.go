@@ -5,17 +5,18 @@ import (
 )
 
 type Config struct {
-	Environment string     `mapstructure:"environment"`
-	LogLevel    int        `mapstructure:"log_level"`
-	Server      Server     `mapstructure:"server"`
-	Database    Database   `mapstructure:"database"`
-	JWT         JWT        `mapstructure:"jwt"`
-	CORS        CORS       `mapstructure:"cors"`
-	Storage     Storage    `mapstructure:"storage"`
-	Security    Security   `mapstructure:"security"`
-	OAuth       OAuth      `mapstructure:"oauth"`
-	SAML        SAML       `mapstructure:"saml"`
-	LDAP        LDAP       `mapstructure:"ldap"`
+	Environment string   `mapstructure:"environment"`
+	LogLevel    int      `mapstructure:"log_level"`
+	Server      Server   `mapstructure:"server"`
+	Database    Database `mapstructure:"database"`
+	JWT         JWT      `mapstructure:"jwt"`
+	CORS        CORS     `mapstructure:"cors"`
+	Storage     Storage  `mapstructure:"storage"`
+	Security    Security `mapstructure:"security"`
+	OAuth       OAuth    `mapstructure:"oauth"`
+	SAML        SAML     `mapstructure:"saml"`
+	LDAP        LDAP     `mapstructure:"ldap"`
+	SSH         SSH      `mapstructure:"ssh"`
 }
 
 type Server struct {
@@ -74,23 +75,29 @@ type MicrosoftOAuth struct {
 }
 
 type SAML struct {
-	Enabled       bool   `mapstructure:"enabled"`
-	EntityID      string `mapstructure:"entity_id"`
-	SSOURL        string `mapstructure:"sso_url"`
-	Certificate   string `mapstructure:"certificate"`
-	PrivateKey    string `mapstructure:"private_key"`
-	AttributeMap  map[string]string `mapstructure:"attribute_map"`
+	Enabled      bool              `mapstructure:"enabled"`
+	EntityID     string            `mapstructure:"entity_id"`
+	SSOURL       string            `mapstructure:"sso_url"`
+	Certificate  string            `mapstructure:"certificate"`
+	PrivateKey   string            `mapstructure:"private_key"`
+	AttributeMap map[string]string `mapstructure:"attribute_map"`
 }
 
 type LDAP struct {
-	Enabled    bool   `mapstructure:"enabled"`
-	Host       string `mapstructure:"host"`
-	Port       int    `mapstructure:"port"`
-	BaseDN     string `mapstructure:"base_dn"`
-	BindDN     string `mapstructure:"bind_dn"`
-	BindPassword string `mapstructure:"bind_password"`
-	UserFilter string `mapstructure:"user_filter"`
+	Enabled      bool              `mapstructure:"enabled"`
+	Host         string            `mapstructure:"host"`
+	Port         int               `mapstructure:"port"`
+	BaseDN       string            `mapstructure:"base_dn"`
+	BindDN       string            `mapstructure:"bind_dn"`
+	BindPassword string            `mapstructure:"bind_password"`
+	UserFilter   string            `mapstructure:"user_filter"`
 	AttributeMap map[string]string `mapstructure:"attribute_map"`
+}
+
+type SSH struct {
+	Enabled     bool   `mapstructure:"enabled"`
+	Port        int    `mapstructure:"port"`
+	HostKeyPath string `mapstructure:"host_key_path"`
 }
 
 func Load() (*Config, error) {
@@ -113,6 +120,9 @@ func Load() (*Config, error) {
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
 	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
 	viper.SetDefault("security.encryption_key", "default-32-byte-key-for-secrets")
+	viper.SetDefault("ssh.enabled", true)
+	viper.SetDefault("ssh.port", 2222)
+	viper.SetDefault("ssh.host_key_path", "./ssh_host_key")
 
 	viper.AutomaticEnv()
 
@@ -133,6 +143,9 @@ func Load() (*Config, error) {
 	viper.BindEnv("oauth.google.client_secret", "GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("storage.repository_path", "REPOSITORY_PATH")
 	viper.BindEnv("security.encryption_key", "ENCRYPTION_KEY")
+	viper.BindEnv("ssh.enabled", "SSH_ENABLED")
+	viper.BindEnv("ssh.port", "SSH_PORT")
+	viper.BindEnv("ssh.host_key_path", "SSH_HOST_KEY_PATH")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

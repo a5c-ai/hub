@@ -157,7 +157,7 @@ export default function SettingsPage() {
                           onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                           placeholder="Tell us about yourself..."
                           rows={3}
-                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                          className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
                       
@@ -397,7 +397,7 @@ export default function SettingsPage() {
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-foreground mb-3">Upgrade Options</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="border border-gray-200 rounded-lg p-4">
+                          <div className="border border-border rounded-lg p-4 bg-card">
                             <h5 className="font-medium text-foreground mb-2">Pro</h5>
                             <div className="text-2xl font-bold text-foreground mb-2">$4<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                             <ul className="text-sm text-muted-foreground space-y-1 mb-4">
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                             <Button size="sm" className="w-full">Upgrade to Pro</Button>
                           </div>
                           
-                          <div className="border border-gray-200 rounded-lg p-4">
+                          <div className="border border-border rounded-lg p-4 bg-card">
                             <h5 className="font-medium text-foreground mb-2">Team</h5>
                             <div className="text-2xl font-bold text-foreground mb-2">$4<span className="text-sm font-normal text-muted-foreground">/user/month</span></div>
                             <ul className="text-sm text-muted-foreground space-y-1 mb-4">

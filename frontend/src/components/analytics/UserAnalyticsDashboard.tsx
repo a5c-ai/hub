@@ -189,7 +189,7 @@ export const UserAnalyticsDashboard: React.FC<UserAnalyticsDashboardProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+              <div className="border-b border-border">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => {
             const Icon = tab.icon;

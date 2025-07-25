@@ -169,7 +169,7 @@ export default function OrganizationOverviewPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Navigation Tabs */}
-            <div className="border-b border-gray-200 mb-6">
+            <div className="border-b border-border mb-6">
               <nav className="-mb-px flex space-x-8">
                 <button
                   onClick={() => setActiveTab('repositories')}

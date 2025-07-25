@@ -57,7 +57,7 @@ export default function PullRequestsPage() {
         </div>
 
         <Card>
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             {/* Tabs */}
             <div className="flex items-center px-6 py-4">
               <div className="flex space-x-8">

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/models"
@@ -626,6 +627,11 @@ func (h *RepositoryHandlers) GetTree(c *gin.Context) {
 	repoName := c.Param("repo")
 	path := c.Param("path")
 
+	// Clean up the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+
 	if owner == "" || repoName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
 		return
@@ -655,13 +661,23 @@ func (h *RepositoryHandlers) GetTree(c *gin.Context) {
 		ref = repo.DefaultBranch
 	}
 
+	// First try to get as a tree (directory)
 	tree, err := h.gitService.GetTree(c.Request.Context(), repoPath, ref, path)
 	if err != nil {
-		h.logger.WithError(err).Error("Failed to get tree")
-		c.JSON(http.StatusNotFound, gin.H{"error": "Path not found"})
+		// If that fails, try to get as a file
+		file, fileErr := h.gitService.GetFile(c.Request.Context(), repoPath, ref, path)
+		if fileErr != nil {
+			// If both fail, return the original tree error
+			h.logger.WithError(err).Error("Failed to get tree or file")
+			c.JSON(http.StatusNotFound, gin.H{"error": "Path not found"})
+			return
+		}
+		// Return the file content
+		c.JSON(http.StatusOK, file)
 		return
 	}
 
+	// Return the tree content
 	c.JSON(http.StatusOK, tree)
 }
 
@@ -670,6 +686,11 @@ func (h *RepositoryHandlers) GetFile(c *gin.Context) {
 	owner := c.Param("owner")
 	repoName := c.Param("repo")
 	path := c.Param("path")
+
+	// Clean up the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
 
 	if owner == "" || repoName == "" || path == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and file path are required"})
@@ -754,6 +775,11 @@ func (h *RepositoryHandlers) CreateFile(c *gin.Context) {
 	repoName := c.Param("repo")
 	path := c.Param("path")
 
+	// Clean up the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+
 	if owner == "" || repoName == "" || path == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and file path are required"})
 		return
@@ -814,6 +840,11 @@ func (h *RepositoryHandlers) UpdateFile(c *gin.Context) {
 	repoName := c.Param("repo")
 	path := c.Param("path")
 
+	// Clean up the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+
 	if owner == "" || repoName == "" || path == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and file path are required"})
 		return
@@ -873,6 +904,11 @@ func (h *RepositoryHandlers) DeleteFile(c *gin.Context) {
 	owner := c.Param("owner")
 	repoName := c.Param("repo")
 	path := c.Param("path")
+
+	// Clean up the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
 
 	if owner == "" || repoName == "" || path == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner, repository name, and file path are required"})

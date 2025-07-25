@@ -80,13 +80,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
 	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
-	actionsHandlers := NewActionsHandlers(workflowService, runnerService, logger)
+	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
 	userHandlers := NewUserHandlers(authService, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, logger)
 	hooksHandlers := NewHooksHandlers(repositoryService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, logger)
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger)
+	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -244,6 +245,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.GET("/user/analytics/activity", analyticsHandlers.GetUserAnalytics)
 			protected.GET("/user/analytics/contributions", analyticsHandlers.GetUserContributions)
 			protected.GET("/user/analytics/repositories", analyticsHandlers.GetUserRepositories)
+
+			// SSH Keys management
+			protected.GET("/user/keys", sshKeyHandlers.ListSSHKeys)
+			protected.POST("/user/keys", sshKeyHandlers.CreateSSHKey)
+			protected.GET("/user/keys/:id", sshKeyHandlers.GetSSHKey)
+			protected.DELETE("/user/keys/:id", sshKeyHandlers.DeleteSSHKey)
 
 			admin := protected.Group("/admin")
 			admin.Use(middleware.AdminMiddleware())
@@ -464,14 +471,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				orgs.GET("/:org/analytics/repositories", analyticsHandlers.GetOrganizationRepositories)
 				orgs.GET("/:org/analytics/teams", analyticsHandlers.GetOrganizationTeams)
 				orgs.GET("/:org/analytics/security", analyticsHandlers.GetOrganizationSecurity)
-			}
-
-			// Internal analytics recording endpoints (for system use)
-			analytics := protected.Group("/analytics")
-			{
-				analytics.POST("/events", analyticsHandlers.RecordEvent)
-				analytics.POST("/metrics", analyticsHandlers.RecordMetric)
-				analytics.POST("/performance", analyticsHandlers.RecordPerformanceLog)
 			}
 		}
 	}

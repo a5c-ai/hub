@@ -5,7 +5,6 @@ go 1.24.0
 toolchain go1.24.5
 
 require (
-	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/golang-jwt/jwt/v5 v5.2.3

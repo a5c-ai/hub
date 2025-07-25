@@ -43,7 +43,7 @@ export default function NewIssuePage() {
         </div>
 
         {/* Issue form */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        <div className="bg-card shadow-sm rounded-lg border border-border p-6">
           <IssueForm
             repositoryOwner={owner}
             repositoryName={repo}

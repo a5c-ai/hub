@@ -296,6 +296,83 @@ export interface UpdateMilestoneRequest {
   due_on?: string;
 }
 
+// Git repository content types
+export interface TreeEntry {
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  type: 'blob' | 'tree' | 'commit'; // blob = file, tree = directory, commit = submodule
+  mode: string;
+}
+
+export interface Tree {
+  sha: string;
+  path: string;
+  entries: TreeEntry[];
+}
+
+export interface File {
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  type: string;
+  content?: string;
+  encoding?: string; // 'base64' for binary files
+}
+
+export interface Branch {
+  name: string;
+  sha: string;
+  protected: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Commit {
+  sha: string;
+  message: string;
+  author: {
+    name: string;
+    email: string;
+    date: string;
+  };
+  committer: {
+    name: string;
+    email: string;
+    date: string;
+  };
+  parent_shas: string[];
+  tree_sha: string;
+  stats?: {
+    additions: number;
+    deletions: number;
+    total: number;
+  };
+  files?: CommitFile[];
+}
+
+export interface CommitFile {
+  filename: string;
+  status: 'added' | 'deleted' | 'modified' | 'renamed' | 'copied';
+  additions: number;
+  deletions: number;
+  changes: number;
+  patch?: string;
+  previous_filename?: string;
+}
+
+export interface RepositoryInfo {
+  default_branch: string;
+  branches_count: number;
+  tags_count: number;
+  commits_count: number;
+  size: number;
+  languages: Record<string, number>;
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;

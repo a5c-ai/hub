@@ -280,7 +280,7 @@ export default function ProfileEditPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-4 pt-6 border-t border-border">
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>

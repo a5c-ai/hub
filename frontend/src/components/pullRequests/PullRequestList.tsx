@@ -92,7 +92,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center space-x-4 border-b border-gray-200">
+              <div className="flex items-center space-x-4 border-b border-border">
         <button
           onClick={() => handleFilterChange({ state: 'open' })}
           className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -138,7 +138,7 @@ export function PullRequestList({ repositoryOwner, repositoryName, state = 'open
       ) : (
         <div className="space-y-3">
           {pullRequests.map((pr) => (
-            <div key={pr.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+            <div key={pr.id} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors bg-card">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-2">

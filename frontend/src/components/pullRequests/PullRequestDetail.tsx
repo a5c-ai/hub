@@ -69,7 +69,7 @@ export function PullRequestDetail({ pullRequest }: PullRequestDetailProps) {
       </Card>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+              <div className="border-b border-border">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('conversation')}

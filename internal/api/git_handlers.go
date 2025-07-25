@@ -221,13 +221,13 @@ func (h *GitHandlers) handleUploadPackInfoRefs(c *gin.Context, repoPath string) 
 	// Execute git-upload-pack command from the repository directory
 	cmd := exec.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
 	cmd.Dir = repoPath
-	
+
 	h.logger.WithFields(logrus.Fields{
 		"command": cmd.String(),
 		"dir":     repoPath,
 		"args":    cmd.Args,
 	}).Info("Executing git upload-pack command")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
@@ -251,17 +251,28 @@ func (h *GitHandlers) handleReceivePackInfoRefs(c *gin.Context, repoPath string)
 	c.Writer.Write(h.packetWrite("# service=git-receive-pack\n"))
 	c.Writer.Write([]byte("0000"))
 
-	// Execute git-receive-pack command
-	cmd := exec.Command("git-receive-pack", "--stateless-rpc", "--advertise-refs", repoPath)
+	// Execute git receive-pack command from the repository directory
+	cmd := exec.Command("git", "receive-pack", "--stateless-rpc", "--advertise-refs", ".")
 	cmd.Dir = repoPath
+
+	h.logger.WithFields(logrus.Fields{
+		"command": cmd.String(),
+		"dir":     repoPath,
+		"args":    cmd.Args,
+	}).Info("Executing git receive-pack command")
 
 	output, err := cmd.Output()
 	if err != nil {
-		h.logger.WithError(err).Error("Failed to execute git-receive-pack")
+		if exitError, ok := err.(*exec.ExitError); ok {
+			h.logger.WithError(err).WithField("stderr", string(exitError.Stderr)).Error("Failed to execute git-receive-pack")
+		} else {
+			h.logger.WithError(err).Error("Failed to execute git-receive-pack")
+		}
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
+	h.logger.WithField("output_size", len(output)).Info("Git receive-pack completed successfully")
 	c.Writer.Write(output)
 }
 
@@ -301,9 +312,25 @@ func (h *GitHandlers) handleGitCommand(c *gin.Context, repoPath, command string,
 	c.Header("Content-Type", contentType)
 	c.Header("Cache-Control", "no-cache")
 
-	// Create command
-	cmd := exec.Command(command, args...)
+	// Create command - use "git" as the base command and add proper args
+	var cmdArgs []string
+	switch command {
+	case "git-upload-pack":
+		cmdArgs = []string{"upload-pack", "--stateless-rpc", "."}
+	case "git-receive-pack":
+		cmdArgs = []string{"receive-pack", "--stateless-rpc", "."}
+	default:
+		cmdArgs = append([]string{command}, args...)
+	}
+
+	cmd := exec.Command("git", cmdArgs...)
 	cmd.Dir = repoPath
+
+	h.logger.WithFields(logrus.Fields{
+		"command": cmd.String(),
+		"args":    cmd.Args,
+		"dir":     repoPath,
+	}).Info("Executing git command")
 
 	// Set up pipes
 	stdin, err := cmd.StdinPipe()
@@ -364,11 +391,13 @@ func (h *GitHandlers) handleGitCommand(c *gin.Context, repoPath, command string,
 		}
 	}()
 
-	// Wait for command to finish
+	// Wait for command to complete
 	if err := cmd.Wait(); err != nil {
 		h.logger.WithError(err).Error("Git command failed")
-		// Don't return error status here as we may have already started writing response
+		return
 	}
+
+	h.logger.Info("Git command completed successfully")
 }
 
 // packetWrite formats data according to Git packet-line format

@@ -174,6 +174,33 @@ export const repoApi = {
 
   forkRepository: (owner: string, repo: string, organization?: string) =>
     apiClient.post(`/repositories/${owner}/${repo}/forks`, { organization }),
+
+  // Repository content methods
+  getTree: (owner: string, repo: string, path: string = '', ref?: string) => {
+    const params = ref ? { ref } : {};
+    return apiClient.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
+  },
+
+  getFile: (owner: string, repo: string, path: string, ref?: string) => {
+    const params = ref ? { ref } : {};
+    return apiClient.get(`/repositories/${owner}/${repo}/contents/${path}`, { params });
+  },
+
+  getRepositoryInfo: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/info`),
+
+  getBranches: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/branches`),
+
+  getCommits: (owner: string, repo: string, ref?: string, path?: string) => {
+    const params: Record<string, string> = {};
+    if (ref) params.ref = ref;
+    if (path) params.path = path;
+    return apiClient.get(`/repositories/${owner}/${repo}/commits`, { params });
+  },
+
+  getCommit: (owner: string, repo: string, sha: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/commits/${sha}`),
 };
 
 // Organization API methods
