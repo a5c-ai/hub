@@ -46,33 +46,33 @@ api.interceptors.response.use(
 
 // Generic API methods
 export const apiClient = {
-  get: async <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  get: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     const response = await api.get(url, config);
     return response.data;
   },
 
-  post: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  post: async <T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     const response = await api.post(url, data, config);
     return response.data;
   },
 
-  put: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  put: async <T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     const response = await api.put(url, data, config);
     return response.data;
   },
 
-  patch: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  patch: async <T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     const response = await api.patch(url, data, config);
     return response.data;
   },
 
-  delete: async <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
     const response = await api.delete(url, config);
     return response.data;
   },
 
   // Paginated request helper
-  getPaginated: async <T>(
+  getPaginated: async <T = any>(
     url: string, 
     params?: { page?: number; per_page?: number; [key: string]: unknown }
   ): Promise<PaginatedResponse<T>> => {
