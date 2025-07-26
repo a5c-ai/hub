@@ -9,9 +9,11 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import RepositoryBrowser from '@/components/repository/RepositoryBrowser';
+import LanguageStats from '@/components/repository/LanguageStats';
 import api, { repoApi } from '@/lib/api';
 import { Repository } from '@/types';
 import { createErrorHandler } from '@/lib/utils';
+import { useRepositoryStats } from '@/hooks/useRepositoryStats';
 
 export default function RepositoryDetailsPage() {
   const params = useParams();
@@ -25,6 +27,15 @@ export default function RepositoryDetailsPage() {
   const [forkCount, setForkCount] = useState(0);
   const [starLoading, setStarLoading] = useState(false);
   const [forkLoading, setForkLoading] = useState(false);
+
+  // Fetch repository statistics
+  const { 
+    statistics, 
+    languages, 
+    contributors, 
+    loading: statsLoading, 
+    error: statsError 
+  } = useRepositoryStats(owner, repo);
 
   const fetchRepository = async () => {
     const handleError = createErrorHandler(setError, setLoading);
@@ -278,6 +289,15 @@ export default function RepositoryDetailsPage() {
                   </svg>
                   Actions
                 </Link>
+                <Link
+                  href={`/repositories/${owner}/${repo}/insights`}
+                  className="border-transparent text-muted-foreground hover:text-foreground hover:border-border border-b-2 py-2 px-1 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Insights
+                </Link>
               </nav>
             </div>
 
@@ -386,6 +406,17 @@ export default function RepositoryDetailsPage() {
                 </div>
               </div>
             </Card>
+
+            {/* Language Statistics */}
+            {languages && languages.length > 0 && (
+              <LanguageStats
+                languages={languages}
+                primaryLanguage={statistics?.primary_language}
+                showPercentages={true}
+                showBytes={true}
+                compact={false}
+              />
+            )}
           </div>
         </div>
       </div>

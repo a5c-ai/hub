@@ -1,127 +1,196 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import RepositoryInsights from '@/components/analytics/RepositoryInsights';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-
-// Mock data for development - replace with actual API calls
-const mockRepositoryInsights = {
-  repository: {
-    id: '1',
-    name: 'example-repo',
-    description: 'An example repository for testing analytics',
-    language: 'TypeScript',
-    starsCount: 245,
-    forksCount: 67,
-    watchersCount: 32,
-  },
-  codeStats: {
-    totalLinesOfCode: 15420,
-    totalFiles: 156,
-    totalCommits: 342,
-    totalBranches: 8,
-    languageBreakdown: {
-      'TypeScript': 65.4,
-      'JavaScript': 20.1,
-      'CSS': 8.2,
-      'HTML': 4.1,
-      'JSON': 2.2,
-    },
-  },
-  activityStats: {
-    totalViews: 1240,
-    totalClones: 89,
-    activityTrend: [
-      { date: '2024-01-01', commits: 12, views: 45 },
-      { date: '2024-01-02', commits: 8, views: 52 },
-      { date: '2024-01-03', commits: 15, views: 38 },
-    ],
-  },
-  contributorStats: {
-    totalContributors: 8,
-    activeContributors: 3,
-    topContributors: [
-      { username: 'alice', commitCount: 156, linesAdded: 4521, linesDeleted: 1204 },
-      { username: 'bob', commitCount: 89, linesAdded: 2103, linesDeleted: 567 },
-      { username: 'charlie', commitCount: 67, linesAdded: 1890, linesDeleted: 345 },
-      { username: 'diana', commitCount: 30, linesAdded: 890, linesDeleted: 123 },
-    ],
-  },
-  issueStats: {
-    totalIssues: 45,
-    openIssues: 8,
-    closedIssues: 37,
-    avgTimeToClose: 48.5,
-  },
-  pullRequestStats: {
-    totalPullRequests: 78,
-    openPullRequests: 5,
-    mergedPullRequests: 68,
-    avgTimeToMerge: 24.2,
-  },
-};
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import RepositoryStats from '@/components/repository/RepositoryStats';
+import LanguageStats from '@/components/repository/LanguageStats';
+import ContributorStats from '@/components/repository/ContributorStats';
+import { useRepositoryStats } from '@/hooks/useRepositoryStats';
+import { ExclamationTriangleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function RepositoryInsightsPage() {
   const params = useParams();
   const owner = params.owner as string;
   const repo = params.repo as string;
   
-  const [data, setData] = useState<typeof mockRepositoryInsights | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        setIsLoading(true);
-        setError(undefined);
-
-        // Replace with actual API call
-        // const response = await fetch(`/api/v1/repositories/${owner}/${repo}/analytics`);
-        // if (!response.ok) {
-        //   throw new Error('Failed to fetch repository insights');
-        // }
-        // const result = await response.json();
-        
-        // For now, use mock data with a delay to simulate loading
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setData(mockRepositoryInsights);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (owner && repo) {
-      fetchInsights();
-    }
-  }, [owner, repo]);
+  const { 
+    statistics, 
+    languages, 
+    contributors, 
+    loading, 
+    error, 
+    refetch 
+  } = useRepositoryStats(owner, repo);
 
   if (!owner || !repo) {
     return (
-      <Card className="p-6">
-        <div className="text-center">
-          <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">Invalid Repository</h3>
-          <p className="text-muted-foreground">The repository owner or name is missing from the URL.</p>
+      <AppLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="p-6">
+            <div className="text-center">
+              <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Invalid Repository</h3>
+              <p className="text-muted-foreground">The repository owner or name is missing from the URL.</p>
+            </div>
+          </Card>
         </div>
-      </Card>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <RepositoryInsights
-        owner={owner}
-        repo={repo}
-        data={data}
-        isLoading={isLoading}
-        error={error}
-      />
-    </div>
+    <AppLayout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link 
+            href="/repositories" 
+            className="hover:text-foreground transition-colors"
+          >
+            Repositories
+          </Link>
+          <span>/</span>
+          <Link 
+            href={`/repositories/${owner}/${repo}`}
+            className="hover:text-foreground transition-colors"
+          >
+            {owner}/{repo}
+          </Link>
+          <span>/</span>
+          <span className="text-foreground font-medium">Insights</span>
+        </nav>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-3">
+            <ChartBarIcon className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Repository Insights
+              </h1>
+              <p className="text-muted-foreground">
+                Statistics and analytics for {owner}/{repo}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            <Link href={`/repositories/${owner}/${repo}`}>
+              <Button variant="secondary" size="sm">
+                Back to Repository
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="border-b border-border mb-8">
+          <nav className="-mb-px flex space-x-8">
+            <div className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
+              <ChartBarIcon className="w-4 h-4 mr-2 inline" />
+              Overview
+            </div>
+          </nav>
+        </div>
+
+        {/* Loading State */}
+        {loading && !statistics && (
+          <div className="space-y-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+              <div className="h-4 bg-muted rounded w-2/3 mb-6"></div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="p-6">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-8 bg-muted rounded w-1/2"></div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="p-6">
+            <div className="text-center">
+              <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Failed to load insights</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={refetch} disabled={loading}>
+                {loading ? 'Retrying...' : 'Retry'}
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Content */}
+        {!loading && !error && (
+          <div className="space-y-8">
+            {/* Repository Statistics */}
+            {statistics && (
+              <RepositoryStats statistics={statistics} />
+            )}
+
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Language Statistics */}
+              {languages && languages.length > 0 && (
+                <LanguageStats
+                  languages={languages}
+                  primaryLanguage={statistics?.primary_language}
+                  showPercentages={true}
+                  showBytes={true}
+                  compact={false}
+                />
+              )}
+
+              {/* Contributor Statistics */}
+              {contributors && contributors.length > 0 && (
+                <ContributorStats
+                  contributors={contributors}
+                  totalContributors={statistics?.contributors}
+                  showDetails={true}
+                  maxDisplay={10}
+                />
+              )}
+            </div>
+
+            {/* Empty State */}
+            {!statistics && !languages?.length && !contributors?.length && (
+              <Card className="p-12">
+                <div className="text-center">
+                  <ChartBarIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-medium text-foreground mb-2">No insights available</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Repository statistics will appear here once the repository has been analyzed.
+                  </p>
+                  <div className="flex items-center justify-center space-x-3">
+                    <Button onClick={refetch} disabled={loading}>
+                      {loading ? 'Analyzing...' : 'Analyze Repository'}
+                    </Button>
+                    <Badge variant="outline" className="text-xs">
+                      This may take a few moments
+                    </Badge>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }

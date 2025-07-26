@@ -402,3 +402,51 @@ export interface IssuesListResponse {
   page: number;
   per_page: number;
 }
+
+// Repository Statistics Types
+export interface RepositoryLanguage {
+  id: string;
+  repository_id: string;
+  language: string;
+  bytes: number;
+  percentage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RepositoryStatistics {
+  id: string;
+  repository_id: string;
+  size_bytes: number;
+  commit_count: number;
+  branch_count: number;
+  tag_count: number;
+  contributors: number;
+  last_activity?: string;
+  primary_language: string;
+  language_count: number;
+  created_at: string;
+  updated_at: string;
+  repository?: Repository;
+  languages?: RepositoryLanguage[];
+}
+
+export interface RepositoryStatsResponse {
+  stats: RepositoryStatistics;
+  languages: Record<string, number>;
+  contributors: Array<{
+    name: string;
+    email: string;
+    commits: number;
+  }>;
+}
+
+export interface ContributorStats {
+  name: string;
+  email: string;
+  commits: number;
+  additions: number;
+  deletions: number;
+  first_commit_date: string;
+  last_commit_date: string;
+}
