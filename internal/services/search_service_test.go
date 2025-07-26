@@ -6,6 +6,7 @@ import (
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -31,7 +32,7 @@ func setupSearchTestDB(t *testing.T) *gorm.DB {
 
 func TestSearchService_GlobalSearch(t *testing.T) {
 	db := setupSearchTestDB(t)
-	service := NewSearchService(db)
+	service := NewSearchService(db, nil, logrus.New())
 
 	// Create test data
 	user := models.User{
@@ -83,12 +84,12 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 	require.NoError(t, db.Create(&commit).Error)
 
 	tests := []struct {
-		name        string
-		filter      SearchFilter
-		expectUsers bool
-		expectRepos bool
-		expectIssues bool
-		expectOrgs  bool
+		name          string
+		filter        SearchFilter
+		expectUsers   bool
+		expectRepos   bool
+		expectIssues  bool
+		expectOrgs    bool
 		expectCommits bool
 	}{
 		{
@@ -197,7 +198,7 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 
 func TestSearchService_SearchUsers(t *testing.T) {
 	db := setupSearchTestDB(t)
-	service := NewSearchService(db)
+	service := NewSearchService(db, nil, logrus.New())
 
 	// Create test users
 	user1 := models.User{
@@ -267,7 +268,7 @@ func TestSearchService_SearchUsers(t *testing.T) {
 
 func TestSearchService_SearchRepositories(t *testing.T) {
 	db := setupSearchTestDB(t)
-	service := NewSearchService(db)
+	service := NewSearchService(db, nil, logrus.New())
 
 	// Create test user
 	user := models.User{
@@ -279,26 +280,26 @@ func TestSearchService_SearchRepositories(t *testing.T) {
 
 	// Create test repositories
 	repo1 := models.Repository{
-		ID:              uuid.New(),
-		Name:            "awesome-project",
-		Description:     "An awesome web application",
-		OwnerID:         user.ID,
-		OwnerType:       "user",
-		Visibility:      "public",
-		StarsCount:      100,
-		ForksCount:      25,
+		ID:          uuid.New(),
+		Name:        "awesome-project",
+		Description: "An awesome web application",
+		OwnerID:     user.ID,
+		OwnerType:   "user",
+		Visibility:  "public",
+		StarsCount:  100,
+		ForksCount:  25,
 	}
 	require.NoError(t, db.Create(&repo1).Error)
 
 	repo2 := models.Repository{
-		ID:              uuid.New(),
-		Name:            "api-server",
-		Description:     "REST API server in Go",
-		OwnerID:         user.ID,
-		OwnerType:       "user",
-		Visibility:      "private",
-		StarsCount:      50,
-		ForksCount:      10,
+		ID:          uuid.New(),
+		Name:        "api-server",
+		Description: "REST API server in Go",
+		OwnerID:     user.ID,
+		OwnerType:   "user",
+		Visibility:  "private",
+		StarsCount:  50,
+		ForksCount:  10,
 	}
 	require.NoError(t, db.Create(&repo2).Error)
 
@@ -349,7 +350,7 @@ func TestSearchService_SearchRepositories(t *testing.T) {
 
 func TestSearchService_EmptyQuery(t *testing.T) {
 	db := setupSearchTestDB(t)
-	service := NewSearchService(db)
+	service := NewSearchService(db, nil, logrus.New())
 
 	results, err := service.GlobalSearch(SearchFilter{
 		Query:   "",
@@ -364,7 +365,7 @@ func TestSearchService_EmptyQuery(t *testing.T) {
 
 func TestSearchService_Pagination(t *testing.T) {
 	db := setupSearchTestDB(t)
-	service := NewSearchService(db)
+	service := NewSearchService(db, nil, logrus.New())
 
 	// Create multiple test users
 	for i := 0; i < 35; i++ {
