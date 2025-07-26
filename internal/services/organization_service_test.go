@@ -77,6 +77,7 @@ func setupOrgTestDB(t *testing.T) *gorm.DB {
 			organization_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,
 			role TEXT NOT NULL,
+			custom_role_id TEXT,
 			public_member BOOLEAN DEFAULT FALSE,
 			FOREIGN KEY (organization_id) REFERENCES organizations(id),
 			FOREIGN KEY (user_id) REFERENCES users(id)

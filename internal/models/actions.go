@@ -86,7 +86,7 @@ const (
 
 // Workflow represents a workflow definition
 type Workflow struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -258,3 +258,11 @@ func (Step) TableName() string        { return "steps" }
 func (Runner) TableName() string      { return "runners" }
 func (Artifact) TableName() string    { return "artifacts" }
 func (Secret) TableName() string      { return "secrets" }
+
+// BeforeCreate hook will set a new UUID if ID is empty to support SQLite in-memory databases
+func (a *Artifact) BeforeCreate(tx *gorm.DB) (err error) {
+	if a.ID == uuid.Nil {
+		a.ID = uuid.New()
+	}
+	return
+}

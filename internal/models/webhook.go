@@ -9,7 +9,7 @@ import (
 
 // Webhook represents a repository webhook configuration
 type Webhook struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -64,7 +64,7 @@ func (w *Webhook) SetEventsSlice(events []string) {
 
 // WebhookDelivery represents a webhook delivery attempt
 type WebhookDelivery struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -95,7 +95,7 @@ func (wd *WebhookDelivery) TableName() string {
 
 // DeployKey represents a repository deploy key
 type DeployKey struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -118,7 +118,7 @@ func (dk *DeployKey) TableName() string {
 
 // WebhookEvent represents a webhook event that needs to be delivered
 type WebhookEvent struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -135,4 +135,33 @@ type WebhookEvent struct {
 
 func (we *WebhookEvent) TableName() string {
 	return "webhook_events"
+}
+
+// BeforeCreate hooks to set UUIDs for SQLite compatibility when ID is empty
+func (w *Webhook) BeforeCreate(tx *gorm.DB) (err error) {
+	if w.ID == uuid.Nil {
+		w.ID = uuid.New()
+	}
+	return
+}
+
+func (wd *WebhookDelivery) BeforeCreate(tx *gorm.DB) (err error) {
+	if wd.ID == uuid.Nil {
+		wd.ID = uuid.New()
+	}
+	return
+}
+
+func (dk *DeployKey) BeforeCreate(tx *gorm.DB) (err error) {
+	if dk.ID == uuid.Nil {
+		dk.ID = uuid.New()
+	}
+	return
+}
+
+func (we *WebhookEvent) BeforeCreate(tx *gorm.DB) (err error) {
+	if we.ID == uuid.Nil {
+		we.ID = uuid.New()
+	}
+	return
 }
