@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { RefreshTokenManager } from './RefreshTokenManager';
+import { TokenBlacklistManager } from './TokenBlacklistManager';
+import { OIDCOrganizationMapper } from './OIDCOrganizationMapper';
+import { SAMLOrganizationMapper } from './SAMLOrganizationMapper';
+import { TeamSyncDashboard } from './TeamSyncDashboard';
+import { OAuthDebugger } from './OAuthDebugger';
+import { AuthAuditLogViewer } from './AuthAuditLogViewer';
 import api from '@/lib/api';
 
 interface SecurityEvent {
@@ -42,7 +49,10 @@ interface RateLimitConfig {
   enabled: boolean;
 }
 
+type SecurityTab = 'overview' | 'tokens' | 'blacklist' | 'oidc' | 'saml' | 'team-sync' | 'oauth-debug' | 'audit-logs';
+
 export function SecurityDashboard() {
+  const [activeTab, setActiveTab] = useState<SecurityTab>('overview');
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [metrics, setMetrics] = useState<SecurityMetrics>({
     total_login_attempts: 0,
@@ -175,32 +185,41 @@ export function SecurityDashboard() {
     return new Date(timestamp).toLocaleString();
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Security Dashboard</h2>
-          <p className="text-muted-foreground">Monitor authentication security and configure rate limiting</p>
-        </div>
-        
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => exportSecurityReport('csv')}
-          >
-            Export CSV
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => exportSecurityReport('json')}
-          >
-            Export JSON
-          </Button>
-        </div>
-      </div>
+  const tabs = [
+    { id: 'overview' as SecurityTab, name: 'Overview', icon: '📊' },
+    { id: 'tokens' as SecurityTab, name: 'Refresh Tokens', icon: '🔄' },
+    { id: 'blacklist' as SecurityTab, name: 'Token Blacklist', icon: '🚫' },
+    { id: 'oidc' as SecurityTab, name: 'OIDC Mapping', icon: '🔗' },
+    { id: 'saml' as SecurityTab, name: 'SAML Mapping', icon: '🏢' },
+    { id: 'team-sync' as SecurityTab, name: 'Team Sync', icon: '👥' },
+    { id: 'oauth-debug' as SecurityTab, name: 'OAuth Debug', icon: '🧪' },
+    { id: 'audit-logs' as SecurityTab, name: 'Audit Logs', icon: '📋' },
+  ];
 
-      {/* Time Range Selector */}
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'tokens':
+        return <RefreshTokenManager isAdminView={true} />;
+      case 'blacklist':
+        return <TokenBlacklistManager isAdminView={true} />;
+      case 'oidc':
+        return <OIDCOrganizationMapper />;
+      case 'saml':
+        return <SAMLOrganizationMapper />;
+      case 'team-sync':
+        return <TeamSyncDashboard />;
+      case 'oauth-debug':
+        return <OAuthDebugger />;
+      case 'audit-logs':
+        return <AuthAuditLogViewer />;
+      case 'overview':
+      default:
+        return renderOverviewContent();
+    }
+  };
+
+  const renderOverviewContent = () => (
+    <div className="space-y-6">{/* Time Range Selector */}
       <Card>
         <div className="p-4">
           <div className="flex space-x-2">
@@ -441,6 +460,60 @@ export function SecurityDashboard() {
           )}
         </div>
       </Card>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Security Dashboard</h2>
+          <p className="text-muted-foreground">Monitor authentication security and advanced authentication features</p>
+        </div>
+        
+        {activeTab === 'overview' && (
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => exportSecurityReport('csv')}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => exportSecurityReport('json')}
+            >
+              Export JSON
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation Tabs */}
+      <Card>
+        <div className="p-4">
+          <nav className="flex space-x-1 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.name}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </Card>
+
+      {/* Tab Content */}
+      {renderTabContent()}
     </div>
   );
 }
