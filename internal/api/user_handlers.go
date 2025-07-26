@@ -78,20 +78,20 @@ func (h *UserHandlers) GetCurrentUserProfile(c *gin.Context) {
 
 	// Return full user profile information (including private fields)
 	c.JSON(http.StatusOK, gin.H{
-		"id":                user.ID,
-		"username":          user.Username,
-		"email":             user.Email,
-		"full_name":         user.FullName,
-		"avatar_url":        user.AvatarURL,
-		"bio":               user.Bio,
-		"company":           user.Company,
-		"location":          user.Location,
-		"website":           user.Website,
-		"email_verified":    user.EmailVerified,
-		"mfa_enabled":       user.TwoFactorEnabled,
-		"created_at":        user.CreatedAt,
-		"updated_at":        user.UpdatedAt,
-		"type":              "user",
+		"id":             user.ID,
+		"username":       user.Username,
+		"email":          user.Email,
+		"full_name":      user.FullName,
+		"avatar_url":     user.AvatarURL,
+		"bio":            user.Bio,
+		"company":        user.Company,
+		"location":       user.Location,
+		"website":        user.Website,
+		"email_verified": user.EmailVerified,
+		"mfa_enabled":    user.TwoFactorEnabled,
+		"created_at":     user.CreatedAt,
+		"updated_at":     user.UpdatedAt,
+		"type":           "user",
 	})
 }
 
@@ -154,20 +154,20 @@ func (h *UserHandlers) UpdateUserProfile(c *gin.Context) {
 
 	// Return updated user profile
 	c.JSON(http.StatusOK, gin.H{
-		"id":                user.ID,
-		"username":          user.Username,
-		"email":             user.Email,
-		"full_name":         user.FullName,
-		"avatar_url":        user.AvatarURL,
-		"bio":               user.Bio,
-		"company":           user.Company,
-		"location":          user.Location,
-		"website":           user.Website,
-		"email_verified":    user.EmailVerified,
-		"mfa_enabled":       user.TwoFactorEnabled,
-		"created_at":        user.CreatedAt,
-		"updated_at":        user.UpdatedAt,
-		"type":              "user",
+		"id":             user.ID,
+		"username":       user.Username,
+		"email":          user.Email,
+		"full_name":      user.FullName,
+		"avatar_url":     user.AvatarURL,
+		"bio":            user.Bio,
+		"company":        user.Company,
+		"location":       user.Location,
+		"website":        user.Website,
+		"email_verified": user.EmailVerified,
+		"mfa_enabled":    user.TwoFactorEnabled,
+		"created_at":     user.CreatedAt,
+		"updated_at":     user.UpdatedAt,
+		"type":           "user",
 	})
 }
 
@@ -226,10 +226,10 @@ func (h *UserHandlers) GetUserActivity(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"activities": []gin.H{},
 		"pagination": gin.H{
-			"page":      1,
-			"per_page":  30,
-			"total":     0,
-			"has_more":  false,
+			"page":     1,
+			"per_page": 30,
+			"total":    0,
+			"has_more": false,
 		},
 	})
 }
@@ -246,19 +246,19 @@ func (h *UserHandlers) GetNotifications(c *gin.Context) {
 	participating := c.Query("participating") == "true"
 	all := c.Query("all") == "true"
 
-	// For now, return empty notifications list  
+	// For now, return empty notifications list
 	// In a full implementation, this would query notifications from the database
 	c.JSON(http.StatusOK, gin.H{
 		"notifications": []gin.H{},
 		"pagination": gin.H{
-			"page":      1,
-			"per_page":  30,
-			"total":     0,
-			"has_more":  false,
+			"page":     1,
+			"per_page": 30,
+			"total":    0,
+			"has_more": false,
 		},
 		"filters": gin.H{
 			"participating": participating,
-			"all":          all,
+			"all":           all,
 		},
 	})
 }
@@ -298,7 +298,7 @@ func (h *UserHandlers) GetEmailVerificationStatus(c *gin.Context) {
 	// Initialize email verification service
 	emailService := auth.NewSMTPEmailService(h.config)
 	verificationService := auth.NewEmailVerificationService(h.db, emailService)
-	
+
 	// Get verification status and any active token
 	verified, token, err := verificationService.GetVerificationStatus(userID.(uuid.UUID))
 	if err != nil {
@@ -344,7 +344,7 @@ func (h *UserHandlers) ResendEmailVerification(c *gin.Context) {
 
 // GetEmailPreferences handles GET /api/v1/user/email/preferences
 func (h *UserHandlers) GetEmailPreferences(c *gin.Context) {
-	_, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
@@ -353,16 +353,16 @@ func (h *UserHandlers) GetEmailPreferences(c *gin.Context) {
 	// For now, return default preferences
 	// In a full implementation, this would query user preferences from database
 	h.logger.WithField("user_id", userID).Info("Email preferences retrieved")
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"issues_and_prs":        true,
-		"repository_updates":    true,
-		"security_alerts":       true,
-		"mfa_notifications":     true,
-		"password_reset":        true,
-		"email_verification":    true,
-		"weekly_digest":         false,
-		"marketing_emails":      false,
+		"issues_and_prs":     true,
+		"repository_updates": true,
+		"security_alerts":    true,
+		"mfa_notifications":  true,
+		"password_reset":     true,
+		"email_verification": true,
+		"weekly_digest":      false,
+		"marketing_emails":   false,
 	})
 }
 
@@ -375,14 +375,14 @@ func (h *UserHandlers) UpdateEmailPreferences(c *gin.Context) {
 	}
 
 	var req struct {
-		IssuesAndPRs       *bool `json:"issues_and_prs,omitempty"`
-		RepositoryUpdates  *bool `json:"repository_updates,omitempty"`
-		SecurityAlerts     *bool `json:"security_alerts,omitempty"`
-		MFANotifications   *bool `json:"mfa_notifications,omitempty"`
-		PasswordReset      *bool `json:"password_reset,omitempty"`
-		EmailVerification  *bool `json:"email_verification,omitempty"`
-		WeeklyDigest       *bool `json:"weekly_digest,omitempty"`
-		MarketingEmails    *bool `json:"marketing_emails,omitempty"`
+		IssuesAndPRs      *bool `json:"issues_and_prs,omitempty"`
+		RepositoryUpdates *bool `json:"repository_updates,omitempty"`
+		SecurityAlerts    *bool `json:"security_alerts,omitempty"`
+		MFANotifications  *bool `json:"mfa_notifications,omitempty"`
+		PasswordReset     *bool `json:"password_reset,omitempty"`
+		EmailVerification *bool `json:"email_verification,omitempty"`
+		WeeklyDigest      *bool `json:"weekly_digest,omitempty"`
+		MarketingEmails   *bool `json:"marketing_emails,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -397,14 +397,14 @@ func (h *UserHandlers) UpdateEmailPreferences(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Email preferences updated successfully",
 		"preferences": gin.H{
-			"issues_and_prs":       req.IssuesAndPRs,
-			"repository_updates":   req.RepositoryUpdates,
-			"security_alerts":      req.SecurityAlerts,
-			"mfa_notifications":    req.MFANotifications,
-			"password_reset":       req.PasswordReset,
-			"email_verification":   req.EmailVerification,
-			"weekly_digest":        req.WeeklyDigest,
-			"marketing_emails":     req.MarketingEmails,
+			"issues_and_prs":     req.IssuesAndPRs,
+			"repository_updates": req.RepositoryUpdates,
+			"security_alerts":    req.SecurityAlerts,
+			"mfa_notifications":  req.MFANotifications,
+			"password_reset":     req.PasswordReset,
+			"email_verification": req.EmailVerification,
+			"weekly_digest":      req.WeeklyDigest,
+			"marketing_emails":   req.MarketingEmails,
 		},
 	})
 }

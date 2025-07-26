@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/a5c-ai/hub/internal/storage"
@@ -32,12 +33,12 @@ func NewAdminStorageHandlers(artifactService *services.ArtifactService, storageB
 
 // StorageConfigRequest represents a storage configuration request
 type StorageConfigRequest struct {
-	Backend       string                 `json:"backend"`
-	Azure         storage.AzureConfig    `json:"azure,omitempty"`
-	S3            storage.S3Config       `json:"s3,omitempty"`
+	Backend       string                   `json:"backend"`
+	Azure         storage.AzureConfig      `json:"azure,omitempty"`
+	S3            storage.S3Config         `json:"s3,omitempty"`
 	Filesystem    storage.FilesystemConfig `json:"filesystem,omitempty"`
-	MaxSizeMB     int64                  `json:"max_size_mb"`
-	RetentionDays int                    `json:"retention_days"`
+	MaxSizeMB     int64                    `json:"max_size_mb"`
+	RetentionDays int                      `json:"retention_days"`
 }
 
 // StorageConfigResponse represents storage configuration response
@@ -56,7 +57,7 @@ func (h *AdminStorageHandlers) GetStorageConfig(c *gin.Context) {
 		Backend:       "filesystem", // This should be read from actual config
 		MaxSizeMB:     100,          // This should be read from artifact service
 		RetentionDays: h.artifactService.GetRetentionPolicy(),
-		Health:        "healthy",    // TODO: Implement actual health check
+		Health:        "healthy", // TODO: Implement actual health check
 	}
 
 	c.JSON(http.StatusOK, config)
@@ -148,7 +149,7 @@ func (h *AdminStorageHandlers) UpdateRetentionPolicy(c *gin.Context) {
 	}
 
 	h.artifactService.SetRetentionDays(req.RetentionDays)
-	
+
 	h.logger.WithField("retention_days", req.RetentionDays).Info("Retention policy updated")
 
 	c.JSON(http.StatusOK, gin.H{
@@ -285,8 +286,9 @@ func (h *AdminStorageHandlers) BatchDeleteArtifacts(c *gin.Context) {
 
 // GetStorageHealth handles GET /api/v1/admin/storage/health
 func (h *AdminStorageHandlers) GetStorageHealth(c *gin.Context) {
-	ctx := context.WithTimeout(c.Request.Context(), 10*context.Second)
-	
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
 	health := map[string]interface{}{
 		"status": "healthy",
 		"checks": map[string]interface{}{},
@@ -295,7 +297,7 @@ func (h *AdminStorageHandlers) GetStorageHealth(c *gin.Context) {
 	// Test storage backend connectivity
 	testPath := "health-check/test.txt"
 	testContent := "health check"
-	
+
 	// Try to upload a test file
 	if err := h.storageBackend.Upload(ctx, testPath, strings.NewReader(testContent), int64(len(testContent))); err != nil {
 		health["status"] = "unhealthy"
