@@ -15,9 +15,12 @@
    useEffect(() => {
      async function fetchPosition() {
        try {
-         const res = await apiClient.get<{ position: number; estimated_wait_time: string }>(`/actions/runs/${runId}/queue-position`);
-         setPosition(res.position);
-         setWaitTime(res.estimated_wait_time);
+        const res = await apiClient.get<{ position: number; estimated_wait_time: string }>(
+          `/actions/runs/${runId}/queue-position`
+        );
+        // APIClient returns data wrapped in the 'data' property
+        setPosition(res.data.position);
+        setWaitTime(res.data.estimated_wait_time);
        } catch (err: any) {
          setError(err.response?.data?.error || 'Failed to load queue status');
        }

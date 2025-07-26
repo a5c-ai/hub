@@ -57,8 +57,11 @@ interface Step {
 }
 
 export default function WorkflowRunDetailPage() {
-  const params = useParams();
-  const { owner, repo, runId } = params;
+  const { owner, repo, runId } = useParams<{
+    owner: string;
+    repo: string;
+    runId: string;
+  }>();
   
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [loading, setLoading] = useState(true);
