@@ -75,7 +75,10 @@ export function BranchRestrictionsConfig({
           }
 
           const results = await Promise.all(searchPromises);
-          const combinedResults = results.reduce((acc, result) => ({ ...acc, ...result }), { users: [], teams: [] });
+          const combinedResults = results.reduce<{ users: User[], teams: Team[] }>((acc, result) => ({
+            users: (result as any).users || acc.users,
+            teams: (result as any).teams || acc.teams
+          }), { users: [], teams: [] });
           setSearchResults(combinedResults);
         } catch (error) {
           console.error('Search error:', error);
