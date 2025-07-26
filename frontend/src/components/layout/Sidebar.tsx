@@ -6,16 +6,18 @@ import {
   HomeIcon,
   // DocumentTextIcon,
   FolderIcon,
-  // UsersIcon,
+  UsersIcon,
   CogIcon,
+  ShieldCheckIcon,
   // ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
   // DocumentTextIcon as DocumentTextIconSolid,
   FolderIcon as FolderIconSolid,
-  // UsersIcon as UsersIconSolid,
+  UsersIcon as UsersIconSolid,
   CogIcon as CogIconSolid,
+  ShieldCheckIcon as ShieldCheckIconSolid,
   // ChartBarIcon as ChartBarIconSolid,
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
@@ -34,6 +36,21 @@ const navigation = [
     href: '/repositories',
     icon: FolderIcon,
     iconSolid: FolderIconSolid,
+  },
+];
+
+const adminNavigation = [
+  {
+    name: 'Admin Dashboard',
+    href: '/admin',
+    icon: ShieldCheckIcon,
+    iconSolid: ShieldCheckIconSolid,
+  },
+  {
+    name: 'User Management',
+    href: '/admin/users',
+    icon: UsersIcon,
+    iconSolid: UsersIconSolid,
   },
 ];
 
@@ -98,6 +115,45 @@ export function Sidebar() {
               </Link>
             );
           })}
+
+          {/* Admin Navigation */}
+          {user?.is_admin && (
+            <>
+              <div className="pt-4">
+                <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Administration
+                </h3>
+                <div className="mt-2 space-y-1">
+                  {adminNavigation.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    const Icon = isActive ? item.iconSolid : item.icon;
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          'group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors',
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'mr-3 h-5 w-5 shrink-0',
+                            isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </nav>
 
         {/* Recent repositories */}
