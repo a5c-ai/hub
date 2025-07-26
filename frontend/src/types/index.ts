@@ -4,6 +4,8 @@ export interface User {
   email: string;
   name: string;
   avatar_url?: string;
+  /** Whether the user has admin privileges */
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
 }
