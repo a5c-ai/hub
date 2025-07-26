@@ -614,7 +614,7 @@ export default function AdminUsersPage() {
 
         {/* Create User Modal */}
         <Modal
-          isOpen={showCreateModal}
+          open={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           title="Create New User"
           data-testid="add-user-modal"
@@ -726,7 +726,7 @@ export default function AdminUsersPage() {
 
         {/* Edit User Modal */}
         <Modal
-          isOpen={showEditModal}
+          open={showEditModal}
           onClose={() => setShowEditModal(false)}
           title="Edit User"
           data-testid="edit-user-modal"
@@ -827,7 +827,7 @@ export default function AdminUsersPage() {
 
         {/* Delete User Modal */}
         <Modal
-          isOpen={showDeleteModal}
+          open={showDeleteModal}
           onClose={() => {
             setShowDeleteModal(false);
             setDeletingUser(null);
