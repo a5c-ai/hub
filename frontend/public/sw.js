@@ -97,7 +97,15 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Skip non-GET requests
+  const pathname = url.pathname;
+
+  // Handle non-GET API requests: queue offline actions when offline
+  if (request.method !== 'GET' && url.origin === location.origin && pathname.startsWith('/api/')) {
+    event.respondWith(handleApiRequest(request));
+    return;
+  }
+
+  // Skip other non-GET requests
   if (request.method !== 'GET') {
     return;
   }
@@ -220,6 +228,34 @@ async function staleWhileRevalidateStrategy(request) {
   }
 }
 
+/**
+ * Handle non-GET API requests by attempting network request or queuing for background sync when offline.
+ */
+async function handleApiRequest(request) {
+  try {
+    return await fetch(request.clone());
+  } catch (error) {
+    console.log('[Service Worker] Network unavailable, queuing offline action', request);
+    try {
+      const body = await request.clone().json();
+      await addOfflineAction({
+        url: request.url,
+        method: request.method,
+        headers: Array.from(request.headers.entries()),
+        body,
+      });
+      // Register for background sync
+      await self.registration.sync.register('background-sync');
+    } catch (err) {
+      console.error('[Service Worker] Failed to queue offline action:', err);
+    }
+    return new Response(JSON.stringify({ offline: true }), {
+      status: 202,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background sync triggered:', event.tag);
@@ -312,19 +348,76 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Helper functions for IndexedDB operations (offline actions)
+/**
+ * Open (or create) the IndexedDB for offline actions.
+ */
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('offline-actions-db', 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('actions')) {
+        db.createObjectStore('actions', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Add a new offline action to the store.
+ */
+async function addOfflineAction(action) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('actions', 'readwrite');
+    const store = tx.objectStore('actions');
+    const timestamp = Date.now();
+    const req = store.add({ ...action, timestamp });
+    req.onsuccess = () => resolve({ id: req.result, ...action, timestamp });
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Retrieve all stored offline actions.
+ */
 async function getOfflineActions() {
-  // TODO: Implement IndexedDB operations for offline actions
-  return [];
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('actions', 'readonly');
+    const store = tx.objectStore('actions');
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
+/**
+ * Process an offline action by replaying the request.
+ */
 async function processOfflineAction(action) {
-  // TODO: Implement processing of offline actions
-  console.log('[Service Worker] Processing offline action:', action);
+  const headers = new Headers(action.headers);
+  const init = { method: action.method, headers };
+  if (action.body !== undefined) {
+    init.body = JSON.stringify(action.body);
+  }
+  return fetch(action.url, init);
 }
 
+/**
+ * Remove a processed offline action by id.
+ */
 async function removeOfflineAction(id) {
-  // TODO: Implement removal of processed offline actions
-  console.log('[Service Worker] Removing offline action:', id);
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('actions', 'readwrite');
+    const store = tx.objectStore('actions');
+    const req = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
 }
 
 // Message handling from main thread
