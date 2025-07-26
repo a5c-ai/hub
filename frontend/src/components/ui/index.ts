@@ -14,3 +14,9 @@ export { Avatar } from './Avatar';
 
 export { Badge, badgeVariants } from './Badge';
 export type { BadgeProps } from './Badge';
+
+export { PatternInput } from './PatternInput';
+export { StatusChecksConfig } from './StatusChecksConfig';
+export { BranchRestrictionsConfig } from './BranchRestrictionsConfig';
+export { ProtectionRulePreview } from './ProtectionRulePreview';
+export { ProtectionRuleMigration } from './ProtectionRuleMigration';
