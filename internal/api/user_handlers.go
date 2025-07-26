@@ -344,7 +344,7 @@ func (h *UserHandlers) ResendEmailVerification(c *gin.Context) {
 
 // GetEmailPreferences handles GET /api/v1/user/email/preferences
 func (h *UserHandlers) GetEmailPreferences(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	_, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
