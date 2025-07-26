@@ -4,21 +4,27 @@ import (
 	"net/http"
 
 	"github.com/a5c-ai/hub/internal/auth"
+	"github.com/a5c-ai/hub/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // UserHandlers contains handlers for user-related endpoints
 type UserHandlers struct {
 	authService auth.AuthService
+	db          *gorm.DB
+	config      *config.Config
 	logger      *logrus.Logger
 }
 
 // NewUserHandlers creates a new user handlers instance
-func NewUserHandlers(authService auth.AuthService, logger *logrus.Logger) *UserHandlers {
+func NewUserHandlers(authService auth.AuthService, db *gorm.DB, cfg *config.Config, logger *logrus.Logger) *UserHandlers {
 	return &UserHandlers{
 		authService: authService,
+		db:          db,
+		config:      cfg,
 		logger:      logger,
 	}
 }
@@ -278,5 +284,125 @@ func (h *UserHandlers) MarkNotificationsAsRead(c *gin.Context) {
 	// In a full implementation, this would update notification read status
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Notifications marked as read",
+	})
+}
+
+// GetEmailVerificationStatus handles GET /api/v1/user/email/verification-status
+func (h *UserHandlers) GetEmailVerificationStatus(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Initialize email verification service
+	emailService := auth.NewSMTPEmailService(h.config)
+	verificationService := auth.NewEmailVerificationService(h.db, emailService)
+	
+	// Get verification status and any active token
+	verified, token, err := verificationService.GetVerificationStatus(userID.(uuid.UUID))
+	if err != nil {
+		h.logger.WithError(err).WithField("user_id", userID).Error("Failed to get email verification status")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get verification status"})
+		return
+	}
+
+	response := gin.H{
+		"verified": verified,
+	}
+
+	if !verified && token != nil {
+		response["pending_token"] = gin.H{
+			"created_at": token.CreatedAt,
+			"expires_at": token.ExpiresAt,
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ResendEmailVerification handles POST /api/v1/user/email/resend-verification
+func (h *UserHandlers) ResendEmailVerification(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Use the auth service to resend verification email
+	err := h.authService.ResendVerificationEmail(c.Request.Context(), userID.(uuid.UUID))
+	if err != nil {
+		h.logger.WithError(err).WithField("user_id", userID).Error("Failed to resend verification email")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send verification email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verification email sent successfully",
+	})
+}
+
+// GetEmailPreferences handles GET /api/v1/user/email/preferences
+func (h *UserHandlers) GetEmailPreferences(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// For now, return default preferences
+	// In a full implementation, this would query user preferences from database
+	c.JSON(http.StatusOK, gin.H{
+		"issues_and_prs":        true,
+		"repository_updates":    true,
+		"security_alerts":       true,
+		"mfa_notifications":     true,
+		"password_reset":        true,
+		"email_verification":    true,
+		"weekly_digest":         false,
+		"marketing_emails":      false,
+	})
+}
+
+// UpdateEmailPreferences handles PUT /api/v1/user/email/preferences
+func (h *UserHandlers) UpdateEmailPreferences(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req struct {
+		IssuesAndPRs       *bool `json:"issues_and_prs,omitempty"`
+		RepositoryUpdates  *bool `json:"repository_updates,omitempty"`
+		SecurityAlerts     *bool `json:"security_alerts,omitempty"`
+		MFANotifications   *bool `json:"mfa_notifications,omitempty"`
+		PasswordReset      *bool `json:"password_reset,omitempty"`
+		EmailVerification  *bool `json:"email_verification,omitempty"`
+		WeeklyDigest       *bool `json:"weekly_digest,omitempty"`
+		MarketingEmails    *bool `json:"marketing_emails,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	// For now, just return success with the updated preferences
+	// In a full implementation, this would save preferences to database
+	h.logger.WithField("user_id", userID).Info("Email preferences updated")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Email preferences updated successfully",
+		"preferences": gin.H{
+			"issues_and_prs":       req.IssuesAndPRs,
+			"repository_updates":   req.RepositoryUpdates,
+			"security_alerts":      req.SecurityAlerts,
+			"mfa_notifications":    req.MFANotifications,
+			"password_reset":       req.PasswordReset,
+			"email_verification":   req.EmailVerification,
+			"weekly_digest":        req.WeeklyDigest,
+			"marketing_emails":     req.MarketingEmails,
+		},
 	})
 }
