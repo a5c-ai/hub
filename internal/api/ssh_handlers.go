@@ -55,8 +55,8 @@ func (h *SSHKeyHandlers) ListSSHKeys(c *gin.Context) {
 		return
 	}
 
-	uid, err := uuid.Parse(userID.(string))
-	if err != nil {
+	uid, ok := userID.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -92,8 +92,8 @@ func (h *SSHKeyHandlers) CreateSSHKey(c *gin.Context) {
 		return
 	}
 
-	uid, err := uuid.Parse(userID.(string))
-	if err != nil {
+	uid, ok := userID.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -165,8 +165,8 @@ func (h *SSHKeyHandlers) GetSSHKey(c *gin.Context) {
 		return
 	}
 
-	uid, err := uuid.Parse(userID.(string))
-	if err != nil {
+	uid, ok := userID.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -208,8 +208,8 @@ func (h *SSHKeyHandlers) DeleteSSHKey(c *gin.Context) {
 		return
 	}
 
-	uid, err := uuid.Parse(userID.(string))
-	if err != nil {
+	uid, ok := userID.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
