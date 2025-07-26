@@ -71,17 +71,17 @@ type AuthService interface {
 }
 
 type authService struct {
-	db             *gorm.DB
-	jwtManager     *JWTManager
-	config         *config.Config
-	sessionService *SessionService
+	db               *gorm.DB
+	jwtManager       *JWTManager
+	config           *config.Config
+	sessionService   *SessionService
 	blacklistService *TokenBlacklistService
 }
 
 func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) AuthService {
 	sessionService := NewSessionService(db)
 	blacklistService := NewTokenBlacklistService(db)
-	
+
 	return &authService{
 		db:               db,
 		jwtManager:       jwtManager,
@@ -93,7 +93,7 @@ func NewAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config) Aut
 
 func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
 	var user models.User
-	
+
 	// Support login with either email or username
 	var err error
 	if req.Email != "" {
@@ -101,7 +101,7 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 	} else {
 		err = s.db.Where("username = ? OR email = ?", req.Email, req.Email).First(&user).Error
 	}
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrInvalidCredentials
@@ -124,7 +124,7 @@ func (s *authService) Login(ctx context.Context, req LoginRequest) (*AuthRespons
 		if req.MFACode == "" {
 			return nil, errors.New("MFA code required")
 		}
-		
+
 		// Verify MFA code using MFA service
 		emailService := NewSMTPEmailService(s.config)
 		mfaService := NewMFAServiceWithEmail(s.db, emailService)
@@ -325,7 +325,7 @@ func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordRese
 	if err != nil {
 		return fmt.Errorf("failed to create reset token: %w", err)
 	}
-	
+
 	// Send reset email
 	if err := emailService.SendPasswordResetEmail(user.Email, resetToken.Token); err != nil {
 		return fmt.Errorf("failed to send password reset email: %w", err)
@@ -337,7 +337,7 @@ func (s *authService) RequestPasswordReset(ctx context.Context, req PasswordRese
 func (s *authService) ResetPassword(ctx context.Context, req PasswordResetConfirmRequest) error {
 	// Initialize password reset service
 	passwordResetService := NewPasswordResetService(s.db)
-	
+
 	// Use the reset token to change password
 	err := passwordResetService.UseResetToken(req.Token, req.Password)
 	if err != nil {
@@ -466,9 +466,18 @@ func (s *authService) InitiatePasswordReset(email string) error {
 		return nil
 	}
 
-	// TODO: Generate password reset token and send email
-	// For now, just log that password reset was requested
-	_ = user
+	// Generate password reset token and send email
+	passwordResetService := NewPasswordResetService(s.db)
+	resetToken, err := passwordResetService.CreateResetToken(user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create reset token: %w", err)
+	}
+
+	emailService := NewSMTPEmailService(s.config)
+	if err := emailService.SendPasswordResetEmail(user.Email, resetToken.Token); err != nil {
+		return fmt.Errorf("failed to send password reset email: %w", err)
+	}
+
 	return nil
 }
 
@@ -495,15 +504,14 @@ func (s *authService) RevokeUserSession(ctx context.Context, userID uuid.UUID, s
 }
 
 func (s *authService) sendVerificationEmail(user *models.User) error {
-	// TODO: Implement email sending
-	fmt.Printf("Sending verification email to %s\n", user.Email)
-	return nil
+	emailService := NewSMTPEmailService(s.config)
+	verificationService := NewEmailVerificationService(s.db, emailService)
+	return verificationService.SendVerificationEmail(user.ID)
 }
 
 func (s *authService) sendPasswordResetEmail(user *models.User, token string) error {
-	// TODO: Implement email sending
-	fmt.Printf("Sending password reset email to %s with token %s\n", user.Email, token)
-	return nil
+	emailService := NewSMTPEmailService(s.config)
+	return emailService.SendPasswordResetEmail(user.Email, token)
 }
 
 func generateAuthSecureToken() string {
