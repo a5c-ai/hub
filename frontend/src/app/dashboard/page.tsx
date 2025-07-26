@@ -22,7 +22,8 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/auth';
 import { useRepositoryStore } from '@/store/repository';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, createErrorHandler } from '@/lib/utils';
+import api from '@/lib/api';
 
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -33,31 +34,9 @@ export default function DashboardPage() {
     fetchRepositories,
     clearError 
   } = useRepositoryStore();
-  const mockActivity = [
-    {
-      id: '1',
-      type: 'push',
-      repository: repositories[0]?.full_name || 'user/repository',
-      message: 'Added new authentication middleware',
-      timestamp: repositories[0]?.updated_at || new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: '2',
-      type: 'pull_request',
-      repository: repositories[1]?.full_name || 'user/another-repo',
-      message: 'Opened pull request: Implement user management endpoints',
-      timestamp: repositories[1]?.updated_at || new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: '3',
-      type: 'issue',
-      repository: repositories[2]?.full_name || 'user/third-repo',
-      message: 'Created issue: Fix login screen layout on tablet',
-      timestamp: repositories[2]?.updated_at || new Date(Date.now() - 172800000).toISOString(),
-    },
-  ];
-
-  const [] = useState(mockActivity);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -76,6 +55,22 @@ export default function DashboardPage() {
       return () => clearTimeout(timer);
     }
   }, [repoError, clearError]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const fetchActivity = async () => {
+        const handleError = createErrorHandler(setActivityError, setActivityLoading);
+        const result = await handleError(async () => {
+          const response = await api.get(`/activity?filter=own`);
+          return response.data.activities;
+        });
+        if (result) {
+          setActivities(result);
+        }
+      };
+      fetchActivity();
+    }
+  }, [isAuthenticated]);
 
   // Calculate stats from real repository data
   const totalRepos = repositories.length;
@@ -256,11 +251,15 @@ export default function DashboardPage() {
               <CardDescription>Your recent actions across all repositories</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {repoLoading ? (
+              {activityLoading ? (
                 <div className="text-center py-8">
                   <div className="text-muted-foreground">Loading activity...</div>
                 </div>
-              ) : repositories.length === 0 ? (
+              ) : activityError ? (
+                <div className="text-center py-8">
+                  <div className="text-destructive">Failed to load activity: {activityError}</div>
+                </div>
+              ) : activities.length === 0 ? (
                 <div className="text-center py-8">
                   <ClockIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">
@@ -272,28 +271,20 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <>
-                  {mockActivity.slice(0, repositories.length).map((item) => (
+                  {activities.slice(0, repositories.length).map((item) => (
                     <div key={item.id} className="flex items-start space-x-3">
                       <div className="flex-shrink-0">
                         <Avatar size="sm" name={user?.name || user?.username} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm">
-                          <span className="font-medium text-foreground">You</span>
-                          <span className="text-muted-foreground"> {item.message}</span>
-                        </div>
+                      <div className="flex-1 min-w-0 text-sm text-foreground">
+                        <span className="font-medium text-foreground">You</span>
+                        <span className="text-muted-foreground"> {item.message}</span>
                         <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground">
-                          <Link
-                            href={`/repositories/${item.repository}`}
-                            className="hover:text-primary"
-                          >
+                          <Link href={`/repositories/${item.repository}`} className="hover:text-primary">
                             {item.repository}
                           </Link>
                           <span>•</span>
-                          <span className="flex items-center">
-                            <ClockIcon className="h-3 w-3 mr-1" />
-                            {formatRelativeTime(item.timestamp)}
-                          </span>
+                          <span>{formatRelativeTime(item.timestamp)}</span>
                         </div>
                       </div>
                     </div>
