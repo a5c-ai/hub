@@ -9,9 +9,6 @@ test.describe('Admin Dashboard Overview', () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    // TODO: Set up admin user authentication
-    // In a real implementation, you would need to create an admin user
-    // or mock the authentication service to return admin permissions
     await loginUser(page, adminUser.email, adminUser.password);
   });
 

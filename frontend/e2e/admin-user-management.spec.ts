@@ -19,9 +19,38 @@ test.describe('Admin User Management', () => {
     // Login as admin user
     await loginUser(page, adminUser.email, adminUser.password);
     
-    // TODO: Mock API responses for user management endpoints
-    // In a real implementation, you would set up proper API mocking
-    // to return consistent test data for user management operations
+    // Mock API responses for user management endpoints
+    await page.route('**/api/v1/admin/users/stats', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          total_users: mockUsers.length,
+          active_users: mockUsers.filter(u => u.status === 'active').length,
+          inactive_users: mockUsers.filter(u => u.status === 'inactive').length,
+          admin_users: mockUsers.filter(u => u.role === 'admin').length,
+          verified_users: mockUsers.length,
+          mfa_enabled_users: 0,
+          users_this_month: mockUsers.length,
+          users_last_month: mockUsers.length,
+          logins_this_week: 100
+        })
+      });
+    });
+    await page.route('**/api/v1/admin/users*', route => {
+      const { method } = route.request();
+      if (method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ users: mockUsers, pagination: { total: mockUsers.length, total_pages: 1 } })
+        });
+      } else if (['POST', 'PATCH', 'DELETE'].includes(method())) {
+        route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      } else {
+        route.continue();
+      }
+    });
   });
 
   test.describe('User Account Administration', () => {
