@@ -158,7 +158,7 @@ export default function WebhookTestingModal({
       open={open}
       onClose={onClose}
       title={`Test Webhook: ${webhook.name}`}
-      size="large"
+      size="lg"
     >
       <div className="space-y-6">
         {/* Webhook Info */}

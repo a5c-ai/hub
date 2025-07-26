@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { owner: string; repo: string; runId: string } }
+  context: { params: Promise<{ owner: string; repo: string; runId: string }> }
 ) {
-  const { owner, repo, runId } = await context.params;
+  const { owner: _owner, repo: _repo, runId: _runId } = await context.params;
 
   // Mock artifacts data
   const artifacts = [
@@ -31,9 +31,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: { owner: string; repo: string; runId: string } }
+  context: { params: Promise<{ owner: string; repo: string; runId: string }> }
 ) {
-  const { owner, repo, runId } = await context.params;
+  const { owner: _owner, repo: _repo, runId: _runId } = await context.params;
 
   try {
     const formData = await request.formData();
@@ -63,7 +63,7 @@ export async function POST(
     };
 
     return NextResponse.json({ artifact }, { status: 201 });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to upload artifact' },
       { status: 500 }

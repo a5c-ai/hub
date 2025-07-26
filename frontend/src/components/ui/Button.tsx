@@ -7,10 +7,10 @@ const Slot = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement> & {
     if (React.isValidElement(children)) {
       return React.cloneElement(children, {
         ...props,
-        ...children.props,
-        className: cn(props.className, children.props.className),
+        ...(children.props || {}),
+        className: cn(props.className, (children.props as any)?.className),
         ref,
-      } as any);
+      } as React.HTMLAttributes<HTMLElement>);
     }
     return null;
   }
@@ -55,7 +55,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return (
         <Slot
           className={buttonClasses}
-          ref={ref as any}
+          ref={ref as React.Ref<HTMLElement>}
           {...props}
         >
           {children}
