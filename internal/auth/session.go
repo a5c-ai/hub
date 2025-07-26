@@ -157,9 +157,13 @@ func (s *SessionService) RefreshSession(refreshToken string) (*Session, error) {
 		return nil, fmt.Errorf("failed to generate new refresh token: %w", err)
 	}
 
-	// Update session with new token and extended expiration
+	// Update session with new token and extended expiration based on configuration
 	session.RefreshToken = newRefreshToken
-	session.ExpiresAt = time.Now().Add(30 * 24 * time.Hour)
+	if session.IsRemembered {
+		session.ExpiresAt = time.Now().Add(s.config.RememberMeExpiration)
+	} else {
+		session.ExpiresAt = time.Now().Add(s.config.DefaultExpiration)
+	}
 	session.LastUsedAt = time.Now()
 
 	if err := s.db.Save(session).Error; err != nil {
@@ -252,9 +256,15 @@ func (s *SessionService) GetSessionStats() (*SessionStats, error) {
 
 // Enhanced session validation with idle timeout
 func (s *SessionService) ValidateSessionWithIdleCheck(refreshToken string) (*Session, error) {
-	session, err := s.ValidateRefreshToken(refreshToken)
+	// Validate token without updating last used time
+	var session Session
+	err := s.db.Where("refresh_token = ? AND is_active = true AND expires_at > ?", refreshToken, time.Now()).
+		First(&session).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("invalid or expired refresh token")
+		}
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 
 	// Check idle timeout
@@ -264,7 +274,11 @@ func (s *SessionService) ValidateSessionWithIdleCheck(refreshToken string) (*Ses
 		return nil, errors.New("session expired due to inactivity")
 	}
 
-	return session, nil
+	// Update last used time
+	session.LastUsedAt = time.Now()
+	s.db.Save(&session)
+
+	return &session, nil
 }
 
 // Detect suspicious activity

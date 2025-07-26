@@ -317,6 +317,32 @@ func TestSessionManagement(t *testing.T) {
 		_, err = sessionService.ValidateRefreshToken(session.RefreshToken)
 		assert.Error(t, err)
 	})
+
+	// Test expired session
+	t.Run("expired session", func(t *testing.T) {
+		// Create a session first
+		session, err := sessionService.CreateSession(userID, ipAddress, userAgent, false)
+		require.NoError(t, err)
+
+		// Expire the session
+		session.ExpiresAt = time.Now().Add(-time.Hour)
+		require.NoError(t, db.Save(session).Error)
+		_, err = sessionService.ValidateRefreshToken(session.RefreshToken)
+		assert.Error(t, err)
+	})
+
+	// Test idle timeout expiration
+	t.Run("idle timeout", func(t *testing.T) {
+		// Create a session first
+		session, err := sessionService.CreateSession(userID, ipAddress, userAgent, false)
+		require.NoError(t, err)
+
+		// Simulate idle timeout
+		session.LastUsedAt = time.Now().Add(-sessionService.config.IdleTimeout - time.Minute)
+		require.NoError(t, db.Save(session).Error)
+		_, err = sessionService.ValidateSessionWithIdleCheck(session.RefreshToken)
+		assert.Error(t, err)
+	})
 }
 
 func TestSecurityFeatures(t *testing.T) {
