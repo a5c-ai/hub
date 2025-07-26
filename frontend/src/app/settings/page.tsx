@@ -57,6 +57,7 @@ export default function SettingsPage() {
     { id: 'account', name: 'Account', icon: '⚙️' },
     { id: 'security', name: 'Security', icon: '🔒' },
     { id: 'sessions', name: 'Sessions', icon: '💻' },
+    { id: 'emails', name: 'Emails', icon: '📧' },
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
     { id: 'billing', name: 'Billing', icon: '💳' },
   ];
@@ -342,6 +343,34 @@ export default function SettingsPage() {
                   </div>
                 </Card>
                 <SessionManagement />
+              </div>
+            )}
+
+            {activeTab === 'emails' && (
+              <div className="space-y-6">
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Email Settings</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Manage your email preferences and verification status.
+                    </p>
+                    
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h4 className="font-medium text-foreground">Email Preferences</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Configure which emails you want to receive
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => window.location.href = '/settings/emails'}
+                        size="sm"
+                      >
+                        Manage Email Settings
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               </div>
             )}
 

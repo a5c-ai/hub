@@ -569,4 +569,49 @@ export const sshKeyApi = {
   deleteSSHKey: (keyId: string) => apiClient.delete(`/user/keys/${keyId}`),
 };
 
+// Email API methods
+export const emailApi = {
+  // User email preferences
+  getEmailPreferences: () => apiClient.get('/user/email/preferences'),
+  updateEmailPreferences: (preferences: {
+    issues_and_prs?: boolean;
+    repository_updates?: boolean;
+    security_alerts?: boolean;
+    mfa_notifications?: boolean;
+    password_reset?: boolean;
+    email_verification?: boolean;
+    weekly_digest?: boolean;
+    marketing_emails?: boolean;
+  }) => apiClient.put('/user/email/preferences', preferences),
+
+  // Email verification
+  getEmailVerificationStatus: () => apiClient.get('/user/email/verification-status'),
+  resendEmailVerification: () => apiClient.post('/user/email/resend-verification'),
+
+  // Admin email management
+  getEmailConfig: () => apiClient.get('/admin/email/config'),
+  updateEmailConfig: (config: {
+    smtp?: {
+      host?: string;
+      port?: string;
+      username?: string;
+      password?: string;
+      from?: string;
+      use_tls?: boolean;
+    };
+    application?: {
+      base_url?: string;
+      name?: string;
+    };
+  }) => apiClient.put('/admin/email/config', config),
+
+  testEmailConfig: (data: { to: string; subject?: string; body?: string }) =>
+    apiClient.post('/admin/email/test', data),
+
+  getEmailLogs: (params?: { page?: number; per_page?: number; type?: string }) =>
+    apiClient.get('/admin/email/logs', { params }),
+
+  getEmailHealth: () => apiClient.get('/admin/email/health'),
+};
+
 export default api;

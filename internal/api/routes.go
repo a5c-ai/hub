@@ -129,7 +129,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
 	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logStreamingService, webhookService, artifactService, gitService, logger)
 	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
-	userHandlers := NewUserHandlers(authService, logger)
+	userHandlers := NewUserHandlers(authService, database.DB, cfg, logger)
+	adminEmailHandlers := NewAdminEmailHandlers(database.DB, cfg, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
 	// Initialize webhook and deploy key services for hooks handlers
 	webhookDeliveryService := services.NewWebhookDeliveryService(database.DB, logger)
@@ -270,6 +271,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.GET("/notifications", userHandlers.GetNotifications)
 			protected.PATCH("/notifications", userHandlers.MarkNotificationsAsRead)
 
+			// User email endpoints
+			emailGroup := protected.Group("/user/email")
+			{
+				emailGroup.GET("/verification-status", userHandlers.GetEmailVerificationStatus)
+				emailGroup.POST("/resend-verification", userHandlers.ResendEmailVerification)
+				emailGroup.GET("/preferences", userHandlers.GetEmailPreferences)
+				emailGroup.PUT("/preferences", userHandlers.UpdateEmailPreferences)
+			}
+
 			// Legacy profile endpoint for backward compatibility
 			protected.GET("/profile", func(c *gin.Context) {
 				userID, exists := c.Get("user_id")
@@ -324,6 +334,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				admin.GET("/analytics/performance", analyticsHandlers.GetPerformanceAnalytics)
 				admin.GET("/analytics/costs", analyticsHandlers.GetCostAnalytics)
 				admin.GET("/analytics/export", analyticsHandlers.ExportAnalytics)
+
+				// Admin email management endpoints
+				adminEmail := admin.Group("/email")
+				{
+					adminEmail.GET("/config", adminEmailHandlers.GetEmailConfig)
+					adminEmail.PUT("/config", adminEmailHandlers.UpdateEmailConfig)
+					adminEmail.POST("/test", adminEmailHandlers.TestEmailConfig)
+					adminEmail.GET("/logs", adminEmailHandlers.GetEmailLogs)
+					adminEmail.GET("/health", adminEmailHandlers.GetEmailHealth)
+				}
 			}
 
 			// Protected repository endpoints
