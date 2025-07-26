@@ -23,6 +23,17 @@ go test -tags=integration ./tests/integration/...
 
 Ensure that services are healthy before running tests; tests will retry connections briefly but require services to be accessible.
 
+## Continuous Integration
+
+Integration tests are also configured to run automatically in GitHub Actions via the `Integration Tests` workflow. On each pull request touching integration tests or the Docker Compose configuration, the CI will:
+ 1. Spin up PostgreSQL and Elasticsearch services
+ 2. Run all tests marked with the `integration` build tag
+
+You can also trigger the workflow manually using:
+```bash
+gh workflow run "Integration Tests" --repo a5c-ai/hub
+```
+
 ## Planned Integration Test Categories
 
 The following integration tests are planned to cover key service and workflow interactions:
