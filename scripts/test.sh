@@ -236,40 +236,37 @@ run_e2e_tests() {
         return 0
     fi
     
-    # Start test servers if needed
-    local NEED_SERVERS=true
-    if [[ "$E2E_ONLY" == "true" ]]; then
-        test_log "Starting test servers for E2E tests..."
-        
-        # Start backend in background
-        (
-            export ENVIRONMENT="test"
-            export PORT="8081"
-            export DB_NAME="hub_test"
-            cd ..
-            go run ./cmd/server
-        ) &
-        BACKEND_PID=$!
-        
-        # Start frontend in background  
-        (
-            export NODE_ENV="test"
-            export PORT="3001"
-            export NEXT_PUBLIC_API_URL="http://localhost:8081"
-            npm run dev
-        ) &
-        FRONTEND_PID=$!
-        
-        # Wait for servers to start
-        sleep 5
-        
-        # Setup cleanup on exit
-        cleanup_servers() {
-            test_log "Stopping test servers..."
-            kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
-        }
-        trap cleanup_servers EXIT
-    fi
+    # Start test servers for E2E tests
+    test_log "Starting test servers for E2E tests..."
+
+    # Start backend in background
+    (
+        export ENVIRONMENT="test"
+        export PORT="8081"
+        export DB_NAME="hub_test"
+        cd ..
+        go run ./cmd/server
+    ) &
+    BACKEND_PID=$!
+
+    # Start frontend in background
+    (
+        export NODE_ENV="test"
+        export PORT="3001"
+        export NEXT_PUBLIC_API_URL="http://localhost:8081"
+        npm run dev
+    ) &
+    FRONTEND_PID=$!
+
+    # Wait for servers to start
+    sleep 5
+
+    # Setup cleanup on exit
+    cleanup_servers() {
+        test_log "Stopping test servers..."
+        kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    }
+    trap cleanup_servers EXIT
     
     # Run E2E tests
     export E2E_BASE_URL="${E2E_BASE_URL:-http://localhost:3001}"
