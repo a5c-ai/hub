@@ -91,6 +91,17 @@ AZURE_STORAGE_ACCOUNT_KEY=your-account-key
 AZURE_STORAGE_CONTAINER_NAME=artifacts
 # Optional: custom endpoint (useful for emulator)
 AZURE_STORAGE_ENDPOINT_URL=
+# SMTP / Email Configuration
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=noreply@example.com
+SMTP_USE_TLS=true
+
+# Application settings for email links
+BASE_URL=http://localhost:3000
+APPLICATION_NAME=Hub
 ```
 
 #### IDE Configuration

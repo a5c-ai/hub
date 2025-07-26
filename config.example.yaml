@@ -30,6 +30,14 @@ cors:
     - http://localhost:3000
     - http://localhost:3001
 
+smtp:
+  host: ""
+  port: "587"
+  username: ""
+  password: ""
+  from: "noreply@localhost"
+  use_tls: true
+
 elasticsearch:
   enabled: false
   addresses:
