@@ -140,7 +140,7 @@ export function OrganizationAnalyticsDashboard({ orgName }: AnalyticsDashboardPr
     try {
       setLoading(true);
       const [dashboardResponse, memberResponse, securityResponse] = await Promise.all([
-        api.get(`/organizations/${orgName}/analytics/dashboard`),
+        api.get(`/organizations/${orgName}/analytics/overview`),
         api.get(`/organizations/${orgName}/analytics/members?period=${period}`),
         api.get(`/organizations/${orgName}/analytics/security?period=${period}`)
       ]);
