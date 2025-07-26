@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/a5c-ai/hub/internal/storage"
@@ -285,8 +286,9 @@ func (h *AdminStorageHandlers) BatchDeleteArtifacts(c *gin.Context) {
 
 // GetStorageHealth handles GET /api/v1/admin/storage/health
 func (h *AdminStorageHandlers) GetStorageHealth(c *gin.Context) {
-	ctx := context.WithTimeout(c.Request.Context(), 10*context.Second)
-	
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
 	health := map[string]interface{}{
 		"status": "healthy",
 		"checks": map[string]interface{}{},
