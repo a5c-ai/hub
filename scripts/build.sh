@@ -61,7 +61,7 @@ export GOARCH=amd64
 export GOCACHE=/tmp/go-build-cache
 export GOMODCACHE=/tmp/go-mod-cache  # Use temp directory for module cache
 export GOMAXPROCS=8  # Increased for faster compilation in CI
-export GOGC=off      # Disable GC during compilation for speed
+export GOGC=100      # Enable GC during compilation to prevent excessive memory use
 export GOFLAGS="-p=8 -buildvcs=false"  # Increased parallelism for speed
 
 # Use longer timeout suitable for CI environment with progress monitoring and optimized flags
