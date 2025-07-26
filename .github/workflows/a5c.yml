@@ -138,5 +138,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: a5c-artifacts
-          path: /tmp/agent-output.md
+          # many paths
+          path: |
+            /tmp/agent-output.md
+            /tmp/agent-output-*/**
 
