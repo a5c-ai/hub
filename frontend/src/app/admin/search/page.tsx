@@ -11,7 +11,7 @@ import {
   ClockIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-// import { apiClient } from '@/lib/api'; // Commented out for now as we're using mock data
+import { apiClient } from '@/lib/api';
 
 interface SearchStats {
   total_documents: number;
@@ -55,37 +55,19 @@ export default function AdminSearchPage() {
     setError(null);
     
     try {
-      // In a real implementation, these would be actual API calls
-      // For now, using mock data
-      const mockStats: SearchStats = {
-        total_documents: 15420,
-        indices: {
-          users: { documents: 1250, size_mb: 8.5, last_updated: '2025-01-15T10:30:00Z' },
-          repositories: { documents: 850, size_mb: 25.2, last_updated: '2025-01-15T10:25:00Z' },
-          issues: { documents: 4200, size_mb: 18.7, last_updated: '2025-01-15T10:20:00Z' },
-          commits: { documents: 8500, size_mb: 45.3, last_updated: '2025-01-15T10:15:00Z' },
-          code: { documents: 620, size_mb: 125.8, last_updated: '2025-01-15T10:10:00Z' }
-        },
-        search_requests_today: 1580,
-        avg_response_time_ms: 125,
-        index_health: 'green'
-      };
-
-      const mockConfig: SearchConfig = {
-        elasticsearch_enabled: true,
-        auto_index: true,
-        max_results_per_page: 30,
-        search_timeout_ms: 5000,
-        highlight_enabled: true,
-        fuzzy_search_enabled: true,
-        analytics_enabled: true
-      };
-
-      setStats(mockStats);
-      setConfig(mockConfig);
+      const [statsRes, configRes] = await Promise.all([
+        apiClient.get<SearchStats>('/admin/search/stats'),
+        apiClient.get<SearchConfig>('/admin/search/config')
+      ]);
+      if (statsRes.success && statsRes.data) {
+        setStats(statsRes.data);
+      }
+      if (configRes.success && configRes.data) {
+        setConfig(configRes.data);
+      }
     } catch (err) {
-      setError('Failed to load search configuration');
       console.error('Error loading search data:', err);
+      setError('Failed to load search configuration');
     } finally {
       setLoading(false);
     }
@@ -99,14 +81,15 @@ export default function AdminSearchPage() {
     setSuccessMessage(null);
 
     try {
-      // In a real implementation, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
-      
-      setSuccessMessage('Search configuration saved successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      const res = await apiClient.put('/admin/search/config', config);
+      if (res.success) {
+        setSuccessMessage('Search configuration saved successfully');
+        await loadSearchData();
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
     } catch (err) {
-      setError('Failed to save configuration');
-      console.error('Error saving config:', err);
+      console.error('Error saving search config:', err);
+      setError('Failed to save search configuration');
     } finally {
       setSaving(false);
     }
@@ -118,15 +101,17 @@ export default function AdminSearchPage() {
     setSuccessMessage(null);
 
     try {
-      // In a real implementation, this would trigger a reindex
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Mock delay
-      
-      setSuccessMessage('Reindexing completed successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      await loadSearchData(); // Reload stats
+      const res = await apiClient.post('/admin/search/reindex');
+      if (res.success) {
+        setSuccessMessage('Reindexing completed successfully');
+        await loadSearchData();
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        setError('Reindexing failed');
+      }
     } catch (err) {
-      setError('Reindexing failed');
       console.error('Error reindexing:', err);
+      setError('Reindexing failed');
     } finally {
       setReindexing(false);
     }
