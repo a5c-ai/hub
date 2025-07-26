@@ -135,7 +135,18 @@ export default function AdminDashboardPage() {
             </Card>
           </Link>
           
-          <Link href="/admin/email">
+        <Link href="/admin/queue">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Job Queue</p>
+                <p className="text-lg font-semibold text-foreground">Monitoring & Management</p>
+              </div>
+              <div className="text-yellow-500 text-2xl">⚙️</div>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/admin/email">
             <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center">
                 <div className="flex-1">
