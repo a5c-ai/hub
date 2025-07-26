@@ -224,9 +224,12 @@ run_e2e_tests() {
     
     test_log "Running end-to-end tests..."
     
-    cd frontend
-    
-    # Check if E2E tests are configured
+	cd frontend
+	
+	test_log "Installing Playwright browsers..."
+	npx playwright install --with-deps
+	
+	# Check if E2E tests are configured
     if ! npm run --silent test:e2e --dry-run &>/dev/null; then
         warn "E2E tests not configured, skipping"
         cd ..
