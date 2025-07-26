@@ -13,54 +13,52 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 
-// Mock data for development - replace with actual API calls
-const mockSystemAnalytics = {
-  totalViews: 45230,
-  totalUsers: 1240,
-  avgResponseTime: 185.5,
-  totalRepositories: 567,
-  viewsTrend: [
-    { date: '2024-01-01', value: 1200 },
-    { date: '2024-01-02', value: 1450 },
-    { date: '2024-01-03', value: 1380 },
-    { date: '2024-01-04', value: 1620 },
-    { date: '2024-01-05', value: 1580 },
-  ],
-  usersTrend: [
-    { date: '2024-01-01', value: 1180 },
-    { date: '2024-01-02', value: 1195 },
-    { date: '2024-01-03', value: 1210 },
-    { date: '2024-01-04', value: 1225 },
-    { date: '2024-01-05', value: 1240 },
-  ],
-  responseTrend: [
-    { date: '2024-01-01', value: 195.2 },
-    { date: '2024-01-02', value: 178.8 },
-    { date: '2024-01-03', value: 189.4 },
-    { date: '2024-01-04', value: 172.1 },
-    { date: '2024-01-05', value: 185.5 },
-  ],
-  repositoriesTrend: [
-    { date: '2024-01-01', value: 540 },
-    { date: '2024-01-02', value: 548 },
-    { date: '2024-01-03', value: 555 },
-    { date: '2024-01-04', value: 561 },
-    { date: '2024-01-05', value: 567 },
-  ],
-};
+// API response types
+interface SystemInsights {
+  total_views: number;
+  total_users: number;
+  avg_response_time: number;
+  total_repositories: number;
+  trends: {
+    views: Array<{ date: string; value: number }>;
+    users: Array<{ date: string; value: number }>;
+    response_time: Array<{ date: string; value: number }>;
+    repositories: Array<{ date: string; value: number }>;
+  };
+}
 
-const mockSystemHealth = {
-  cpuUsage: 45.2,
-  memoryUsage: 67.8,
-  diskUsage: 34.1,
-  uptime: 99.95,
-  errorRate: 0.12,
-  activeConnections: 156,
-};
+interface TransformedAnalyticsData {
+  totalViews: number;
+  totalUsers: number;
+  avgResponseTime: number;
+  totalRepositories: number;
+  viewsTrend: Array<{ date: string; value: number }>;
+  usersTrend: Array<{ date: string; value: number }>;
+  responseTrend: Array<{ date: string; value: number }>;
+  repositoriesTrend: Array<{ date: string; value: number }>;
+}
+
+interface PerformanceMetrics {
+  cpu_usage_percent: number;
+  memory_usage_percent: number;
+  disk_usage_percent: number;
+  uptime_percent: number;
+  error_rate_percent: number;
+  active_connections: number;
+}
+
+interface HealthData {
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+  uptime: number;
+  errorRate: number;
+  activeConnections: number;
+}
 
 export default function AdminAnalyticsPage() {
-  const [data, setData] = useState<typeof mockSystemAnalytics | null>(null);
-  const [healthData, setHealthData] = useState<typeof mockSystemHealth | null>(null);
+  const [data, setData] = useState<TransformedAnalyticsData | null>(null);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
@@ -72,26 +70,56 @@ export default function AdminAnalyticsPage() {
         setIsLoading(true);
         setError(null);
 
-        // Replace with actual API calls
-        // const [analyticsResponse, healthResponse] = await Promise.all([
-        //   fetch(`/api/v1/admin/analytics/platform?period=${timeRange}`),
-        //   fetch('/api/v1/admin/analytics/system-health')
-        // ]);
+        const [analyticsResponse, performanceResponse] = await Promise.all([
+          fetch(`/api/v1/admin/analytics/platform?period=${timeRange}`),
+          fetch('/api/v1/admin/analytics/performance')
+        ]);
         
-        // if (!analyticsResponse.ok || !healthResponse.ok) {
-        //   throw new Error('Failed to fetch analytics data');
-        // }
+        if (!analyticsResponse.ok) {
+          throw new Error(`Failed to fetch analytics data: ${analyticsResponse.statusText}`);
+        }
         
-        // const analyticsData = await analyticsResponse.json();
-        // const healthData = await healthResponse.json();
+        const analyticsData: SystemInsights = await analyticsResponse.json();
         
-        // For now, use mock data with a delay to simulate loading
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Convert backend format to frontend format
+        const transformedData = {
+          totalViews: analyticsData.total_views,
+          totalUsers: analyticsData.total_users,
+          avgResponseTime: analyticsData.avg_response_time,
+          totalRepositories: analyticsData.total_repositories,
+          viewsTrend: analyticsData.trends?.views || [],
+          usersTrend: analyticsData.trends?.users || [],
+          responseTrend: analyticsData.trends?.response_time || [],
+          repositoriesTrend: analyticsData.trends?.repositories || [],
+        };
         
-        setData(mockSystemAnalytics);
-        setHealthData(mockSystemHealth);
+        setData(transformedData);
+        
+        // Handle performance data if available
+        if (performanceResponse.ok) {
+          const performanceData: PerformanceMetrics = await performanceResponse.json();
+          setHealthData({
+            cpuUsage: performanceData.cpu_usage_percent,
+            memoryUsage: performanceData.memory_usage_percent,
+            diskUsage: performanceData.disk_usage_percent,
+            uptime: performanceData.uptime_percent,
+            errorRate: performanceData.error_rate_percent,
+            activeConnections: performanceData.active_connections,
+          });
+        } else {
+          // If performance endpoint fails, set basic health data
+          setHealthData({
+            cpuUsage: 0,
+            memoryUsage: 0,
+            diskUsage: 0,
+            uptime: 100,
+            errorRate: 0,
+            activeConnections: 0,
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching analytics data');
+        console.error('Analytics fetch error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -108,17 +136,25 @@ export default function AdminAnalyticsPage() {
     try {
       setIsExporting(true);
       
-      // Replace with actual API call
-      // const response = await fetch(`/api/v1/admin/analytics/export?format=${format}&period=${timeRange}`);
-      // if (!response.ok) {
-      //   throw new Error('Failed to export data');
-      // }
+      const response = await fetch(`/api/v1/admin/analytics/export?format=${format}&period=${timeRange}`);
+      if (!response.ok) {
+        throw new Error(`Failed to export data: ${response.statusText}`);
+      }
       
-      // For demo purposes, just show a success message
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert(`Analytics data exported as ${format.toUpperCase()}`);
-    } catch {
-      alert('Failed to export data');
+      // Download the exported file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analytics-${timeRange}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export data');
+      console.error('Export error:', err);
     } finally {
       setIsExporting(false);
     }
@@ -202,11 +238,15 @@ export default function AdminAnalyticsPage() {
             <h3 className="text-lg font-medium text-foreground mb-4">System Performance</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">2.1%</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {healthData ? `${healthData.errorRate.toFixed(1)}%` : '0%'}
+                </div>
                 <span className="text-sm text-muted-foreground">Error Rate</span>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">1,247</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {healthData ? healthData.activeConnections.toLocaleString() : '0'}
+                </div>
                 <span className="text-sm text-muted-foreground">Active Connections</span>
               </div>
             </div>
@@ -218,23 +258,25 @@ export default function AdminAnalyticsPage() {
               <Button
                 variant="secondary"
                 className="w-full justify-start"
-                onClick={() => alert('Performance report generated')}
+                onClick={() => handleExport('json')}
+                disabled={isExporting}
               >
                 Generate Performance Report
               </Button>
               <Button
                 variant="secondary"
                 className="w-full justify-start"
-                onClick={() => alert('System health check initiated')}
+                onClick={() => window.location.reload()}
               >
-                Run System Health Check
+                Refresh System Health
               </Button>
               <Button
                 variant="secondary"
                 className="w-full justify-start"
-                onClick={() => alert('Cleanup process started')}
+                onClick={() => handleExport('csv')}
+                disabled={isExporting}
               >
-                Cleanup Old Analytics Data
+                Export All Analytics Data
               </Button>
             </div>
           </Card>
