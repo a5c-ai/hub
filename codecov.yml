@@ -1,0 +1,12 @@
+# Codecov configuration for unified coverage reporting and quality gates
+coverage:
+  precision: 2        # digits of precision for coverage percentage
+  round: down         # round coverage metrics down
+
+status:
+  project:
+    default:
+      target: 80%      # minimum overall coverage threshold
+  patch:
+    default:
+      target: 80%      # minimum coverage threshold for PRs
