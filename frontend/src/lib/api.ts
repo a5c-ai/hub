@@ -211,6 +211,19 @@ export const repoApi = {
 
   getCommit: (owner: string, repo: string, sha: string) =>
     apiClient.get(`/repositories/${owner}/${repo}/commits/${sha}`),
+
+  // Repository statistics methods
+  getRepositoryStats: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/stats`),
+
+  getRepositoryStatistics: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/stats`),
+
+  getRepositoryLanguages: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/languages`),
+
+  updateRepositoryStats: (owner: string, repo: string) =>
+    apiClient.post(`/repositories/${owner}/${repo}/stats/update`),
 };
 
 // Organization API methods
