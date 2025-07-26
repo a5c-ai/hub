@@ -119,6 +119,20 @@ export ENVIRONMENT="$TEST_ENV"
 export NODE_ENV="test"
 export GO_ENV="test"
 
+# Start PostgreSQL test database in Docker
+log "Starting PostgreSQL test database in Docker..."
+docker run --rm --name hub_test_db \
+    -e POSTGRES_DB="${TEST_DB_NAME:-hub_test}" \
+    -e POSTGRES_USER="${TEST_DB_USER:-hub}" \
+    -e POSTGRES_PASSWORD="${TEST_DB_PASSWORD:-password}" \
+    -p "${TEST_DB_PORT:-5432}:${TEST_DB_PORT:-5432}" \
+    -d postgres:14
+# Wait until PostgreSQL is ready
+until docker exec hub_test_db pg_isready -U "${TEST_DB_USER:-hub}" -d "${TEST_DB_NAME:-hub_test}" &>/dev/null; do
+    sleep 1
+done
+log "PostgreSQL is ready"
+
 # Build before testing if requested
 if [[ "$BUILD_FIRST" == "true" && "$E2E_ONLY" == "false" ]]; then
     log "Building application before tests..."
@@ -263,6 +277,8 @@ run_e2e_tests() {
     cleanup_servers() {
         test_log "Stopping test servers..."
         kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+        log "Stopping PostgreSQL test database container..."
+        docker rm -f hub_test_db 2>/dev/null || true
     }
     trap cleanup_servers EXIT
 
