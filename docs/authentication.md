@@ -42,6 +42,7 @@ The A5C Hub authentication system provides enterprise-grade authentication with 
 ### Session Management
 - **Secure Session Tokens** - JWT-based authentication with configurable expiration
 - **Refresh Token Management** - Secure token rotation and lifecycle management  
+  Automatically rotates refresh tokens on use and invalidates old tokens
 - **Token Blacklisting** - Secure token revocation for logout and security incidents
 - **OAuth State Validation** - CSRF protection for OAuth flows with secure state storage
 - **Device Tracking** - Device tracking and naming with location tracking (optional)
@@ -163,7 +164,7 @@ ldap:
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
 - `POST /auth/logout` - User logout
-- `POST /auth/refresh` - Refresh access token
+- `POST /auth/refresh` - Refresh access token and rotate refresh token (old token invalidated)
 - `GET /auth/me` - Get current user
 
 ### Email Verification
