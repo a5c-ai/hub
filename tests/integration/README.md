@@ -22,3 +22,11 @@ go test -tags=integration ./tests/integration/...
 ```
 
 Ensure that services are healthy before running tests; tests will retry connections briefly but require services to be accessible.
+
+## Planned Integration Test Categories
+
+The following integration tests are planned to cover key service and workflow interactions:
+
+- **Repository Data Flow Tests**: verify git operations result in correct database persistence and metadata synchronization.
+- **User & Authentication Integration Tests**: validate authentication flows, session management, and permission enforcement.
+- **Issue & PR Workflow Integration Tests**: ensure issue creation, PR workflows, and CI/CD triggers operate end-to-end.
