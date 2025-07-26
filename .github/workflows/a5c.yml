@@ -133,3 +133,10 @@ jobs:
           # Auto-routing by default, unless specific agent is requested
           agent_uri: ${{ github.event.inputs.agent_uri || '' }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload artifacts
+        id: upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: a5c-artifacts
+          path: /tmp/agent-output.md
+
