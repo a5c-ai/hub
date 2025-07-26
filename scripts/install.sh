@@ -50,7 +50,7 @@ if [[ -f "go.mod" ]]; then
     # Download with retry logic and optimized timeout
     for i in {1..3}; do
         echo "Attempt $i: Downloading Go modules..."
-        if timeout 15m go mod download; then  # Removed -x for less verbose output, reduced timeout
+        if timeout 20m go mod download; then  # Removed -x for less verbose output, increased timeout for CI
             echo "✅ Go modules downloaded successfully"
             break
         else
@@ -101,12 +101,12 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     for i in {1..3}; do
         echo "Attempt $i: Installing frontend dependencies..."
         if [[ -f "package-lock.json" ]]; then
-            if timeout 25m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 30m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi
         else
-            if timeout 25m npm install --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 30m npm install --prefer-offline --no-audit --no-fund --progress=false; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi

@@ -59,13 +59,14 @@ export CGO_ENABLED=0
 export GOOS=linux
 export GOARCH=amd64
 export GOCACHE=/tmp/go-build-cache
-export GOMAXPROCS=4  # Increased back to 4 for faster compilation
+export GOMODCACHE=/tmp/go-mod-cache  # Use temp directory for module cache
+export GOMAXPROCS=8  # Increased for faster compilation in CI
 export GOGC=off      # Disable GC during compilation for speed
-export GOFLAGS="-p=4 -buildvcs=false"  # Increased parallelism for speed
+export GOFLAGS="-p=8 -buildvcs=false"  # Increased parallelism for speed
 
-# Use shorter timeout with progress monitoring and optimized flags
+# Use longer timeout suitable for CI environment with progress monitoring and optimized flags
 log "Starting Go build with aggressive optimization settings..."
-timeout 10m go build \
+timeout 25m go build \
     -ldflags "$LDFLAGS" \
     -trimpath \
     -v \
@@ -88,8 +89,8 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     # Install frontend dependencies if not already installed
     if [[ ! -d "node_modules" ]]; then
         log "Installing frontend dependencies..."
-        # Use npm ci with optimizations for CI and timeout
-        timeout 20m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
+        # Use npm ci with optimizations for CI and adequate timeout
+        timeout 30m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
     fi
     
     # Set environment variables for build with optimized memory settings
@@ -104,9 +105,9 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     export NEXT_PARALLEL=true  # Re-enable parallel processing for speed
     export NEXT_BUILD_WORKERS=2  # Optimize workers for CI
     
-    # Build with shorter timeout and better error handling
+    # Build with adequate timeout for CI environment and better error handling
     log "Starting frontend build with optimized resource settings..."
-    timeout 20m npm run build
+    timeout 30m npm run build
     
     if [[ $? -ne 0 ]]; then
         error "Failed to build frontend"
