@@ -45,8 +45,9 @@ func (s *ArtifactService) UploadArtifact(ctx context.Context, workflowRunID uuid
 	// Generate storage path
 	storagePath := s.generateStoragePath(workflowRunID, name)
 
-	// Create artifact record
+	// Create artifact record with generated ID
 	artifact := &models.Artifact{
+		ID:            uuid.New(),
 		WorkflowRunID: workflowRunID,
 		Name:          name,
 		Path:          storagePath,
@@ -189,7 +190,7 @@ func (s *ArtifactService) CleanupExpiredArtifacts(ctx context.Context) error {
 func (s *ArtifactService) EnforceRetentionPolicy(ctx context.Context) error {
 	// Get all non-expired artifacts that should be expired based on retention policy
 	cutoffDate := time.Now().AddDate(0, 0, -s.retentionDays)
-	
+
 	var artifactsToExpire []models.Artifact
 	err := s.db.WithContext(ctx).
 		Where("expired = false AND created_at < ?", cutoffDate).
@@ -208,7 +209,7 @@ func (s *ArtifactService) EnforceRetentionPolicy(ctx context.Context) error {
 
 	if len(artifactsToExpire) > 0 {
 		s.logger.WithFields(logrus.Fields{
-			"count":         len(artifactsToExpire),
+			"count":          len(artifactsToExpire),
 			"retention_days": s.retentionDays,
 		}).Info("Enforced retention policy on artifacts")
 	}
@@ -246,7 +247,7 @@ func (s *ArtifactService) generateStoragePath(workflowRunID uuid.UUID, name stri
 	timestamp := time.Now().Format("20060102-150405")
 	sanitizedName := strings.ReplaceAll(name, " ", "_")
 	sanitizedName = strings.ReplaceAll(sanitizedName, "/", "_")
-	
+
 	return filepath.Join(
 		"artifacts",
 		workflowRunID.String(),
@@ -318,7 +319,7 @@ func (s *ArtifactService) GetStorageStats(ctx context.Context) (map[string]inter
 func (s *ArtifactService) StoreBuildLog(ctx context.Context, jobID uuid.UUID, logContent string) error {
 	// Generate storage path for build log
 	logPath := s.generateBuildLogPath(jobID)
-	
+
 	// Store the log content
 	reader := strings.NewReader(logContent)
 	if err := s.storage.Upload(ctx, logPath, reader, int64(len(logContent))); err != nil {
@@ -326,9 +327,9 @@ func (s *ArtifactService) StoreBuildLog(ctx context.Context, jobID uuid.UUID, lo
 	}
 
 	s.logger.WithFields(logrus.Fields{
-		"job_id":    jobID,
-		"log_path":  logPath,
-		"log_size":  len(logContent),
+		"job_id":   jobID,
+		"log_path": logPath,
+		"log_size": len(logContent),
 	}).Info("Build log stored successfully")
 
 	return nil
@@ -337,13 +338,13 @@ func (s *ArtifactService) StoreBuildLog(ctx context.Context, jobID uuid.UUID, lo
 // GetBuildLog retrieves build logs for a job
 func (s *ArtifactService) GetBuildLog(ctx context.Context, jobID uuid.UUID) (string, error) {
 	logPath := s.generateBuildLogPath(jobID)
-	
+
 	// Check if log exists
 	exists, err := s.storage.Exists(ctx, logPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to check build log existence: %w", err)
 	}
-	
+
 	if !exists {
 		return "", fmt.Errorf("build log not found for job %s", jobID)
 	}
@@ -371,7 +372,7 @@ func (s *ArtifactService) SearchBuildLogs(ctx context.Context, repositoryID uuid
 	// 1. Use Elasticsearch or similar search engine for indexing logs
 	// 2. Store log metadata in database for efficient searching
 	// 3. Implement advanced search features (regex, filters, etc.)
-	
+
 	s.logger.WithFields(logrus.Fields{
 		"repository_id": repositoryID,
 		"query":         query,

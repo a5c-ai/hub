@@ -173,8 +173,16 @@ func (s *organizationService) Update(ctx context.Context, name string, req Updat
 		updates["billing_email"] = *req.BillingEmail
 	}
 
-	if err := s.db.Model(&org).Updates(updates).Error; err != nil {
+	if err := s.db.Model(&models.Organization{}).Where("name = ?", name).Updates(updates).Error; err != nil {
 		return nil, fmt.Errorf("failed to update organization: %w", err)
+	}
+
+	// Reflect updates in returned struct
+	if req.DisplayName != nil {
+		org.DisplayName = *req.DisplayName
+	}
+	if req.Description != nil {
+		org.Description = *req.Description
 	}
 
 	return &org, nil
