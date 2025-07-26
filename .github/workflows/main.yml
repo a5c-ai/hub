@@ -93,7 +93,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     timeout-minutes: 45  # Increased timeout to handle slow dependency downloads
     strategy:
       matrix:
