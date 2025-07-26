@@ -14,17 +14,17 @@ import (
 
 // Request/Response Types for Teams
 type CreateTeamRequest struct {
-	Name         string                `json:"name" binding:"required,min=1,max=255"`
-	Description  string                `json:"description,omitempty"`
-	Privacy      models.TeamPrivacy    `json:"privacy" binding:"required"`
-	ParentTeamID *uuid.UUID            `json:"parent_team_id,omitempty"`
+	Name         string             `json:"name" binding:"required,min=1,max=255"`
+	Description  string             `json:"description,omitempty"`
+	Privacy      models.TeamPrivacy `json:"privacy" binding:"required"`
+	ParentTeamID *uuid.UUID         `json:"parent_team_id,omitempty"`
 }
 
 type UpdateTeamRequest struct {
-	Name         *string               `json:"name,omitempty"`
-	Description  *string               `json:"description,omitempty"`
-	Privacy      *models.TeamPrivacy   `json:"privacy,omitempty"`
-	ParentTeamID *uuid.UUID            `json:"parent_team_id,omitempty"`
+	Name         *string             `json:"name,omitempty"`
+	Description  *string             `json:"description,omitempty"`
+	Privacy      *models.TeamPrivacy `json:"privacy,omitempty"`
+	ParentTeamID *uuid.UUID          `json:"parent_team_id,omitempty"`
 }
 
 type TeamFilters struct {
@@ -412,19 +412,19 @@ type TeamTemplateService interface {
 }
 
 type CreateTeamFromTemplateRequest struct {
-	Name            string            `json:"name" binding:"required,min=1,max=255"`
-	Description     string            `json:"description,omitempty"`
-	Privacy         models.TeamPrivacy `json:"privacy" binding:"required"`
-	ParentTeamID    *uuid.UUID        `json:"parent_team_id,omitempty"`
-	TemplateConfig  map[string]interface{} `json:"template_config,omitempty"`
+	Name           string                 `json:"name" binding:"required,min=1,max=255"`
+	Description    string                 `json:"description,omitempty"`
+	Privacy        models.TeamPrivacy     `json:"privacy" binding:"required"`
+	ParentTeamID   *uuid.UUID             `json:"parent_team_id,omitempty"`
+	TemplateConfig map[string]interface{} `json:"template_config,omitempty"`
 }
 
 type ExternalSystemConfig struct {
-	SystemType   string            `json:"system_type"` // "ldap", "active_directory", "okta", etc.
+	SystemType   string                 `json:"system_type"` // "ldap", "active_directory", "okta", etc.
 	Config       map[string]interface{} `json:"config"`
-	SyncInterval string            `json:"sync_interval"` // "hourly", "daily", "weekly"
-	AutoCreate   bool              `json:"auto_create"`
-	AutoRemove   bool              `json:"auto_remove"`
+	SyncInterval string                 `json:"sync_interval"` // "hourly", "daily", "weekly"
+	AutoCreate   bool                   `json:"auto_create"`
+	AutoRemove   bool                   `json:"auto_remove"`
 }
 
 type TeamPerformanceData struct {
@@ -466,7 +466,7 @@ func (s *teamTemplateService) CreateTeamFromTemplate(ctx context.Context, orgNam
 
 	// Get the template
 	var template models.OrganizationTemplate
-	if err := s.db.Where("id = ? AND organization_id = ? AND template_type = ?", 
+	if err := s.db.Where("id = ? AND organization_id = ? AND template_type = ?",
 		templateID, org.ID, models.TemplateTypeTeam).First(&template).Error; err != nil {
 		return nil, fmt.Errorf("team template not found: %w", err)
 	}
@@ -523,7 +523,7 @@ func (s *teamTemplateService) GetTeamTemplates(ctx context.Context, orgName stri
 	}
 
 	var templates []*models.OrganizationTemplate
-	if err := s.db.Where("organization_id = ? AND template_type = ?", 
+	if err := s.db.Where("organization_id = ? AND template_type = ?",
 		org.ID, models.TemplateTypeTeam).Find(&templates).Error; err != nil {
 		return nil, fmt.Errorf("failed to get team templates: %w", err)
 	}
@@ -576,12 +576,12 @@ func (s *teamTemplateService) GetTeamPerformanceMetrics(ctx context.Context, org
 		TeamName:        teamName,
 		Period:          period,
 		MemberCount:     int(memberCount),
-		CommitsCount:    0,  // Would query git data
-		IssuesResolved:  0,  // Would query issue data
-		PullRequests:    0,  // Would query PR data
-		CodeReviews:     0,  // Would query review data
-		AvgResponseTime: 0,  // Would calculate from timestamps
-		Productivity:    0,  // Would calculate based on various metrics
+		CommitsCount:    0, // Would query git data
+		IssuesResolved:  0, // Would query issue data
+		PullRequests:    0, // Would query PR data
+		CodeReviews:     0, // Would query review data
+		AvgResponseTime: 0, // Would calculate from timestamps
+		Productivity:    0, // Would calculate based on various metrics
 		LastUpdated:     time.Now(),
 	}
 
@@ -602,7 +602,7 @@ func (s *teamTemplateService) TrackTeamActivity(ctx context.Context, orgName, te
 		}
 
 		go func() {
-			s.as.LogActivity(context.Background(), org.ID, activity.ActorID, 
+			s.as.LogActivity(context.Background(), org.ID, activity.ActorID,
 				models.ActivityAction("team."+activity.ActivityType), "team", &team.ID, activity.Metadata)
 		}()
 	}
@@ -616,7 +616,7 @@ func (s *teamTemplateService) applyTemplateConfiguration(ctx context.Context, te
 	// - Default branch protection rules
 	// - Integration settings
 	// - Notification preferences
-	
+
 	// This is a simplified implementation - would be expanded based on template types
 	if permissions, ok := templateConfig["default_permissions"].(map[string]interface{}); ok {
 		// Apply default repository permissions for the team
@@ -645,51 +645,51 @@ func (s *teamTemplateService) syncWithLDAP(ctx context.Context, team *models.Tea
 	// 1. Connect to LDAP server using config
 	// 2. Query group members
 	// 3. Sync membership with team
-	
+
 	// For now, simulate sync completion
 	fmt.Printf("LDAP sync initiated for team %s\n", team.Name)
-	
+
 	// This would typically:
 	// - Query LDAP for group membership
 	// - Compare with current team membership
 	// - Add/remove members based on sync policy
-	
+
 	return nil
 }
 
 func (s *teamTemplateService) syncWithActiveDirectory(ctx context.Context, team *models.Team, config ExternalSystemConfig) error {
 	// Active Directory sync implementation placeholder
 	fmt.Printf("Active Directory sync initiated for team %s\n", team.Name)
-	
+
 	// This would typically:
 	// - Connect to AD using provided credentials
 	// - Query security group or organizational unit
 	// - Sync membership based on AD group membership
-	
+
 	return nil
 }
 
 func (s *teamTemplateService) syncWithOkta(ctx context.Context, team *models.Team, config ExternalSystemConfig) error {
 	// Okta sync implementation placeholder
 	fmt.Printf("Okta sync initiated for team %s\n", team.Name)
-	
+
 	// This would typically:
 	// - Use Okta API to query group membership
 	// - Sync users based on Okta group assignment
 	// - Handle role mapping if configured
-	
+
 	return nil
 }
 
 func (s *teamTemplateService) syncWithGitHub(ctx context.Context, team *models.Team, config ExternalSystemConfig) error {
 	// GitHub team sync implementation placeholder
 	fmt.Printf("GitHub sync initiated for team %s\n", team.Name)
-	
+
 	// This would typically:
 	// - Use GitHub API to query organization team membership
 	// - Sync team members from GitHub team
 	// - Handle permission mapping
-	
+
 	return nil
 }
 
@@ -698,7 +698,7 @@ func (s *teamTemplateService) addExternalMemberToTeam(teamID, userID uuid.UUID, 
 	// Check if member already exists
 	var existingMember models.TeamMember
 	err := s.db.Where("team_id = ? AND user_id = ?", teamID, userID).First(&existingMember).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Add new member
 		member := &models.TeamMember{
@@ -706,11 +706,11 @@ func (s *teamTemplateService) addExternalMemberToTeam(teamID, userID uuid.UUID, 
 			UserID: userID,
 			Role:   role,
 		}
-		
+
 		if err := s.db.Create(member).Error; err != nil {
 			return fmt.Errorf("failed to add external member to team: %w", err)
 		}
-		
+
 		// Log the addition
 		if s.as != nil {
 			go func() {
@@ -731,7 +731,7 @@ func (s *teamTemplateService) addExternalMemberToTeam(teamID, userID uuid.UUID, 
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -741,7 +741,7 @@ func (s *teamTemplateService) removeExternalMemberFromTeam(teamID, userID uuid.U
 	if err != nil {
 		return fmt.Errorf("failed to remove external member from team: %w", err)
 	}
-	
+
 	// Log the removal
 	if s.as != nil {
 		go func() {
@@ -750,27 +750,27 @@ func (s *teamTemplateService) removeExternalMemberFromTeam(teamID, userID uuid.U
 			})
 		}()
 	}
-	
+
 	return nil
 }
 
 // External sync status tracking
 type ExternalSyncStatus struct {
-	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	TeamID           uuid.UUID `json:"team_id" gorm:"type:uuid;not null;index"`
-	ExternalSystem   string    `json:"external_system" gorm:"not null;size:100"`
-	LastSyncAt       time.Time `json:"last_sync_at"`
-	NextSyncAt       time.Time `json:"next_sync_at"`
-	SyncStatus       string    `json:"sync_status" gorm:"size:50"`
-	MembersAdded     int       `json:"members_added" gorm:"default:0"`
-	MembersRemoved   int       `json:"members_removed" gorm:"default:0"`
-	MembersUpdated   int       `json:"members_updated" gorm:"default:0"`
-	SyncError        string    `json:"sync_error,omitempty" gorm:"type:text"`
-	Configuration    string    `json:"configuration" gorm:"type:jsonb"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	TeamID         uuid.UUID `json:"team_id" gorm:"type:uuid;not null;index"`
+	ExternalSystem string    `json:"external_system" gorm:"not null;size:100"`
+	LastSyncAt     time.Time `json:"last_sync_at"`
+	NextSyncAt     time.Time `json:"next_sync_at"`
+	SyncStatus     string    `json:"sync_status" gorm:"size:50"`
+	MembersAdded   int       `json:"members_added" gorm:"default:0"`
+	MembersRemoved int       `json:"members_removed" gorm:"default:0"`
+	MembersUpdated int       `json:"members_updated" gorm:"default:0"`
+	SyncError      string    `json:"sync_error,omitempty" gorm:"type:text"`
+	Configuration  string    `json:"configuration" gorm:"type:jsonb"`
 }
 
 func (ExternalSyncStatus) TableName() string {
@@ -781,9 +781,9 @@ func (ExternalSyncStatus) TableName() string {
 func (s *teamTemplateService) updateSyncStatus(teamID uuid.UUID, systemType string, status string, stats map[string]int, syncError error) error {
 	var syncStatus ExternalSyncStatus
 	err := s.db.Where("team_id = ? AND external_system = ?", teamID, systemType).First(&syncStatus).Error
-	
+
 	now := time.Now()
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Create new sync status record
 		syncStatus = ExternalSyncStatus{
@@ -799,7 +799,7 @@ func (s *teamTemplateService) updateSyncStatus(teamID uuid.UUID, systemType stri
 		syncStatus.LastSyncAt = now
 		syncStatus.SyncStatus = status
 	}
-	
+
 	// Update statistics
 	if stats != nil {
 		if added, ok := stats["added"]; ok {
@@ -812,17 +812,17 @@ func (s *teamTemplateService) updateSyncStatus(teamID uuid.UUID, systemType stri
 			syncStatus.MembersUpdated += updated
 		}
 	}
-	
+
 	// Set error if any
 	if syncError != nil {
 		syncStatus.SyncError = syncError.Error()
 	} else {
 		syncStatus.SyncError = ""
 	}
-	
+
 	// Calculate next sync time (example: daily sync)
 	syncStatus.NextSyncAt = now.Add(24 * time.Hour)
-	
+
 	if syncStatus.ID == uuid.Nil {
 		return s.db.Create(&syncStatus).Error
 	} else {

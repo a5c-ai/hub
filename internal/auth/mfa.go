@@ -23,8 +23,8 @@ type MFASetupRequest struct {
 }
 
 type MFASetupResponse struct {
-	Secret    string `json:"secret"`
-	QRCodeURL string `json:"qr_code_url"`
+	Secret      string   `json:"secret"`
+	QRCodeURL   string   `json:"qr_code_url"`
 	BackupCodes []string `json:"backup_codes"`
 }
 
@@ -34,14 +34,14 @@ type MFAVerifyRequest struct {
 }
 
 type BackupCode struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	UserID uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
-	Code   string    `json:"code" gorm:"not null;size:255"`
-	Used   bool      `json:"used" gorm:"default:false"`
+
+	UserID uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
+	Code   string     `json:"code" gorm:"not null;size:255"`
+	Used   bool       `json:"used" gorm:"default:false"`
 	UsedAt *time.Time `json:"used_at"`
 
 	// Relationships
@@ -49,16 +49,16 @@ type BackupCode struct {
 }
 
 type WebAuthnCredential struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
-	CredentialID string    `json:"credential_id" gorm:"not null;uniqueIndex;size:255"`
-	PublicKey    []byte    `json:"public_key" gorm:"not null"`
-	Name         string    `json:"name" gorm:"not null;size:255"`
-	SignCount    uint32    `json:"sign_count" gorm:"default:0"`
+
+	UserID       uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
+	CredentialID string     `json:"credential_id" gorm:"not null;uniqueIndex;size:255"`
+	PublicKey    []byte     `json:"public_key" gorm:"not null"`
+	Name         string     `json:"name" gorm:"not null;size:255"`
+	SignCount    uint32     `json:"sign_count" gorm:"default:0"`
 	LastUsedAt   *time.Time `json:"last_used_at"`
 
 	// Relationships
@@ -66,11 +66,11 @@ type WebAuthnCredential struct {
 }
 
 type SMSVerificationCode struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
+
 	UserID    uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
 	Code      string     `json:"code" gorm:"not null;size:10"`
 	ExpiresAt time.Time  `json:"expires_at" gorm:"not null"`
@@ -116,13 +116,13 @@ func (s *MFAService) SetupTOTP(userID uuid.UUID, issuer, accountName string) (*M
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate TOTP key: %w", err)
 	}
-	
+
 	// Generate QR code URL from the key
 	qrURL := key.URL()
-	
+
 	// Generate backup codes
 	backupCodes := s.generateBackupCodes()
-	
+
 	// Store backup codes in database
 	for _, code := range backupCodes {
 		backupCode := BackupCode{
@@ -137,7 +137,7 @@ func (s *MFAService) SetupTOTP(userID uuid.UUID, issuer, accountName string) (*M
 
 	// Store the secret temporarily (in production, you might want to encrypt this)
 	// For now, we'll assume the client will store it and send it back for verification
-	
+
 	return &MFASetupResponse{
 		Secret:      key.Secret(),
 		QRCodeURL:   qrURL,
@@ -162,7 +162,7 @@ func (s *MFAService) VerifyTOTP(userID uuid.UUID, secret, code string) (bool, er
 		if err != nil {
 			return false, fmt.Errorf("failed to enable MFA: %w", err)
 		}
-		
+
 		// Send MFA setup notification email
 		if s.emailService != nil {
 			var user models.User
@@ -170,12 +170,12 @@ func (s *MFAService) VerifyTOTP(userID uuid.UUID, secret, code string) (bool, er
 				// Get backup codes for this user
 				var backupCodes []BackupCode
 				s.db.Where("user_id = ? AND used = false", userID).Find(&backupCodes)
-				
+
 				codes := make([]string, len(backupCodes))
 				for i, bc := range backupCodes {
 					codes[i] = bc.Code
 				}
-				
+
 				// Send email notification (don't fail if email fails)
 				if err := s.emailService.SendMFASetupEmail(user.Email, codes); err != nil {
 					fmt.Printf("Failed to send MFA setup email: %v\n", err)
@@ -241,7 +241,7 @@ func (s *MFAService) RegenerateBackupCodes(userID uuid.UUID) ([]string, error) {
 
 	// Generate new backup codes
 	backupCodes := s.generateBackupCodes()
-	
+
 	// Store new backup codes
 	for _, code := range backupCodes {
 		backupCode := BackupCode{
@@ -279,7 +279,7 @@ func (s *MFAService) useBackupCode(userID uuid.UUID, code string) (bool, error) 
 	now := time.Now()
 	backupCode.Used = true
 	backupCode.UsedAt = &now
-	
+
 	err = s.db.Save(&backupCode).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to mark backup code as used: %w", err)
@@ -295,7 +295,6 @@ func (s *MFAService) generateBackupCodes() []string {
 	}
 	return codes
 }
-
 
 func generateBackupCode() string {
 	// Generate 8-digit backup code
@@ -331,13 +330,13 @@ func NewSMSService(provider SMSProvider) *SMSService {
 func (s *SMSService) SendMFACode(phoneNumber string) (string, error) {
 	// Generate 6-digit code
 	code := generateSMSCode()
-	
+
 	message := fmt.Sprintf("Your verification code is: %s", code)
 	err := s.provider.SendSMS(phoneNumber, message)
 	if err != nil {
 		return "", fmt.Errorf("failed to send SMS: %w", err)
 	}
-	
+
 	return code, nil
 }
 
@@ -366,13 +365,13 @@ func (p *LoggingSMSProvider) SendSMS(phoneNumber, message string) error {
 	fmt.Printf("To: %s\n", phoneNumber)
 	fmt.Printf("Message: %s\n", message)
 	fmt.Printf("==========================================\n")
-	
+
 	// In production, you might want to:
 	// 1. Use a real SMS provider (Twilio, AWS SNS, etc.)
 	// 2. Store in database for audit trail
 	// 3. Send to a message queue for later processing
 	// 4. Use alternative notification methods
-	
+
 	return nil
 }
 
@@ -380,7 +379,7 @@ func (p *LoggingSMSProvider) SendSMS(phoneNumber, message string) error {
 func (s *MFAService) SendSMSCode(userID uuid.UUID, phoneNumber string) error {
 	// Generate 6-digit code
 	code := generateSMSCode()
-	
+
 	// Store code in database with expiration
 	expiresAt := time.Now().Add(5 * time.Minute)
 	smsCode := SMSVerificationCode{
@@ -389,11 +388,11 @@ func (s *MFAService) SendSMSCode(userID uuid.UUID, phoneNumber string) error {
 		ExpiresAt: expiresAt,
 		Used:      false,
 	}
-	
+
 	if err := s.db.Create(&smsCode).Error; err != nil {
 		return fmt.Errorf("failed to store SMS code: %w", err)
 	}
-	
+
 	// Send SMS (using logging provider when no real provider configured)
 	provider := &LoggingSMSProvider{}
 	message := fmt.Sprintf("Your verification code is: %s. Valid for 5 minutes.", code)
@@ -402,19 +401,19 @@ func (s *MFAService) SendSMSCode(userID uuid.UUID, phoneNumber string) error {
 
 func (s *MFAService) verifySMSCode(userID uuid.UUID, code string) bool {
 	var smsCode SMSVerificationCode
-	err := s.db.Where("user_id = ? AND code = ? AND used = false AND expires_at > ?", 
+	err := s.db.Where("user_id = ? AND code = ? AND used = false AND expires_at > ?",
 		userID, code, time.Now()).First(&smsCode).Error
-	
+
 	if err != nil {
 		return false
 	}
-	
+
 	// Mark code as used
 	now := time.Now()
 	smsCode.Used = true
 	smsCode.UsedAt = &now
 	s.db.Save(&smsCode)
-	
+
 	return true
 }
 
@@ -439,7 +438,7 @@ type WebAuthnLoginResponse struct {
 func (s *MFAService) InitiateWebAuthnRegistration(userID uuid.UUID, credentialName string) (*WebAuthnRegistrationResponse, error) {
 	// This is a simplified implementation
 	// In production, you would use a proper WebAuthn library like github.com/go-webauthn/webauthn
-	
+
 	// For now, return mock options
 	options := map[string]interface{}{
 		"challenge": generateMFASecureToken(),
@@ -462,12 +461,12 @@ func (s *MFAService) InitiateWebAuthnRegistration(userID uuid.UUID, credentialNa
 		},
 		"timeout": 60000,
 	}
-	
+
 	optionsJSON, err := json.Marshal(options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal options: %w", err)
 	}
-	
+
 	return &WebAuthnRegistrationResponse{
 		Options: string(optionsJSON),
 	}, nil
@@ -482,17 +481,17 @@ func (s *MFAService) CompleteWebAuthnRegistration(userID uuid.UUID, credentialNa
 		Name:         credentialName,
 		SignCount:    0,
 	}
-	
+
 	if err := s.db.Create(&credential).Error; err != nil {
 		return fmt.Errorf("failed to store WebAuthn credential: %w", err)
 	}
-	
+
 	// Enable MFA for user if not already enabled
 	err := s.db.Model(&models.User{}).Where("id = ?", userID).Update("two_factor_enabled", true).Error
 	if err != nil {
 		return fmt.Errorf("failed to enable MFA: %w", err)
 	}
-	
+
 	return nil
 }
 

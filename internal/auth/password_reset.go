@@ -14,11 +14,11 @@ import (
 )
 
 type PasswordResetToken struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
+
 	UserID    uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
 	Token     string     `json:"-" gorm:"not null;uniqueIndex;size:255"`
 	ExpiresAt time.Time  `json:"expires_at" gorm:"not null"`
@@ -69,7 +69,7 @@ func (s *PasswordResetService) CreateResetToken(userID uuid.UUID) (*PasswordRese
 func (s *PasswordResetService) ValidateResetToken(token string) (*PasswordResetToken, error) {
 	var resetToken PasswordResetToken
 	err := s.db.Where("token = ? AND used = false AND expires_at > ?", token, time.Now()).First(&resetToken).Error
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("invalid or expired reset token")
@@ -129,7 +129,7 @@ func (s *PasswordResetService) RevokeUserTokens(userID uuid.UUID) error {
 			"used":    true,
 			"used_at": &now,
 		}).Error
-	
+
 	return err
 }
 

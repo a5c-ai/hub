@@ -12,15 +12,15 @@ type EventType string
 
 const (
 	// Repository Events
-	EventRepositoryCreated    EventType = "repository.created"
-	EventRepositoryDeleted    EventType = "repository.deleted"
-	EventRepositoryPush       EventType = "repository.push"
-	EventRepositoryClone      EventType = "repository.clone"
-	EventRepositoryFork       EventType = "repository.fork"
-	EventRepositoryStar       EventType = "repository.star"
-	EventRepositoryWatch      EventType = "repository.watch"
+	EventRepositoryCreated     EventType = "repository.created"
+	EventRepositoryDeleted     EventType = "repository.deleted"
+	EventRepositoryPush        EventType = "repository.push"
+	EventRepositoryClone       EventType = "repository.clone"
+	EventRepositoryFork        EventType = "repository.fork"
+	EventRepositoryStar        EventType = "repository.star"
+	EventRepositoryWatch       EventType = "repository.watch"
 	EventRepositoryPullRequest EventType = "repository.pull_request"
-	EventRepositoryIssue      EventType = "repository.issue"
+	EventRepositoryIssue       EventType = "repository.issue"
 
 	// User Events
 	EventUserLogin         EventType = "user.login"
@@ -30,59 +30,59 @@ const (
 	EventUserPasswordReset EventType = "user.password_reset"
 
 	// Organization Events
-	EventOrgCreated        EventType = "organization.created"
-	EventOrgMemberAdded    EventType = "organization.member_added"
-	EventOrgMemberRemoved  EventType = "organization.member_removed"
-	EventOrgTeamCreated    EventType = "organization.team_created"
-	EventOrgRepositoryAdd  EventType = "organization.repository_add"
+	EventOrgCreated       EventType = "organization.created"
+	EventOrgMemberAdded   EventType = "organization.member_added"
+	EventOrgMemberRemoved EventType = "organization.member_removed"
+	EventOrgTeamCreated   EventType = "organization.team_created"
+	EventOrgRepositoryAdd EventType = "organization.repository_add"
 
 	// CI/CD Events
-	EventWorkflowRun       EventType = "workflow.run"
-	EventJobStarted        EventType = "job.started"
-	EventJobCompleted      EventType = "job.completed"
-	EventDeployment        EventType = "deployment"
+	EventWorkflowRun  EventType = "workflow.run"
+	EventJobStarted   EventType = "job.started"
+	EventJobCompleted EventType = "job.completed"
+	EventDeployment   EventType = "deployment"
 
 	// Security Events
-	EventSecurityScan      EventType = "security.scan"
-	EventAccessDenied      EventType = "security.access_denied"
-	EventAPIKeyUsed        EventType = "security.api_key_used"
-	EventMFAEnabled        EventType = "security.mfa_enabled"
+	EventSecurityScan EventType = "security.scan"
+	EventAccessDenied EventType = "security.access_denied"
+	EventAPIKeyUsed   EventType = "security.api_key_used"
+	EventMFAEnabled   EventType = "security.mfa_enabled"
 
 	// Performance Events
-	EventAPICall           EventType = "api.call"
-	EventPageView          EventType = "page.view"
-	EventSearchQuery       EventType = "search.query"
+	EventAPICall     EventType = "api.call"
+	EventPageView    EventType = "page.view"
+	EventSearchQuery EventType = "search.query"
 )
 
 // AnalyticsEvent stores individual analytics events
 type AnalyticsEvent struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at" gorm:"index"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	EventType    EventType `json:"event_type" gorm:"type:varchar(100);not null;index"`
-	ActorID      *uuid.UUID `json:"actor_id,omitempty" gorm:"type:uuid;index"`
-	ActorType    string    `json:"actor_type" gorm:"type:varchar(50);index"` // user, system, anonymous
-	
+	EventType EventType  `json:"event_type" gorm:"type:varchar(100);not null;index"`
+	ActorID   *uuid.UUID `json:"actor_id,omitempty" gorm:"type:uuid;index"`
+	ActorType string     `json:"actor_type" gorm:"type:varchar(50);index"` // user, system, anonymous
+
 	// Target information
-	TargetType   string     `json:"target_type" gorm:"type:varchar(50);index"` // repository, user, organization
-	TargetID     *uuid.UUID `json:"target_id,omitempty" gorm:"type:uuid;index"`
-	
+	TargetType string     `json:"target_type" gorm:"type:varchar(50);index"` // repository, user, organization
+	TargetID   *uuid.UUID `json:"target_id,omitempty" gorm:"type:uuid;index"`
+
 	// Context information
 	RepositoryID   *uuid.UUID `json:"repository_id,omitempty" gorm:"type:uuid;index"`
 	OrganizationID *uuid.UUID `json:"organization_id,omitempty" gorm:"type:uuid;index"`
-	
+
 	// Request/session information
-	UserAgent    string `json:"user_agent" gorm:"type:text"`
-	IPAddress    string `json:"ip_address" gorm:"type:varchar(45);index"`
-	SessionID    string `json:"session_id" gorm:"type:varchar(255);index"`
-	RequestID    string `json:"request_id" gorm:"type:varchar(255);index"`
-	
+	UserAgent string `json:"user_agent" gorm:"type:text"`
+	IPAddress string `json:"ip_address" gorm:"type:varchar(45);index"`
+	SessionID string `json:"session_id" gorm:"type:varchar(255);index"`
+	RequestID string `json:"request_id" gorm:"type:varchar(255);index"`
+
 	// Event metadata
-	Metadata     string `json:"metadata" gorm:"type:jsonb"` // Additional event-specific data
-	Duration     *int64 `json:"duration,omitempty"`        // Duration in milliseconds
-	Size         *int64 `json:"size,omitempty"`            // Size in bytes (for transfers)
+	Metadata     string `json:"metadata" gorm:"type:jsonb"`           // Additional event-specific data
+	Duration     *int64 `json:"duration,omitempty"`                   // Duration in milliseconds
+	Size         *int64 `json:"size,omitempty"`                       // Size in bytes (for transfers)
 	Status       string `json:"status" gorm:"type:varchar(50);index"` // success, error, pending
 	ErrorMessage string `json:"error_message,omitempty" gorm:"type:text"`
 
@@ -101,32 +101,32 @@ type MetricType string
 
 const (
 	MetricTypeCounter   MetricType = "counter"
-	MetricTypeGauge     MetricType = "gauge" 
+	MetricTypeGauge     MetricType = "gauge"
 	MetricTypeHistogram MetricType = "histogram"
 	MetricTypeSummary   MetricType = "summary"
 )
 
 // AnalyticsMetric stores aggregated metrics data
 type AnalyticsMetric struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Name         string     `json:"name" gorm:"type:varchar(255);not null;index"`
-	MetricType   MetricType `json:"metric_type" gorm:"type:varchar(50);not null"`
-	Value        float64    `json:"value" gorm:"not null"`
-	Timestamp    time.Time  `json:"timestamp" gorm:"not null;index"`
-	
+	Name       string     `json:"name" gorm:"type:varchar(255);not null;index"`
+	MetricType MetricType `json:"metric_type" gorm:"type:varchar(50);not null"`
+	Value      float64    `json:"value" gorm:"not null"`
+	Timestamp  time.Time  `json:"timestamp" gorm:"not null;index"`
+
 	// Scope information
 	RepositoryID   *uuid.UUID `json:"repository_id,omitempty" gorm:"type:uuid;index"`
 	OrganizationID *uuid.UUID `json:"organization_id,omitempty" gorm:"type:uuid;index"`
 	UserID         *uuid.UUID `json:"user_id,omitempty" gorm:"type:uuid;index"`
-	
+
 	// Aggregation information
-	Period       string `json:"period" gorm:"type:varchar(50);index"` // hourly, daily, weekly, monthly
-	Tags         string `json:"tags" gorm:"type:jsonb"`               // Additional tags for filtering
-	
+	Period string `json:"period" gorm:"type:varchar(50);index"` // hourly, daily, weekly, monthly
+	Tags   string `json:"tags" gorm:"type:jsonb"`               // Additional tags for filtering
+
 	// Statistical data for histograms/summaries
 	Count        *int64   `json:"count,omitempty"`
 	Sum          *float64 `json:"sum,omitempty"`
@@ -149,7 +149,7 @@ func (am *AnalyticsMetric) TableName() string {
 
 // RepositoryAnalytics stores repository-specific analytics
 type RepositoryAnalytics struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -158,31 +158,31 @@ type RepositoryAnalytics struct {
 	Date         time.Time `json:"date" gorm:"type:date;not null;index"`
 
 	// Code statistics
-	LinesOfCode       int64 `json:"lines_of_code" gorm:"default:0"`
-	FileCount         int64 `json:"file_count" gorm:"default:0"`
-	CommitCount       int64 `json:"commit_count" gorm:"default:0"`
-	BranchCount       int64 `json:"branch_count" gorm:"default:0"`
-	ContributorCount  int64 `json:"contributor_count" gorm:"default:0"`
-	
+	LinesOfCode      int64 `json:"lines_of_code" gorm:"default:0"`
+	FileCount        int64 `json:"file_count" gorm:"default:0"`
+	CommitCount      int64 `json:"commit_count" gorm:"default:0"`
+	BranchCount      int64 `json:"branch_count" gorm:"default:0"`
+	ContributorCount int64 `json:"contributor_count" gorm:"default:0"`
+
 	// Activity metrics
-	ViewsCount        int64 `json:"views_count" gorm:"default:0"`
-	ClonesCount       int64 `json:"clones_count" gorm:"default:0"`
-	ForksCount        int64 `json:"forks_count" gorm:"default:0"`
-	StarsCount        int64 `json:"stars_count" gorm:"default:0"`
-	WatchersCount     int64 `json:"watchers_count" gorm:"default:0"`
-	
+	ViewsCount    int64 `json:"views_count" gorm:"default:0"`
+	ClonesCount   int64 `json:"clones_count" gorm:"default:0"`
+	ForksCount    int64 `json:"forks_count" gorm:"default:0"`
+	StarsCount    int64 `json:"stars_count" gorm:"default:0"`
+	WatchersCount int64 `json:"watchers_count" gorm:"default:0"`
+
 	// Issue and PR metrics
-	IssuesOpened      int64 `json:"issues_opened" gorm:"default:0"`
-	IssuesClosed      int64 `json:"issues_closed" gorm:"default:0"`
+	IssuesOpened       int64 `json:"issues_opened" gorm:"default:0"`
+	IssuesClosed       int64 `json:"issues_closed" gorm:"default:0"`
 	PullRequestsOpened int64 `json:"pull_requests_opened" gorm:"default:0"`
 	PullRequestsClosed int64 `json:"pull_requests_closed" gorm:"default:0"`
 	PullRequestsMerged int64 `json:"pull_requests_merged" gorm:"default:0"`
-	
+
 	// Performance metrics
 	AveragePRMergeTime    *float64 `json:"average_pr_merge_time,omitempty"`    // in hours
 	AverageIssueCloseTime *float64 `json:"average_issue_close_time,omitempty"` // in hours
-	BuildSuccessRate      *float64 `json:"build_success_rate,omitempty"`      // percentage
-	
+	BuildSuccessRate      *float64 `json:"build_success_rate,omitempty"`       // percentage
+
 	// Language breakdown (stored as JSON)
 	LanguageStats string `json:"language_stats" gorm:"type:jsonb"`
 
@@ -196,7 +196,7 @@ func (ra *RepositoryAnalytics) TableName() string {
 
 // UserAnalytics stores user-specific analytics
 type UserAnalytics struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -210,17 +210,17 @@ type UserAnalytics struct {
 	PullRequestsCreated int64 `json:"pull_requests_created" gorm:"default:0"`
 	IssuesCreated       int64 `json:"issues_created" gorm:"default:0"`
 	CommentsCreated     int64 `json:"comments_created" gorm:"default:0"`
-	
+
 	// Repository interactions
 	RepositoriesCreated int64 `json:"repositories_created" gorm:"default:0"`
 	RepositoriesStarred int64 `json:"repositories_starred" gorm:"default:0"`
 	RepositoriesForked  int64 `json:"repositories_forked" gorm:"default:0"`
-	
+
 	// Session information
-	SessionDuration  *float64 `json:"session_duration,omitempty"` // average in minutes
-	PageViews        int64    `json:"page_views" gorm:"default:0"`
-	UniquePageViews  int64    `json:"unique_page_views" gorm:"default:0"`
-	
+	SessionDuration *float64 `json:"session_duration,omitempty"` // average in minutes
+	PageViews       int64    `json:"page_views" gorm:"default:0"`
+	UniquePageViews int64    `json:"unique_page_views" gorm:"default:0"`
+
 	// Performance metrics
 	AverageResponseTime *float64 `json:"average_response_time,omitempty"` // in milliseconds
 
@@ -234,7 +234,7 @@ func (ua *UserAnalytics) TableName() string {
 
 // OrganizationAnalytics stores organization-specific analytics
 type OrganizationAnalytics struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -246,17 +246,17 @@ type OrganizationAnalytics struct {
 	MemberCount     int64 `json:"member_count" gorm:"default:0"`
 	TeamCount       int64 `json:"team_count" gorm:"default:0"`
 	RepositoryCount int64 `json:"repository_count" gorm:"default:0"`
-	
+
 	// Activity metrics
 	TotalCommits      int64 `json:"total_commits" gorm:"default:0"`
 	TotalPullRequests int64 `json:"total_pull_requests" gorm:"default:0"`
 	TotalIssues       int64 `json:"total_issues" gorm:"default:0"`
-	
+
 	// Resource usage
-	StorageUsedMB     int64    `json:"storage_used_mb" gorm:"default:0"`
-	BandwidthUsedMB   int64    `json:"bandwidth_used_mb" gorm:"default:0"`
-	ComputeTimeMinutes int64   `json:"compute_time_minutes" gorm:"default:0"`
-	
+	StorageUsedMB      int64 `json:"storage_used_mb" gorm:"default:0"`
+	BandwidthUsedMB    int64 `json:"bandwidth_used_mb" gorm:"default:0"`
+	ComputeTimeMinutes int64 `json:"compute_time_minutes" gorm:"default:0"`
+
 	// Cost metrics (optional)
 	EstimatedCost *float64 `json:"estimated_cost,omitempty"`
 
@@ -270,7 +270,7 @@ func (oa *OrganizationAnalytics) TableName() string {
 
 // SystemAnalytics stores platform-wide analytics
 type SystemAnalytics struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -282,24 +282,24 @@ type SystemAnalytics struct {
 	ActiveUsers        int64 `json:"active_users" gorm:"default:0"`
 	TotalOrganizations int64 `json:"total_organizations" gorm:"default:0"`
 	TotalRepositories  int64 `json:"total_repositories" gorm:"default:0"`
-	
+
 	// Performance metrics
 	AverageResponseTime *float64 `json:"average_response_time,omitempty"` // in milliseconds
 	P95ResponseTime     *float64 `json:"p95_response_time,omitempty"`     // in milliseconds
 	ErrorRate           *float64 `json:"error_rate,omitempty"`            // percentage
 	Uptime              *float64 `json:"uptime,omitempty"`                // percentage
-	
+
 	// Resource metrics
-	CPUUsage       *float64 `json:"cpu_usage,omitempty"`       // percentage
-	MemoryUsage    *float64 `json:"memory_usage,omitempty"`    // percentage  
-	DiskUsage      *float64 `json:"disk_usage,omitempty"`      // percentage
-	NetworkInMB    int64    `json:"network_in_mb" gorm:"default:0"`
-	NetworkOutMB   int64    `json:"network_out_mb" gorm:"default:0"`
-	
+	CPUUsage     *float64 `json:"cpu_usage,omitempty"`    // percentage
+	MemoryUsage  *float64 `json:"memory_usage,omitempty"` // percentage
+	DiskUsage    *float64 `json:"disk_usage,omitempty"`   // percentage
+	NetworkInMB  int64    `json:"network_in_mb" gorm:"default:0"`
+	NetworkOutMB int64    `json:"network_out_mb" gorm:"default:0"`
+
 	// Business metrics
 	NewRegistrations int64    `json:"new_registrations" gorm:"default:0"`
-	ChurnRate        *float64 `json:"churn_rate,omitempty"`    // percentage
-	GrowthRate       *float64 `json:"growth_rate,omitempty"`   // percentage
+	ChurnRate        *float64 `json:"churn_rate,omitempty"`  // percentage
+	GrowthRate       *float64 `json:"growth_rate,omitempty"` // percentage
 }
 
 func (sa *SystemAnalytics) TableName() string {
@@ -308,27 +308,27 @@ func (sa *SystemAnalytics) TableName() string {
 
 // PerformanceLog stores detailed performance information
 type PerformanceLog struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at" gorm:"index"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	RequestID    string    `json:"request_id" gorm:"type:varchar(255);index"`
-	Method       string    `json:"method" gorm:"type:varchar(10);not null"`
-	Path         string    `json:"path" gorm:"type:varchar(500);not null;index"`
-	StatusCode   int       `json:"status_code" gorm:"not null;index"`
-	Duration     int64     `json:"duration" gorm:"not null"` // in milliseconds
-	ResponseSize int64     `json:"response_size" gorm:"default:0"`
-	
+	RequestID    string `json:"request_id" gorm:"type:varchar(255);index"`
+	Method       string `json:"method" gorm:"type:varchar(10);not null"`
+	Path         string `json:"path" gorm:"type:varchar(500);not null;index"`
+	StatusCode   int    `json:"status_code" gorm:"not null;index"`
+	Duration     int64  `json:"duration" gorm:"not null"` // in milliseconds
+	ResponseSize int64  `json:"response_size" gorm:"default:0"`
+
 	// User context
 	UserID    *uuid.UUID `json:"user_id,omitempty" gorm:"type:uuid;index"`
 	IPAddress string     `json:"ip_address" gorm:"type:varchar(45);index"`
 	UserAgent string     `json:"user_agent" gorm:"type:text"`
-	
+
 	// Additional context
 	RepositoryID   *uuid.UUID `json:"repository_id,omitempty" gorm:"type:uuid;index"`
 	OrganizationID *uuid.UUID `json:"organization_id,omitempty" gorm:"type:uuid;index"`
-	
+
 	// Error information
 	ErrorMessage string `json:"error_message,omitempty" gorm:"type:text"`
 	StackTrace   string `json:"stack_trace,omitempty" gorm:"type:text"`

@@ -11,15 +11,15 @@ import (
 
 // TokenBlacklist represents a blacklisted token
 type TokenBlacklist struct {
-	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	TokenHash    string    `json:"-" gorm:"uniqueIndex;not null;size:64"`
-	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;index"` 
-	ExpiresAt    time.Time `json:"expires_at" gorm:"not null"`
-	Reason       string    `json:"reason" gorm:"size:255"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	TokenHash     string    `json:"-" gorm:"uniqueIndex;not null;size:64"`
+	UserID        uuid.UUID `json:"user_id" gorm:"type:uuid;index"`
+	ExpiresAt     time.Time `json:"expires_at" gorm:"not null"`
+	Reason        string    `json:"reason" gorm:"size:255"`
 	BlacklistedBy uuid.UUID `json:"blacklisted_by" gorm:"type:uuid"`
 }
 
@@ -39,20 +39,20 @@ func NewTokenBlacklistService(db *gorm.DB) *TokenBlacklistService {
 // BlacklistToken adds a token to the blacklist
 func (s *TokenBlacklistService) BlacklistToken(token string, expiresAt time.Time) error {
 	tokenHash := s.hashToken(token)
-	
+
 	blacklistEntry := &TokenBlacklist{
 		TokenHash: tokenHash,
 		ExpiresAt: expiresAt,
 		Reason:    "Manual logout",
 	}
-	
+
 	return s.db.Create(blacklistEntry).Error
 }
 
 // BlacklistTokenWithDetails adds a token to the blacklist with additional details
 func (s *TokenBlacklistService) BlacklistTokenWithDetails(token string, userID, blacklistedBy uuid.UUID, expiresAt time.Time, reason string) error {
 	tokenHash := s.hashToken(token)
-	
+
 	blacklistEntry := &TokenBlacklist{
 		TokenHash:     tokenHash,
 		UserID:        userID,
@@ -60,7 +60,7 @@ func (s *TokenBlacklistService) BlacklistTokenWithDetails(token string, userID, 
 		Reason:        reason,
 		BlacklistedBy: blacklistedBy,
 	}
-	
+
 	return s.db.Create(blacklistEntry).Error
 }
 
@@ -69,7 +69,7 @@ func (s *TokenBlacklistService) BlacklistUserTokens(userID uuid.UUID) error {
 	// This would typically involve getting all active sessions for the user
 	// and blacklisting their associated tokens. Since we're using session-based
 	// refresh tokens, we'll create a general blacklist entry for the user.
-	
+
 	blacklistEntry := &TokenBlacklist{
 		TokenHash:     s.hashToken(userID.String() + time.Now().String()),
 		UserID:        userID,
@@ -77,23 +77,23 @@ func (s *TokenBlacklistService) BlacklistUserTokens(userID uuid.UUID) error {
 		Reason:        "User logout - all devices",
 		BlacklistedBy: userID,
 	}
-	
+
 	return s.db.Create(blacklistEntry).Error
 }
 
 // IsTokenBlacklisted checks if a token is in the blacklist
 func (s *TokenBlacklistService) IsTokenBlacklisted(token string) (bool, error) {
 	tokenHash := s.hashToken(token)
-	
+
 	var count int64
 	err := s.db.Model(&TokenBlacklist{}).
 		Where("token_hash = ? AND expires_at > ?", tokenHash, time.Now()).
 		Count(&count).Error
-	
+
 	if err != nil {
 		return false, err
 	}
-	
+
 	return count > 0, nil
 }
 
@@ -119,17 +119,17 @@ func (s *TokenBlacklistService) RemoveFromBlacklist(token string) error {
 // GetBlacklistStats returns statistics about the blacklist
 func (s *TokenBlacklistService) GetBlacklistStats() (map[string]interface{}, error) {
 	var total, active int64
-	
+
 	// Total blacklisted tokens
 	s.db.Model(&TokenBlacklist{}).Count(&total)
-	
+
 	// Active (not expired) blacklisted tokens
 	s.db.Model(&TokenBlacklist{}).Where("expires_at > ?", time.Now()).Count(&active)
-	
+
 	return map[string]interface{}{
-		"total_blacklisted": total,
+		"total_blacklisted":  total,
 		"active_blacklisted": active,
-		"expired_count": total - active,
+		"expired_count":      total - active,
 	}, nil
 }
 

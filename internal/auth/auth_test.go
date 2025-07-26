@@ -5,17 +5,39 @@ import (
 	"testing"
 	"time"
 
+	"database/sql"
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
+	sqlite3 "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	sqlite "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
+// testSQLiteDriver is a custom SQLite driver name used to register a SQLite3 driver with gen_random_uuid() support
+const testSQLiteDriver = "sqlite3_gen_random_uuid"
+
+func init() {
+	// Register custom SQLite driver with gen_random_uuid() support for tests
+	sql.Register(testSQLiteDriver, &sqlite3.SQLiteDriver{
+		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+			conn.RegisterFunc("gen_random_uuid", func() string {
+				return uuid.New().String()
+			}, true)
+			return nil
+		},
+	})
+}
+
 func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// Open in-memory SQLite DB using the custom driver supporting gen_random_uuid()
+	dialector := sqlite.Open(":memory:")
+	if dr, ok := dialector.(*sqlite.Dialector); ok {
+		dr.DriverName = testSQLiteDriver
+	}
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	require.NoError(t, err)
 
 	// Migrate tables
@@ -507,7 +529,7 @@ func TestOAuthFlow(t *testing.T) {
 // Benchmark tests
 func BenchmarkPasswordHashing(b *testing.B) {
 	password := "TestPassword123!"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := bcryptHashPassword(password)
@@ -525,13 +547,13 @@ func BenchmarkTokenGeneration(b *testing.B) {
 		},
 	}
 	jwtManager := NewJWTManager(cfg.JWT)
-	
+
 	user := &models.User{
 		ID:       uuid.New(),
 		Username: "testuser",
 		Email:    "test@example.com",
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := jwtManager.GenerateToken(user)

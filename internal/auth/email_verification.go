@@ -13,11 +13,11 @@ import (
 )
 
 type EmailVerificationToken struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
+
 	UserID    uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
 	Token     string     `json:"-" gorm:"not null;uniqueIndex;size:255"`
 	ExpiresAt time.Time  `json:"expires_at" gorm:"not null"`
@@ -98,7 +98,7 @@ func (s *EmailVerificationService) VerifyEmail(token string) error {
 	// Find and validate token
 	var verificationToken EmailVerificationToken
 	err := s.db.Where("token = ? AND used = false AND expires_at > ?", token, time.Now()).First(&verificationToken).Error
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("invalid or expired verification token")
@@ -145,7 +145,7 @@ func (s *EmailVerificationService) RevokeUserTokens(userID uuid.UUID) error {
 			"used":    true,
 			"used_at": &now,
 		}).Error
-	
+
 	return err
 }
 
@@ -181,11 +181,11 @@ func (s *EmailVerificationService) GetVerificationStatus(userID uuid.UUID) (bool
 	err = s.db.Where("user_id = ? AND used = false AND expires_at > ?", userID, time.Now()).
 		Order("created_at desc").
 		First(&token).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil, nil // Not verified, no active token
 	}
-	
+
 	if err != nil {
 		return false, nil, err
 	}

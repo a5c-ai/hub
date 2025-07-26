@@ -59,7 +59,7 @@ type OAuthService struct {
 
 func NewOAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, authSvc AuthService) *OAuthService {
 	providers := make(map[string]OAuthProvider)
-	
+
 	// Initialize GitHub provider if configured
 	if cfg.OAuth.GitHub.ClientID != "" && cfg.OAuth.GitHub.ClientSecret != "" {
 		providers["github"] = &GitHubProvider{
@@ -67,7 +67,7 @@ func NewOAuthService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, au
 			ClientSecret: cfg.OAuth.GitHub.ClientSecret,
 		}
 	}
-	
+
 	// Initialize Google provider if configured
 	if cfg.OAuth.Google.ClientID != "" && cfg.OAuth.Google.ClientSecret != "" {
 		providers["google"] = &GoogleProvider{
@@ -136,7 +136,7 @@ func (s *OAuthService) InitiateOAuth(provider, redirectURI string) (string, stri
 	}
 
 	authURL := oauthProvider.GetAuthURL(state, redirectURI)
-	
+
 	return authURL, state, nil
 }
 
@@ -200,7 +200,7 @@ func (s *OAuthService) findOrCreateOAuthUser(userInfo *OAuthUserInfo, providerNa
 	// Try to find existing user by email
 	var user models.User
 	err := s.db.Where("email = ?", userInfo.Email).First(&user).Error
-	
+
 	if err == nil {
 		// User exists, update profile if needed
 		if user.FullName == "" && userInfo.Name != "" {
@@ -292,7 +292,7 @@ func (p *GitHubProvider) GetAuthURL(state, redirectURI string) string {
 	params.Add("redirect_uri", redirectURI)
 	params.Add("scope", "user:email")
 	params.Add("state", state)
-	
+
 	return "https://github.com/login/oauth/authorize?" + params.Encode()
 }
 
@@ -307,7 +307,7 @@ func (p *GitHubProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, er
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -340,7 +340,7 @@ func (p *GitHubProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
@@ -393,7 +393,7 @@ func (p *GitHubProvider) getPrimaryEmail(accessToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
@@ -452,7 +452,7 @@ func (p *GoogleProvider) GetAuthURL(state, redirectURI string) string {
 	params.Add("response_type", "code")
 	params.Add("scope", "openid email profile")
 	params.Add("state", state)
-	
+
 	return "https://accounts.google.com/o/oauth2/v2/auth?" + params.Encode()
 }
 
@@ -468,7 +468,7 @@ func (p *GoogleProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, er
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -495,7 +495,7 @@ func (p *GoogleProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -547,12 +547,12 @@ func (p *MicrosoftProvider) GetAuthURL(state, redirectURI string) string {
 	params.Add("response_type", "code")
 	params.Add("scope", "openid email profile")
 	params.Add("state", state)
-	
+
 	baseURL := "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 	if p.TenantID != "" {
 		baseURL = fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/authorize", p.TenantID)
 	}
-	
+
 	return baseURL + "?" + params.Encode()
 }
 
@@ -573,7 +573,7 @@ func (p *MicrosoftProvider) ExchangeCode(code, redirectURI string) (*OAuthToken,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -600,7 +600,7 @@ func (p *MicrosoftProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -668,7 +668,7 @@ func (p *GitLabProvider) GetAuthURL(state, redirectURI string) string {
 	params.Add("response_type", "code")
 	params.Add("scope", "read_user")
 	params.Add("state", state)
-	
+
 	return baseURL + "/oauth/authorize?" + params.Encode()
 }
 
@@ -689,7 +689,7 @@ func (p *GitLabProvider) ExchangeCode(code, redirectURI string) (*OAuthToken, er
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -722,7 +722,7 @@ func (p *GitLabProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -759,18 +759,18 @@ func (p *GitLabProvider) GetUserInfo(token *OAuthToken) (*OAuthUserInfo, error) 
 
 // Enhanced OAuth service with account linking
 type OAuthAccount struct {
-	ID           uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-	
-	UserID       uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
-	Provider     string    `json:"provider" gorm:"not null;size:50"`
-	ProviderID   string    `json:"provider_id" gorm:"not null;size:255"`
-	Email        string    `json:"email" gorm:"size:255"`
-	Username     string    `json:"username" gorm:"size:255"`
-	AccessToken  string    `json:"-" gorm:"type:text"`
-	RefreshToken string    `json:"-" gorm:"type:text"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	UserID       uuid.UUID  `json:"user_id" gorm:"type:uuid;not null;index"`
+	Provider     string     `json:"provider" gorm:"not null;size:50"`
+	ProviderID   string     `json:"provider_id" gorm:"not null;size:255"`
+	Email        string     `json:"email" gorm:"size:255"`
+	Username     string     `json:"username" gorm:"size:255"`
+	AccessToken  string     `json:"-" gorm:"type:text"`
+	RefreshToken string     `json:"-" gorm:"type:text"`
 	ExpiresAt    *time.Time `json:"expires_at"`
 
 	// Relationships
@@ -835,11 +835,11 @@ func (s *OAuthService) GetLinkedAccounts(userID uuid.UUID) ([]OAuthAccount, erro
 
 // OAuth state management for security
 type OAuthState struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	
+
 	State     string    `json:"state" gorm:"not null;uniqueIndex;size:255"`
 	Provider  string    `json:"provider" gorm:"not null;size:50"`
 	ExpiresAt time.Time `json:"expires_at" gorm:"not null"`
@@ -862,9 +862,9 @@ func (s *OAuthService) StoreState(state, provider string) error {
 
 func (s *OAuthService) ValidateState(state, provider string) error {
 	var oauthState OAuthState
-	err := s.db.Where("state = ? AND provider = ? AND used = false AND expires_at > ?", 
+	err := s.db.Where("state = ? AND provider = ? AND used = false AND expires_at > ?",
 		state, provider, time.Now()).First(&oauthState).Error
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrInvalidOAuthState

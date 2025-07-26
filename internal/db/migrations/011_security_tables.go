@@ -7,17 +7,17 @@ import (
 )
 
 type SecurityEvent struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
-	
-	UserID      *uuid.UUID `gorm:"type:uuid;index"`
-	EventType   string     `gorm:"not null;size:50;index"`
-	IPAddress   string     `gorm:"size:45;index"`
-	UserAgent   string     `gorm:"size:255"`
-	Details     string     `gorm:"type:text"`
-	Severity    string     `gorm:"size:20;default:'info'"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+
+	UserID    *uuid.UUID `gorm:"type:uuid;index"`
+	EventType string     `gorm:"not null;size:50;index"`
+	IPAddress string     `gorm:"size:45;index"`
+	UserAgent string     `gorm:"size:255"`
+	Details   string     `gorm:"type:text"`
+	Severity  string     `gorm:"size:20;default:'info'"`
 }
 
 func (SecurityEvent) TableName() string {
@@ -25,17 +25,17 @@ func (SecurityEvent) TableName() string {
 }
 
 type LoginAttempt struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
-	
-	UserID      *uuid.UUID `gorm:"type:uuid;index"`
-	Email       string     `gorm:"not null;size:255;index"`
-	IPAddress   string     `gorm:"not null;size:45;index"`
-	Success     bool       `gorm:"not null;index"`
-	UserAgent   string     `gorm:"size:255"`
-	FailReason  string     `gorm:"size:255"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+
+	UserID     *uuid.UUID `gorm:"type:uuid;index"`
+	Email      string     `gorm:"not null;size:255;index"`
+	IPAddress  string     `gorm:"not null;size:45;index"`
+	Success    bool       `gorm:"not null;index"`
+	UserAgent  string     `gorm:"size:255"`
+	FailReason string     `gorm:"size:255"`
 }
 
 func (LoginAttempt) TableName() string {
