@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import UserAnalyticsDashboard from '@/components/analytics/UserAnalyticsDashboard';
+import { apiClient } from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
 
 
 export default function UserInsightsPage() {
@@ -10,53 +12,56 @@ export default function UserInsightsPage() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [timeRange, setTimeRange] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
 
+  const { user } = useAuthStore();
+
   useEffect(() => {
     const fetchUserAnalytics = async () => {
       try {
         setIsLoading(true);
         setError(undefined);
 
-        // Fetch real analytics data from API
-        const response = await fetch(
-          `/api/v1/user/analytics/activity?period=${timeRange}`
-        );
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch user analytics: ${response.statusText}`
-          );
-        }
-        const result = await response.json();
-        // Transform backend data to frontend format
+        const [activityRes, contributionsRes, reposRes] = await Promise.all([
+          apiClient.get(
+            `/user/analytics/activity?period=${timeRange}`
+          ),
+          apiClient.get(
+            `/user/analytics/contributions?period=${timeRange}`
+          ),
+          apiClient.get(
+            `/user/analytics/repositories?period=${timeRange}`
+          ),
+        ]);
+
         setData({
           user: {
-            id: result.user.id,
-            username: result.user.username,
-            fullName: result.user.full_name,
-            avatarUrl: result.user.avatar_url,
-            joinedAt: result.user.created_at,
+            id: user?.id ?? '',
+            username: user?.username ?? '',
+            fullName: user?.name || user?.username,
+            avatarUrl: user?.avatar_url,
+            joinedAt: user?.created_at || '',
           },
           activityStats: {
-            totalLogins: result.activity_stats.total_logins,
-            totalSessions: result.activity_stats.total_sessions,
-            avgSessionTime: result.activity_stats.avg_session_time ?? 0,
-            totalPageViews: result.activity_stats.total_page_views,
-            activityTrend: result.activity_stats.activity_trend,
+            totalLogins: activityRes.data.total_logins,
+            totalSessions: activityRes.data.total_sessions,
+            avgSessionTime: activityRes.data.avg_session_time ?? 0,
+            totalPageViews: activityRes.data.total_page_views,
+            activityTrend: activityRes.data.activity_trend,
           },
           contributionStats: {
-            totalCommits: result.contribution_stats.total_commits,
+            totalCommits: contributionsRes.data.total_commits,
             totalPullRequests:
-              result.contribution_stats.total_pull_requests,
-            totalIssues: result.contribution_stats.total_issues,
-            totalComments: result.contribution_stats.total_comments,
+              contributionsRes.data.total_pull_requests,
+            totalIssues: contributionsRes.data.total_issues,
+            totalComments: contributionsRes.data.total_comments,
             contributionTrend:
-              result.contribution_stats.contribution_trend,
+              contributionsRes.data.contribution_trend,
           },
           repositoryStats: {
             totalRepositories:
-              result.repository_stats.total_repositories,
-            totalStars: result.repository_stats.total_stars,
-            totalForks: result.repository_stats.total_forks,
-            repositoryTrend: result.repository_stats.repository_trend,
+              reposRes.data.total_repositories,
+            totalStars: reposRes.data.total_stars,
+            totalForks: reposRes.data.total_forks,
+            repositoryTrend: reposRes.data.repository_trend,
           },
         });
       } catch (err) {
@@ -67,7 +72,7 @@ export default function UserInsightsPage() {
     };
 
     fetchUserAnalytics();
-  }, [timeRange]);
+  }, [timeRange, user]);
 
   const handleTimeRangeChange = (newTimeRange: 'weekly' | 'monthly' | 'yearly') => {
     setTimeRange(newTimeRange);
