@@ -197,7 +197,7 @@ run_frontend_tests() {
     
     local npm_test_cmd="npm run test"
     if [[ "$COVERAGE" == "true" ]]; then
-        npm_test_cmd="npm run test:coverage"
+        npm_test_cmd="npm run test:ci"
     fi
     
     # Set test environment
