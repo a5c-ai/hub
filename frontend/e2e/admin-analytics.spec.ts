@@ -12,9 +12,39 @@ test.describe('Admin System Analytics', () => {
     // Login as admin user
     await loginUser(page, adminUser.email, adminUser.password);
     
-    // TODO: Set up API mocking for analytics endpoints
-    // In a real implementation, you would mock the analytics API
-    // to return consistent test data
+    // Mock API responses for analytics endpoints
+    await page.route('**/api/v1/admin/analytics/platform*', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          total_views: 1000,
+          total_users: 200,
+          avg_response_time: 123,
+          total_repositories: 50,
+          trends: {
+            views: [{ date: '2025-01-01', value: 100 }],
+            users: [{ date: '2025-01-01', value: 20 }],
+            response_time: [{ date: '2025-01-01', value: 120 }],
+            repositories: [{ date: '2025-01-01', value: 5 }]
+          }
+        })
+      });
+    });
+    await page.route('**/api/v1/admin/analytics/performance', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          cpu_usage_percent: 75,
+          memory_usage_percent: 65,
+          disk_usage_percent: 80,
+          uptime_percent: 99,
+          error_rate_percent: 2,
+          active_connections: 150
+        })
+      });
+    });
   });
 
   test.describe('Platform Usage Trends and Growth Metrics', () => {
