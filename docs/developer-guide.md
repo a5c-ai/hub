@@ -84,6 +84,13 @@ REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=dev-secret-key
 GIT_DATA_PATH=./data/repositories
 FRONTEND_URL=http://localhost:3000
+
+# Azure Blob Storage Configuration
+AZURE_STORAGE_ACCOUNT_NAME=hubstorage
+AZURE_STORAGE_ACCOUNT_KEY=your-account-key
+AZURE_STORAGE_CONTAINER_NAME=artifacts
+# Optional: custom endpoint (useful for emulator)
+AZURE_STORAGE_ENDPOINT_URL=
 ```
 
 #### IDE Configuration
