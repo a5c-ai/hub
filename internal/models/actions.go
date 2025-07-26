@@ -86,16 +86,16 @@ const (
 
 // Workflow represents a workflow definition
 type Workflow struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
+	RepositoryID uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
 	Repository   Repository `json:"repository" gorm:"foreignKey:RepositoryID"`
-	
+
 	Name    string `json:"name" gorm:"not null;size:255"`
-	Path    string `json:"path" gorm:"not null;size:500"` // .hub/workflows/ci.yml
+	Path    string `json:"path" gorm:"not null;size:500"`     // .hub/workflows/ci.yml
 	Content string `json:"content" gorm:"type:text;not null"` // YAML content
 	Enabled bool   `json:"enabled" gorm:"default:true"`
 
@@ -105,28 +105,28 @@ type Workflow struct {
 
 // WorkflowRun represents a single execution of a workflow
 type WorkflowRun struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	WorkflowID   uuid.UUID `json:"workflow_id" gorm:"type:uuid;not null;index"`
-	Workflow     Workflow  `json:"workflow,omitempty" gorm:"foreignKey:WorkflowID"`
-	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
+	WorkflowID   uuid.UUID  `json:"workflow_id" gorm:"type:uuid;not null;index"`
+	Workflow     Workflow   `json:"workflow,omitempty" gorm:"foreignKey:WorkflowID"`
+	RepositoryID uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
 	Repository   Repository `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
 
-	Number     int                   `json:"number" gorm:"not null"` // Sequential run number per repo
-	Status     WorkflowRunStatus     `json:"status" gorm:"type:varchar(50);not null"`
+	Number     int                    `json:"number" gorm:"not null"` // Sequential run number per repo
+	Status     WorkflowRunStatus      `json:"status" gorm:"type:varchar(50);not null"`
 	Conclusion *WorkflowRunConclusion `json:"conclusion" gorm:"type:varchar(50)"`
-	
+
 	HeadSHA    string  `json:"head_sha" gorm:"size:40;not null"`
 	HeadBranch *string `json:"head_branch" gorm:"size:255"`
 	Event      string  `json:"event" gorm:"size:50;not null"` // push, pull_request, schedule, workflow_dispatch
-	
+
 	EventPayload interface{} `json:"event_payload" gorm:"type:jsonb"`
 	ActorID      *uuid.UUID  `json:"actor_id" gorm:"type:uuid;index"`
 	Actor        *User       `json:"actor,omitempty" gorm:"foreignKey:ActorID"`
-	
+
 	StartedAt   *time.Time `json:"started_at"`
 	CompletedAt *time.Time `json:"completed_at"`
 
@@ -137,7 +137,7 @@ type WorkflowRun struct {
 
 // Job represents a job within a workflow run
 type Job struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -153,9 +153,9 @@ type Job struct {
 	Runner     *Runner    `json:"runner,omitempty" gorm:"foreignKey:RunnerID"`
 	RunnerName *string    `json:"runner_name" gorm:"size:255"`
 
-	Needs     interface{} `json:"needs" gorm:"type:jsonb"` // Array of job IDs this job depends on
-	Strategy  interface{} `json:"strategy" gorm:"type:jsonb"` // Matrix strategy configuration
-	Environment *string   `json:"environment" gorm:"size:255"` // Target environment
+	Needs       interface{} `json:"needs" gorm:"type:jsonb"`     // Array of job IDs this job depends on
+	Strategy    interface{} `json:"strategy" gorm:"type:jsonb"`  // Matrix strategy configuration
+	Environment *string     `json:"environment" gorm:"size:255"` // Target environment
 
 	StartedAt   *time.Time `json:"started_at"`
 	CompletedAt *time.Time `json:"completed_at"`
@@ -166,7 +166,7 @@ type Job struct {
 
 // Step represents a single step within a job
 type Step struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -191,7 +191,7 @@ type Step struct {
 
 // Runner represents a workflow runner
 type Runner struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -205,7 +205,7 @@ type Runner struct {
 	OS           *string `json:"os" gorm:"size:50"`
 	Architecture *string `json:"architecture" gorm:"size:50"`
 
-	RepositoryID   *uuid.UUID    `json:"repository_id" gorm:"type:uuid;index"`   // null for organization runners
+	RepositoryID   *uuid.UUID    `json:"repository_id" gorm:"type:uuid;index"` // null for organization runners
 	Repository     *Repository   `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
 	OrganizationID *uuid.UUID    `json:"organization_id" gorm:"type:uuid;index"` // null for repo runners
 	Organization   *Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
@@ -218,7 +218,7 @@ type Runner struct {
 
 // Artifact represents a build artifact
 type Artifact struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -235,7 +235,7 @@ type Artifact struct {
 
 // Secret represents an encrypted secret
 type Secret struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -251,10 +251,10 @@ type Secret struct {
 }
 
 // TableName methods for custom table names if needed
-func (Workflow) TableName() string         { return "workflows" }
-func (WorkflowRun) TableName() string      { return "workflow_runs" }
-func (Job) TableName() string              { return "jobs" }
-func (Step) TableName() string             { return "steps" }
-func (Runner) TableName() string           { return "runners" }
-func (Artifact) TableName() string         { return "artifacts" }
-func (Secret) TableName() string           { return "secrets" }
+func (Workflow) TableName() string    { return "workflows" }
+func (WorkflowRun) TableName() string { return "workflow_runs" }
+func (Job) TableName() string         { return "jobs" }
+func (Step) TableName() string        { return "steps" }
+func (Runner) TableName() string      { return "runners" }
+func (Artifact) TableName() string    { return "artifacts" }
+func (Secret) TableName() string      { return "secrets" }

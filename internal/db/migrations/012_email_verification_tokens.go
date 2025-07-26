@@ -7,15 +7,15 @@ import (
 )
 
 type EmailVerificationToken struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
-	
-	UserID    uuid.UUID  `gorm:"type:uuid;not null;index"`
-	Token     string     `gorm:"not null;uniqueIndex;size:255"`
-	ExpiresAt time.Time  `gorm:"not null"`
-	Used      bool       `gorm:"default:false"`
+
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	Token     string    `gorm:"not null;uniqueIndex;size:255"`
+	ExpiresAt time.Time `gorm:"not null"`
+	Used      bool      `gorm:"default:false"`
 	UsedAt    *time.Time
 }
 

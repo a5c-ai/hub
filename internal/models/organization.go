@@ -8,7 +8,7 @@ import (
 )
 
 type Organization struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -44,7 +44,7 @@ const (
 
 // Custom Role System
 type CustomRole struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -65,7 +65,7 @@ func (cr *CustomRole) TableName() string {
 }
 
 type OrganizationMember struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -94,7 +94,7 @@ const (
 )
 
 type Team struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -125,7 +125,7 @@ const (
 )
 
 type TeamMember struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -152,7 +152,7 @@ const (
 )
 
 type RepositoryPermission struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -172,7 +172,7 @@ func (rp *RepositoryPermission) TableName() string {
 
 // Organization Invitation System
 type OrganizationInvitation struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -215,7 +215,7 @@ const (
 )
 
 type OrganizationActivity struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -252,7 +252,7 @@ const (
 )
 
 type OrganizationPolicy struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -284,7 +284,7 @@ const (
 )
 
 type OrganizationTemplate struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -307,7 +307,7 @@ func (ot *OrganizationTemplate) TableName() string {
 
 // Organization Settings Enhancement
 type OrganizationSettings struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -315,36 +315,36 @@ type OrganizationSettings struct {
 	OrganizationID uuid.UUID `json:"organization_id" gorm:"type:uuid;not null;uniqueIndex"`
 
 	// Branding
-	PrimaryColor    string `json:"primary_color" gorm:"size:7;default:'#1f2937'"`
-	SecondaryColor  string `json:"secondary_color" gorm:"size:7;default:'#6b7280'"`
-	LogoURL         string `json:"logo_url" gorm:"type:text"`
-	CustomCSS       string `json:"custom_css" gorm:"type:text"`
+	PrimaryColor   string `json:"primary_color" gorm:"size:7;default:'#1f2937'"`
+	SecondaryColor string `json:"secondary_color" gorm:"size:7;default:'#6b7280'"`
+	LogoURL        string `json:"logo_url" gorm:"type:text"`
+	CustomCSS      string `json:"custom_css" gorm:"type:text"`
 
 	// Security Settings
-	RequireTwoFactor    bool   `json:"require_two_factor" gorm:"default:false"`
-	AllowedIPRanges     string `json:"allowed_ip_ranges" gorm:"type:jsonb"`
-	SSOProvider         string `json:"sso_provider" gorm:"size:100"`
-	SSOConfiguration    string `json:"sso_configuration" gorm:"type:jsonb"`
-	SessionTimeout      int    `json:"session_timeout" gorm:"default:86400"`
+	RequireTwoFactor bool   `json:"require_two_factor" gorm:"default:false"`
+	AllowedIPRanges  string `json:"allowed_ip_ranges" gorm:"type:jsonb"`
+	SSOProvider      string `json:"sso_provider" gorm:"size:100"`
+	SSOConfiguration string `json:"sso_configuration" gorm:"type:jsonb"`
+	SessionTimeout   int    `json:"session_timeout" gorm:"default:86400"`
 
 	// Repository Settings
-	DefaultVisibility        string `json:"default_visibility" gorm:"size:20;default:'private'"`
-	AllowPrivateRepos        bool   `json:"allow_private_repos" gorm:"default:true"`
-	AllowInternalRepos       bool   `json:"allow_internal_repos" gorm:"default:true"`
-	AllowForking             bool   `json:"allow_forking" gorm:"default:true"`
+	DefaultVisibility         string `json:"default_visibility" gorm:"size:20;default:'private'"`
+	AllowPrivateRepos         bool   `json:"allow_private_repos" gorm:"default:true"`
+	AllowInternalRepos        bool   `json:"allow_internal_repos" gorm:"default:true"`
+	AllowForking              bool   `json:"allow_forking" gorm:"default:true"`
 	AllowOutsideCollaborators bool   `json:"allow_outside_collaborators" gorm:"default:true"`
 
 	// Billing and Usage
-	BillingPlan       string     `json:"billing_plan" gorm:"size:50;default:'free'"`
-	SeatCount         int        `json:"seat_count" gorm:"default:0"`
-	StorageLimit      int64      `json:"storage_limit_gb" gorm:"default:1024"`
-	BandwidthLimit    int64      `json:"bandwidth_limit_gb" gorm:"default:1024"`
-	NextBillingDate   *time.Time `json:"next_billing_date"`
+	BillingPlan     string     `json:"billing_plan" gorm:"size:50;default:'free'"`
+	SeatCount       int        `json:"seat_count" gorm:"default:0"`
+	StorageLimit    int64      `json:"storage_limit_gb" gorm:"default:1024"`
+	BandwidthLimit  int64      `json:"bandwidth_limit_gb" gorm:"default:1024"`
+	NextBillingDate *time.Time `json:"next_billing_date"`
 
 	// Backup and Recovery
-	BackupEnabled     bool   `json:"backup_enabled" gorm:"default:false"`
-	BackupFrequency   string `json:"backup_frequency" gorm:"size:20;default:'daily'"`
-	RetentionDays     int    `json:"retention_days" gorm:"default:30"`
+	BackupEnabled   bool   `json:"backup_enabled" gorm:"default:false"`
+	BackupFrequency string `json:"backup_frequency" gorm:"size:20;default:'daily'"`
+	RetentionDays   int    `json:"retention_days" gorm:"default:30"`
 
 	// Relationships
 	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`

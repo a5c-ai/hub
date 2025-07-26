@@ -9,7 +9,7 @@ import (
 
 // Webhook represents a repository webhook configuration
 type Webhook struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -24,8 +24,8 @@ type Webhook struct {
 	Events       string    `json:"events" gorm:"type:text"`
 
 	// Relationships
-	Repository   Repository        `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
-	Deliveries   []WebhookDelivery `json:"deliveries,omitempty" gorm:"foreignKey:WebhookID"`
+	Repository Repository        `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
+	Deliveries []WebhookDelivery `json:"deliveries,omitempty" gorm:"foreignKey:WebhookID"`
 }
 
 func (w *Webhook) TableName() string {
@@ -37,7 +37,7 @@ func (w *Webhook) GetEventsSlice() []string {
 	if w.Events == "" {
 		return []string{}
 	}
-	
+
 	// Parse JSON events string
 	// For simplicity, assume comma-separated for now
 	// In production, this would use proper JSON unmarshaling
@@ -64,23 +64,23 @@ func (w *Webhook) SetEventsSlice(events []string) {
 
 // WebhookDelivery represents a webhook delivery attempt
 type WebhookDelivery struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	WebhookID    uuid.UUID `json:"webhook_id" gorm:"type:uuid;not null;index"`
-	EventType    string    `json:"event_type" gorm:"not null;size:100"`
-	DeliveryID   string    `json:"delivery_id" gorm:"not null;size:255;index"`
-	URL          string    `json:"url" gorm:"not null;size:2048"`
-	Payload      string    `json:"payload" gorm:"type:text"`
-	StatusCode   int       `json:"status_code" gorm:"default:0"`
-	Duration     int64     `json:"duration" gorm:"default:0"` // in milliseconds
-	Success      bool      `json:"success" gorm:"default:false"`
-	ErrorMessage string    `json:"error_message" gorm:"type:text"`
-	Attempts     int       `json:"attempts" gorm:"default:1"`
+	WebhookID    uuid.UUID  `json:"webhook_id" gorm:"type:uuid;not null;index"`
+	EventType    string     `json:"event_type" gorm:"not null;size:100"`
+	DeliveryID   string     `json:"delivery_id" gorm:"not null;size:255;index"`
+	URL          string     `json:"url" gorm:"not null;size:2048"`
+	Payload      string     `json:"payload" gorm:"type:text"`
+	StatusCode   int        `json:"status_code" gorm:"default:0"`
+	Duration     int64      `json:"duration" gorm:"default:0"` // in milliseconds
+	Success      bool       `json:"success" gorm:"default:false"`
+	ErrorMessage string     `json:"error_message" gorm:"type:text"`
+	Attempts     int        `json:"attempts" gorm:"default:1"`
 	NextRetryAt  *time.Time `json:"next_retry_at"`
-	
+
 	// Response details
 	ResponseHeaders string `json:"response_headers" gorm:"type:text"`
 	ResponseBody    string `json:"response_body" gorm:"type:text"`
@@ -95,17 +95,17 @@ func (wd *WebhookDelivery) TableName() string {
 
 // DeployKey represents a repository deploy key
 type DeployKey struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
-	Title        string    `json:"title" gorm:"not null;size:255"`
-	Key          string    `json:"key" gorm:"not null;type:text"`
-	Fingerprint  string    `json:"fingerprint" gorm:"not null;size:255;index"`
-	ReadOnly     bool      `json:"read_only" gorm:"default:true"`
-	Verified     bool      `json:"verified" gorm:"default:false"`
+	RepositoryID uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
+	Title        string     `json:"title" gorm:"not null;size:255"`
+	Key          string     `json:"key" gorm:"not null;type:text"`
+	Fingerprint  string     `json:"fingerprint" gorm:"not null;size:255;index"`
+	ReadOnly     bool       `json:"read_only" gorm:"default:true"`
+	Verified     bool       `json:"verified" gorm:"default:false"`
 	LastUsedAt   *time.Time `json:"last_used_at"`
 
 	// Relationships
@@ -118,15 +118,15 @@ func (dk *DeployKey) TableName() string {
 
 // WebhookEvent represents a webhook event that needs to be delivered
 type WebhookEvent struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	RepositoryID uuid.UUID `json:"repository_id" gorm:"type:uuid;not null;index"`
-	EventType    string    `json:"event_type" gorm:"not null;size:100;index"`
-	EventData    string    `json:"event_data" gorm:"type:text"`
-	Processed    bool      `json:"processed" gorm:"default:false;index"`
+	RepositoryID uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
+	EventType    string     `json:"event_type" gorm:"not null;size:100;index"`
+	EventData    string     `json:"event_data" gorm:"type:text"`
+	Processed    bool       `json:"processed" gorm:"default:false;index"`
 	ProcessedAt  *time.Time `json:"processed_at"`
 
 	// Relationships
