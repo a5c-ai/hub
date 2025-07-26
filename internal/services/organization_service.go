@@ -14,8 +14,8 @@ import (
 
 // Request/Response Types
 type CreateOrganizationRequest struct {
+	Login        string `json:"login" binding:"required,min=1,max=255"`
 	Name         string `json:"name" binding:"required,min=1,max=255"`
-	DisplayName  string `json:"display_name" binding:"required,min=1,max=255"`
 	Description  string `json:"description,omitempty"`
 	AvatarURL    string `json:"avatar_url,omitempty"`
 	Website      string `json:"website,omitempty"`
@@ -90,8 +90,8 @@ func NewOrganizationService(db *gorm.DB, as ActivityService) OrganizationService
 
 func (s *organizationService) Create(ctx context.Context, req CreateOrganizationRequest, ownerID uuid.UUID) (*models.Organization, error) {
 	org := &models.Organization{
-		Name:         req.Name,
-		DisplayName:  req.DisplayName,
+		Name:         req.Login,
+		DisplayName:  req.Name,
 		Description:  req.Description,
 		AvatarURL:    req.AvatarURL,
 		Website:      req.Website,

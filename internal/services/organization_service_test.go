@@ -94,14 +94,14 @@ func TestOrganizationService_Create(t *testing.T) {
 
 	ownerID := uuid.New()
 	req := CreateOrganizationRequest{
-		Name:        "test-org",
-		DisplayName: "Test Organization",
+		Login:       "test-org",
+		Name:        "Test Organization",
 		Description: "A test organization",
 		Email:       "test@example.com",
 	}
 
 	// Create test user first using direct SQL for SQLite compatibility
-	db.Exec("INSERT INTO users (id, username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))", 
+	db.Exec("INSERT INTO users (id, username, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
 		ownerID.String(), "testuser", "test@example.com", "hash")
 
 	// Mock activity service
@@ -111,14 +111,14 @@ func TestOrganizationService_Create(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, org)
-	assert.Equal(t, req.Name, org.Name)
-	assert.Equal(t, req.DisplayName, org.DisplayName)
+	assert.Equal(t, req.Login, org.Name)
+	assert.Equal(t, req.Name, org.DisplayName)
 	assert.Equal(t, req.Description, org.Description)
 	assert.Equal(t, req.Email, org.Email)
 
 	// Verify organization member was created using direct SQL
 	var count int
-	db.Raw("SELECT COUNT(*) FROM organization_members WHERE organization_id = ? AND user_id = ? AND role = ?", 
+	db.Raw("SELECT COUNT(*) FROM organization_members WHERE organization_id = ? AND user_id = ? AND role = ?",
 		org.ID.String(), ownerID.String(), string(models.OrgRoleOwner)).Scan(&count)
 	assert.Equal(t, 1, count)
 }
@@ -129,7 +129,7 @@ func TestOrganizationService_Get(t *testing.T) {
 
 	// Create test organization using direct SQL
 	orgID := uuid.New()
-	db.Exec("INSERT INTO organizations (id, name, display_name, description, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))", 
+	db.Exec("INSERT INTO organizations (id, name, display_name, description, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
 		orgID.String(), "test-org", "Test Organization", "A test organization")
 
 	result, err := service.Get(context.Background(), "test-org")

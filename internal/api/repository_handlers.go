@@ -167,11 +167,6 @@ func (h *RepositoryHandlers) CreateRepository(c *gin.Context) {
 		if uid, ok := userID.(uuid.UUID); ok {
 			req.OwnerID = uid
 			req.OwnerType = "user"
-		} else if uidStr, ok := userID.(string); ok {
-			if uid, err := uuid.Parse(uidStr); err == nil {
-				req.OwnerID = uid
-				req.OwnerType = "user"
-			}
 		}
 	}
 

@@ -352,6 +352,8 @@ func (h *UserHandlers) GetEmailPreferences(c *gin.Context) {
 
 	// For now, return default preferences
 	// In a full implementation, this would query user preferences from database
+	h.logger.WithField("user_id", userID).Info("Email preferences retrieved")
+	
 	c.JSON(http.StatusOK, gin.H{
 		"issues_and_prs":        true,
 		"repository_updates":    true,

@@ -45,8 +45,8 @@ func (ctrl *OrganizationController) CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	ownerID, err := uuid.Parse(userID.(string))
-	if err != nil {
+	ownerID, ok := userID.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -62,7 +62,7 @@ func (ctrl *OrganizationController) CreateOrganization(c *gin.Context) {
 
 func (ctrl *OrganizationController) GetOrganization(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	org, err := ctrl.orgService.Get(c.Request.Context(), orgName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
@@ -74,7 +74,7 @@ func (ctrl *OrganizationController) GetOrganization(c *gin.Context) {
 
 func (ctrl *OrganizationController) UpdateOrganization(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	var req services.UpdateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -92,7 +92,7 @@ func (ctrl *OrganizationController) UpdateOrganization(c *gin.Context) {
 
 func (ctrl *OrganizationController) DeleteOrganization(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	if err := ctrl.orgService.Delete(c.Request.Context(), orgName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,13 +103,13 @@ func (ctrl *OrganizationController) DeleteOrganization(c *gin.Context) {
 
 func (ctrl *OrganizationController) ListOrganizations(c *gin.Context) {
 	filters := services.OrganizationFilters{}
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil {
 			filters.Limit = limit
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil {
 			filters.Offset = offset
@@ -132,8 +132,8 @@ func (ctrl *OrganizationController) GetUserOrganizations(c *gin.Context) {
 		return
 	}
 
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
+	userID, ok := userIDStr.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -150,25 +150,25 @@ func (ctrl *OrganizationController) GetUserOrganizations(c *gin.Context) {
 // Member endpoints
 func (ctrl *OrganizationController) GetMembers(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	filters := services.MemberFilters{}
-	
+
 	if roleStr := c.Query("role"); roleStr != "" {
 		filters.Role = models.OrganizationRole(roleStr)
 	}
-	
+
 	if publicStr := c.Query("public"); publicStr != "" {
 		if public, err := strconv.ParseBool(publicStr); err == nil {
 			filters.Public = &public
 		}
 	}
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil {
 			filters.Limit = limit
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil {
 			filters.Offset = offset
@@ -204,7 +204,7 @@ func (ctrl *OrganizationController) AddMember(c *gin.Context) {
 	var req struct {
 		Role models.OrganizationRole `json:"role" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -238,7 +238,7 @@ func (ctrl *OrganizationController) UpdateMemberRole(c *gin.Context) {
 	var req struct {
 		Role models.OrganizationRole `json:"role" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -297,7 +297,7 @@ func (ctrl *OrganizationController) CreateInvitation(c *gin.Context) {
 		Email string                  `json:"email" binding:"required,email"`
 		Role  models.OrganizationRole `json:"role" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -309,8 +309,8 @@ func (ctrl *OrganizationController) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	inviterID, err := uuid.Parse(inviterIDStr.(string))
-	if err != nil {
+	inviterID, ok := inviterIDStr.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -326,7 +326,7 @@ func (ctrl *OrganizationController) CreateInvitation(c *gin.Context) {
 
 func (ctrl *OrganizationController) CancelInvitation(c *gin.Context) {
 	invitationIDStr := c.Param("invitation_id")
-	
+
 	invitationID, err := uuid.Parse(invitationIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid invitation ID"})
@@ -345,7 +345,7 @@ func (ctrl *OrganizationController) AcceptInvitation(c *gin.Context) {
 	var req struct {
 		Token string `json:"token" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -357,8 +357,8 @@ func (ctrl *OrganizationController) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
+	userID, ok := userIDStr.(uuid.UUID)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -374,16 +374,16 @@ func (ctrl *OrganizationController) AcceptInvitation(c *gin.Context) {
 // Activity endpoints
 func (ctrl *OrganizationController) GetActivity(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	limit := 50 // default
 	offset := 0 // default
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
 			limit = l
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
 			offset = o
