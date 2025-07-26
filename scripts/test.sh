@@ -226,16 +226,10 @@ run_e2e_tests() {
     
 	cd frontend
 	
-	test_log "Installing Playwright browsers..."
-	npx playwright install --with-deps
-	
-	# Check if E2E tests are configured
-    if ! npm run --silent test:e2e --dry-run &>/dev/null; then
-        warn "E2E tests not configured, skipping"
-        cd ..
-        return 0
-    fi
-    
+    # Install Playwright browsers
+    test_log "Installing Playwright browsers..."
+    npx playwright install --with-deps
+
     # Start test servers for E2E tests
     test_log "Starting test servers for E2E tests..."
 
@@ -244,6 +238,10 @@ run_e2e_tests() {
         export ENVIRONMENT="test"
         export PORT="8081"
         export DB_NAME="hub_test"
+        export DB_HOST="${TEST_DB_HOST:-localhost}"
+        export DB_PORT="${TEST_DB_PORT:-5432}"
+        export DB_USER="${TEST_DB_USER:-hub}"
+        export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
         cd ..
         go run ./cmd/server
     ) &
@@ -267,18 +265,23 @@ run_e2e_tests() {
         kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
     }
     trap cleanup_servers EXIT
-    
+
+    # Check if E2E tests are configured
+    if ! npm run --silent test:e2e --dry-run &>/dev/null; then
+        warn "E2E tests not configured, skipping"
+        cd ..
+        return 0
+    fi
+
     # Run E2E tests
     export E2E_BASE_URL="${E2E_BASE_URL:-http://localhost:3001}"
     export E2E_API_URL="${E2E_API_URL:-http://localhost:8081}"
-    
     if npm run test:e2e; then
         test_log "E2E tests passed ✅"
     else
         error "E2E tests failed ❌"
         E2E_TESTS_PASSED=false
     fi
-    
     cd ..
 }
 
