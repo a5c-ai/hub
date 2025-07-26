@@ -140,6 +140,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
+	adminStorageHandlers := NewAdminStorageHandlers(artifactService, storageBackend, logger)
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -344,6 +345,19 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 					adminEmail.GET("/logs", adminEmailHandlers.GetEmailLogs)
 					adminEmail.GET("/health", adminEmailHandlers.GetEmailHealth)
 				}
+
+				// Storage admin endpoints
+				adminStorage := admin.Group("/storage")
+				{
+					adminStorage.GET("/config", adminStorageHandlers.GetStorageConfig)
+					adminStorage.PUT("/config", adminStorageHandlers.UpdateStorageConfig)
+					adminStorage.GET("/usage", adminStorageHandlers.GetStorageUsage)
+					adminStorage.GET("/retention", adminStorageHandlers.GetRetentionPolicy)
+					adminStorage.PUT("/retention", adminStorageHandlers.UpdateRetentionPolicy)
+					adminStorage.DELETE("/cleanup", adminStorageHandlers.ManualCleanup)
+					adminStorage.POST("/artifacts/batch-delete", adminStorageHandlers.BatchDeleteArtifacts)
+					adminStorage.GET("/health", adminStorageHandlers.GetStorageHealth)
+				}
 			}
 
 			// Protected repository endpoints
@@ -492,6 +506,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/actions/runs/:run_id/artifacts/:artifact_id", actionsHandlers.DownloadArtifact)
 				repos.GET("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.GetArtifact)
 				repos.DELETE("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.DeleteArtifact)
+
+				// Build log search operations (require authentication)
+				repos.GET("/:owner/:repo/actions/logs/search", adminStorageHandlers.SearchBuildLogs)
 
 				// Repository analytics endpoints (require authentication)
 				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)

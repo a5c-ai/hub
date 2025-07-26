@@ -15,6 +15,11 @@ interface Artifact {
   expires_at?: string;
   expired: boolean;
   download_url?: string;
+  path?: string;
+  workflow_run?: {
+    id: string;
+    workflow_name: string;
+  };
 }
 
 interface ArtifactManagerProps {
@@ -36,6 +41,14 @@ export default function ArtifactManager({
   const [uploadName, setUploadName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  
+  // Batch operations state
+  const [selectedArtifacts, setSelectedArtifacts] = useState<Set<string>>(new Set());
+  const [showBatchActions, setShowBatchActions] = useState(false);
+  const [batchOperationInProgress, setBatchOperationInProgress] = useState(false);
+  
+  // Metadata display state
+  const [showMetadata, setShowMetadata] = useState<Record<string, boolean>>({});
 
   const fetchArtifacts = async () => {
     try {
@@ -196,6 +209,103 @@ export default function ArtifactManager({
     return `Expires in ${diffDays} days`;
   };
 
+  // Batch operations functions
+  const handleSelectArtifact = (artifactId: string, checked: boolean) => {
+    const newSelected = new Set(selectedArtifacts);
+    if (checked) {
+      newSelected.add(artifactId);
+    } else {
+      newSelected.delete(artifactId);
+    }
+    setSelectedArtifacts(newSelected);
+    setShowBatchActions(newSelected.size > 0);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(artifacts.filter(a => !a.expired).map(a => a.id));
+      setSelectedArtifacts(allIds);
+      setShowBatchActions(allIds.size > 0);
+    } else {
+      setSelectedArtifacts(new Set());
+      setShowBatchActions(false);
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedArtifacts.size === 0) return;
+
+    setBatchOperationInProgress(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const artifactId of selectedArtifacts) {
+      const artifact = artifacts.find(a => a.id === artifactId);
+      if (artifact && !artifact.expired) {
+        try {
+          await handleDownload(artifact);
+          successCount++;
+        } catch (err) {
+          errorCount++;
+        }
+      }
+    }
+
+    setBatchOperationInProgress(false);
+    setSelectedArtifacts(new Set());
+    setShowBatchActions(false);
+    
+    if (errorCount > 0) {
+      setError(`Batch download completed: ${successCount} successful, ${errorCount} failed`);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedArtifacts.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedArtifacts.size} selected artifacts?`)) {
+      return;
+    }
+
+    setBatchOperationInProgress(true);
+    
+    try {
+      const response = await fetch('/api/v1/admin/storage/artifacts/batch-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artifact_ids: Array.from(selectedArtifacts),
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        await fetchArtifacts();
+        setSelectedArtifacts(new Set());
+        setShowBatchActions(false);
+        
+        if (result.error_count > 0) {
+          setError(`Batch delete completed: ${result.success_count} successful, ${result.error_count} failed`);
+        }
+      } else {
+        throw new Error('Failed to perform batch delete');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Batch delete failed');
+    } finally {
+      setBatchOperationInProgress(false);
+    }
+  };
+
+  const toggleMetadata = (artifactId: string) => {
+    setShowMetadata(prev => ({
+      ...prev,
+      [artifactId]: !prev[artifactId]
+    }));
+  };
+
   if (loading) {
     return (
       <Card className="p-4">
@@ -212,13 +322,56 @@ export default function ArtifactManager({
 
   return (
     <Card>
-      <div className="p-4 border-b">
+      <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="font-medium">Artifacts</h4>
           <Button onClick={() => setShowUploadModal(true)} size="sm">
             Upload Artifact
           </Button>
         </div>
+        
+        {artifacts.length > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedArtifacts.size === artifacts.filter(a => !a.expired).length && artifacts.filter(a => !a.expired).length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded"
+                />
+                Select All ({artifacts.filter(a => !a.expired).length})
+              </label>
+              {selectedArtifacts.size > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {selectedArtifacts.size} selected
+                </span>
+              )}
+            </div>
+            
+            {showBatchActions && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBatchDownload}
+                  disabled={batchOperationInProgress}
+                >
+                  Download Selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBatchDelete}
+                  disabled={batchOperationInProgress}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  {batchOperationInProgress ? 'Deleting...' : 'Delete Selected'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -243,53 +396,110 @@ export default function ArtifactManager({
         ) : (
           artifacts.map((artifact) => (
             <div key={artifact.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h5 className="font-medium">{artifact.name}</h5>
-                    {artifact.expired && (
-                      <Badge variant="destructive" className="text-xs">
-                        Expired
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-4">
-                    <span>{formatFileSize(artifact.size_bytes)}</span>
-                    <span>Created {new Date(artifact.created_at).toLocaleDateString()}</span>
-                    <span>{formatExpirationDate(artifact.expires_at)}</span>
-                  </div>
-                  {downloadProgress[artifact.id] !== undefined && (
-                    <div className="mt-2">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Downloading... {downloadProgress[artifact.id]}%
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1">
-                        <div
-                          className="bg-blue-500 h-1 rounded-full transition-all duration-300"
-                          style={{ width: `${downloadProgress[artifact.id]}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-start gap-3">
+                {/* Checkbox for batch selection */}
+                {!artifact.expired && (
+                  <input
+                    type="checkbox"
+                    checked={selectedArtifacts.has(artifact.id)}
+                    onChange={(e) => handleSelectArtifact(artifact.id, e.target.checked)}
+                    className="mt-1 rounded"
+                  />
+                )}
                 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(artifact)}
-                    disabled={artifact.expired || downloadProgress[artifact.id] !== undefined}
-                  >
-                    {downloadProgress[artifact.id] !== undefined ? 'Downloading...' : 'Download'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(artifact.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Delete
-                  </Button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h5 className="font-medium truncate">{artifact.name}</h5>
+                        {artifact.expired && (
+                          <Badge variant="destructive" className="text-xs">
+                            Expired
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-4 flex-wrap">
+                        <span>{formatFileSize(artifact.size_bytes)}</span>
+                        <span>Created {new Date(artifact.created_at).toLocaleDateString()}</span>
+                        <span>{formatExpirationDate(artifact.expires_at)}</span>
+                      </div>
+                      
+                      {/* Enhanced metadata display */}
+                      {showMetadata[artifact.id] && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-md space-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Artifact ID:</span>
+                              <p className="font-mono text-xs break-all">{artifact.id}</p>
+                            </div>
+                            {artifact.path && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">Storage Path:</span>
+                                <p className="font-mono text-xs break-all">{artifact.path}</p>
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-medium text-muted-foreground">Created:</span>
+                              <p className="text-xs">{new Date(artifact.created_at).toLocaleString()}</p>
+                            </div>
+                            {artifact.expires_at && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">Expires:</span>
+                                <p className="text-xs">{new Date(artifact.expires_at).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {artifact.workflow_run && (
+                              <div className="md:col-span-2">
+                                <span className="font-medium text-muted-foreground">Workflow:</span>
+                                <p className="text-xs">{artifact.workflow_run.workflow_name}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {downloadProgress[artifact.id] !== undefined && (
+                        <div className="mt-2">
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Downloading... {downloadProgress[artifact.id]}%
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1">
+                            <div
+                              className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                              style={{ width: `${downloadProgress[artifact.id]}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleMetadata(artifact.id)}
+                        className="text-xs"
+                      >
+                        {showMetadata[artifact.id] ? 'Hide' : 'Info'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(artifact)}
+                        disabled={artifact.expired || downloadProgress[artifact.id] !== undefined}
+                      >
+                        {downloadProgress[artifact.id] !== undefined ? 'Downloading...' : 'Download'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(artifact.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
