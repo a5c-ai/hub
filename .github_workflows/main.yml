@@ -215,14 +215,21 @@ jobs:
           cache-dependency-path: |
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('frontend/playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
       # Run tests with increased timeout and better error handling
       - name: Run tests
-        timeout-minutes: 20  # Increased from 15 to 20 minutes
+        timeout-minutes: 25  # Increased from 15 to 20 minutes
         run: |
           # Set test environment optimizations
           export GO_TEST_TIMEOUT=10m
           export NODE_OPTIONS="--max-old-space-size=4096"
-          
+
           # Run tests with verbose output
           ./scripts/test.sh
         
