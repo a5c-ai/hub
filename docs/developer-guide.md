@@ -84,6 +84,18 @@ REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=dev-secret-key
 GIT_DATA_PATH=./data/repositories
 FRONTEND_URL=http://localhost:3000
+
+# SMTP / Email Configuration
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=noreply@example.com
+SMTP_USE_TLS=true
+
+# Application settings for email links
+BASE_URL=http://localhost:3000
+APPLICATION_NAME=Hub
 ```
 
 #### IDE Configuration
