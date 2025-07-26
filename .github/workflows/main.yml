@@ -22,6 +22,9 @@ env:
     FEATURE_TEAM_WEBHOOK: false
     FEATURE_TEAM_API_KEY: true
     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    AZURE_OPENAI_PROJECT_NAME: ${{ secrets.AZURE_OPENAI_PROJECT_NAME || '' }}
+    AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY || '' }}
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}    
     FEATURE_TEAM_DELETION: true
     FEATURE_TEAM_PAYMENTS: true
     CONFIRM_EMAIL: false
