@@ -13,7 +13,7 @@ import (
 	"github.com/a5c-ai/hub/internal/models"
 )
 
-func setupTestDB(t *testing.T) *gorm.DB {
+func setupWebhookTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	assert.NoError(t, err)
 
@@ -30,7 +30,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 func TestWebhookDeliveryService_CreateWebhook(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewWebhookDeliveryService(db, logger)
 
@@ -56,16 +56,16 @@ func TestWebhookDeliveryService_CreateWebhook(t *testing.T) {
 }
 
 func TestWebhookDeliveryService_ListWebhooks(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewWebhookDeliveryService(db, logger)
 
 	repositoryID := uuid.New()
-	
+
 	// Create two webhooks
 	_, err := service.CreateWebhook(context.Background(), repositoryID, "webhook1", "https://example.com/webhook1", "secret1", []string{"push"}, "application/json", false, true)
 	assert.NoError(t, err)
-	
+
 	_, err = service.CreateWebhook(context.Background(), repositoryID, "webhook2", "https://example.com/webhook2", "secret2", []string{"pull_request"}, "application/json", false, true)
 	assert.NoError(t, err)
 
@@ -75,13 +75,13 @@ func TestWebhookDeliveryService_ListWebhooks(t *testing.T) {
 }
 
 func TestWebhookDeliveryService_VerifySignature(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewWebhookDeliveryService(db, logger)
 
 	secret := "test-secret"
 	payload := []byte(`{"test": "payload"}`)
-	
+
 	// Calculate expected signature
 	expectedSignature := service.calculateSignature(secret, payload)
 	fullSignature := "sha256=" + expectedSignature
@@ -96,7 +96,7 @@ func TestWebhookDeliveryService_VerifySignature(t *testing.T) {
 }
 
 func TestDeployKeyService_CreateDeployKey(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewDeployKeyService(db, logger)
 
@@ -121,7 +121,7 @@ func TestDeployKeyService_CreateDeployKey(t *testing.T) {
 }
 
 func TestDeployKeyService_ValidateSSHKey(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewDeployKeyService(db, logger)
 
@@ -137,7 +137,7 @@ func TestDeployKeyService_ValidateSSHKey(t *testing.T) {
 }
 
 func TestDeployKeyService_ListDeployKeys(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupWebhookTestDB(t)
 	logger := logrus.New()
 	service := NewDeployKeyService(db, logger)
 
@@ -148,7 +148,7 @@ func TestDeployKeyService_ListDeployKeys(t *testing.T) {
 	// Create two deploy keys
 	_, err := service.CreateDeployKey(context.Background(), repositoryID, "Key 1", testKey1, true)
 	assert.NoError(t, err)
-	
+
 	_, err = service.CreateDeployKey(context.Background(), repositoryID, "Key 2", testKey2, false)
 	assert.NoError(t, err)
 

@@ -27,7 +27,7 @@ func (m *mockActivityService) GetActivity(ctx context.Context, orgName string, l
 	return args.Get(0).([]*models.OrganizationActivity), args.Error(1)
 }
 
-func setupTestDB(t *testing.T) *gorm.DB {
+func setupOrgTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	assert.NoError(t, err)
 
@@ -88,7 +88,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 func TestOrganizationService_Create(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	mockAS := new(mockActivityService)
 	service := NewOrganizationService(db, mockAS)
 
@@ -124,7 +124,7 @@ func TestOrganizationService_Create(t *testing.T) {
 }
 
 func TestOrganizationService_Get(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	service := NewOrganizationService(db, nil)
 
 	// Create test organization using direct SQL
@@ -141,7 +141,7 @@ func TestOrganizationService_Get(t *testing.T) {
 }
 
 func TestOrganizationService_Update(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	service := NewOrganizationService(db, nil)
 
 	// Create test organization
@@ -168,7 +168,7 @@ func TestOrganizationService_Update(t *testing.T) {
 }
 
 func TestOrganizationService_Delete(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	service := NewOrganizationService(db, nil)
 
 	// Create test organization
@@ -189,7 +189,7 @@ func TestOrganizationService_Delete(t *testing.T) {
 }
 
 func TestOrganizationService_List(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	service := NewOrganizationService(db, nil)
 
 	// Create test organizations
@@ -211,7 +211,7 @@ func TestOrganizationService_List(t *testing.T) {
 }
 
 func TestOrganizationService_GetUserOrganizations(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupOrgTestDB(t)
 	service := NewOrganizationService(db, nil)
 
 	userID := uuid.New()
