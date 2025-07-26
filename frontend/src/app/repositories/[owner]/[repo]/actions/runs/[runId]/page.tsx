@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import LogStreamingComponent from '@/components/actions/LogStreamingComponent';
 import ArtifactManager from '@/components/actions/ArtifactManager';
+import { QueueStatusIndicator } from '@/components/queue/QueueStatusIndicator';
 
 interface WorkflowRun {
   id: string;
@@ -192,8 +193,8 @@ export default function WorkflowRunDetailPage() {
         </div>
         
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             disabled={run.status !== 'in_progress'}
           >
             Cancel run
@@ -201,6 +202,9 @@ export default function WorkflowRunDetailPage() {
           <Button variant="outline">
             Re-run jobs
           </Button>
+        </div>
+        <div className="mt-4">
+          <QueueStatusIndicator runId={runId} />
         </div>
       </div>
 
