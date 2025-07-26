@@ -5,6 +5,30 @@ import UserAnalyticsDashboard from '@/components/analytics/UserAnalyticsDashboar
 import { apiClient } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
+// API response types for user analytics
+interface ActivityResponse {
+  total_logins: number;
+  total_sessions: number;
+  avg_session_time?: number;
+  total_page_views: number;
+  activity_trend: Array<{ date: string; value: number }>;
+}
+
+interface ContributionResponse {
+  total_commits: number;
+  total_pull_requests: number;
+  total_issues: number;
+  total_comments: number;
+  contribution_trend: Array<{ date: string; commits: number; prs: number; issues: number }>;
+}
+
+interface RepositoryResponse {
+  total_repositories: number;
+  total_stars: number;
+  total_forks: number;
+  repository_trend: Array<{ date: string; value: number }>;
+}
+
 
 export default function UserInsightsPage() {
   const [data, setData] = useState<any | null>(null);
@@ -21,15 +45,9 @@ export default function UserInsightsPage() {
         setError(undefined);
 
         const [activityRes, contributionsRes, reposRes] = await Promise.all([
-          apiClient.get(
-            `/user/analytics/activity?period=${timeRange}`
-          ),
-          apiClient.get(
-            `/user/analytics/contributions?period=${timeRange}`
-          ),
-          apiClient.get(
-            `/user/analytics/repositories?period=${timeRange}`
-          ),
+          apiClient.get<ActivityResponse>(`/user/analytics/activity?period=${timeRange}`),
+          apiClient.get<ContributionResponse>(`/user/analytics/contributions?period=${timeRange}`),
+          apiClient.get<RepositoryResponse>(`/user/analytics/repositories?period=${timeRange}`),
         ]);
 
         setData({
