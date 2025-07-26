@@ -91,7 +91,7 @@ on:
 jobs:
   # Single job that handles all agent routing and execution
   a5c:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     permissions:
       contents: write
       pull-requests: write
