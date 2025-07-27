@@ -133,8 +133,12 @@ setup_test_db() {
     docker run -d --name hub-test-db -e POSTGRES_PASSWORD=$DB_PASSWORD -e POSTGRES_USER=$DB_USER -e POSTGRES_DB=$DB_NAME -p $DB_PORT:5432 postgres:16
     # Provide password for psql to connect without interactive prompt
     export PGPASSWORD="$DB_PASSWORD"
-    test_log "Waiting for PostgreSQL to be ready..."
-    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\l' &>/dev/null; do sleep 1; done
+    test_log "Waiting for PostgreSQL to be ready (timeout: ${GO_TEST_TIMEOUT:-5m})..."
+    if ! timeout "${GO_TEST_TIMEOUT:-5m}" bash -c \
+        "until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do sleep 1; done"; then
+        error "Timed out waiting for PostgreSQL after ${GO_TEST_TIMEOUT:-5m}"
+        exit 1
+    fi
     test_log "PostgreSQL test container is ready."
 }
 cleanup_test_db() {
