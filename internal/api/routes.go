@@ -106,7 +106,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	v1 := router.Group("/api/v1")
 	{
 		// Git LFS endpoints (batch API, upload, download, verify)
-		lfsHandlers := NewLFSHandlers()
+		lfsHandlers, err := NewLFSHandlers(cfg.LFS, repoBasePath)
+		if err != nil {
+			logger.WithError(err).Fatal("failed to initialize Git LFS handlers")
+		}
 		lfs := v1.Group("/git-lfs")
 		{
 			lfs.POST("/objects/batch", lfsHandlers.Batch)
