@@ -22,14 +22,14 @@ import (
 
 // Common Git errors
 var (
-	ErrRepositoryNotFound   = errors.New("repository not found")
-	ErrRepositoryCorrupted  = errors.New("repository is corrupted")
-	ErrReferenceNotFound    = errors.New("reference not found")
-	ErrCommitNotFound       = errors.New("commit not found")
-	ErrBranchNotFound       = errors.New("branch not found")
-	ErrTagNotFound          = errors.New("tag not found")
-	ErrFileNotFound         = errors.New("file not found")
-	ErrPathNotFound         = errors.New("path not found")
+	ErrRepositoryNotFound  = errors.New("repository not found")
+	ErrRepositoryCorrupted = errors.New("repository is corrupted")
+	ErrReferenceNotFound   = errors.New("reference not found")
+	ErrCommitNotFound      = errors.New("commit not found")
+	ErrBranchNotFound      = errors.New("branch not found")
+	ErrTagNotFound         = errors.New("tag not found")
+	ErrFileNotFound        = errors.New("file not found")
+	ErrPathNotFound        = errors.New("path not found")
 )
 
 // gitService implements the GitService interface using go-git
@@ -774,6 +774,15 @@ func (s *gitService) CreateFile(ctx context.Context, repoPath string, req Create
 		return s.createFileInBareRepo(ctx, repo, req)
 	}
 
+	// Ensure working on requested branch
+	if req.Branch != "" {
+		if err := workTree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.ReferenceName("refs/heads/" + req.Branch),
+		}); err != nil {
+			return nil, fmt.Errorf("failed to checkout branch %s: %w", req.Branch, err)
+		}
+	}
+
 	// Write file to filesystem
 	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
 	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
@@ -837,6 +846,15 @@ func (s *gitService) UpdateFile(ctx context.Context, repoPath string, req Update
 		return s.updateFileInBareRepo(ctx, repo, req)
 	}
 
+	// Ensure working on requested branch
+	if req.Branch != "" {
+		if err := workTree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.ReferenceName("refs/heads/" + req.Branch),
+		}); err != nil {
+			return nil, fmt.Errorf("failed to checkout branch %s: %w", req.Branch, err)
+		}
+	}
+
 	// Check if file exists and verify SHA
 	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -849,7 +867,7 @@ func (s *gitService) UpdateFile(ctx context.Context, repoPath string, req Update
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current file for SHA verification: %w", err)
 		}
-		
+
 		if currentFile.SHA != req.SHA {
 			return nil, fmt.Errorf("file SHA mismatch: expected %s, got %s (file was modified by another process)", req.SHA, currentFile.SHA)
 		}
@@ -913,6 +931,15 @@ func (s *gitService) DeleteFile(ctx context.Context, repoPath string, req Delete
 		return s.deleteFileInBareRepo(ctx, repo, req)
 	}
 
+	// Ensure working on requested branch
+	if req.Branch != "" {
+		if err := workTree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.ReferenceName("refs/heads/" + req.Branch),
+		}); err != nil {
+			return nil, fmt.Errorf("failed to checkout branch %s: %w", req.Branch, err)
+		}
+	}
+
 	// Check if file exists
 	filePath := filepath.Join(workTree.Filesystem.Root(), req.Path)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -925,7 +952,7 @@ func (s *gitService) DeleteFile(ctx context.Context, repoPath string, req Delete
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current file for SHA verification: %w", err)
 		}
-		
+
 		if currentFile.SHA != req.SHA {
 			return nil, fmt.Errorf("file SHA mismatch: expected %s, got %s (file was modified by another process)", req.SHA, currentFile.SHA)
 		}
@@ -988,7 +1015,7 @@ func (s *gitService) GetRepositoryInfo(ctx context.Context, repoPath string) (*R
 		if head.Name().IsBranch() {
 			defaultBranch = head.Name().Short()
 		}
-		
+
 		// Get last commit
 		if commitObj, err := repo.CommitObject(head.Hash()); err == nil {
 			lastCommit = s.convertCommit(commitObj)
@@ -1045,10 +1072,10 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 				if c.Author.When.After(stats.LastActivity) {
 					stats.LastActivity = c.Author.When
 				}
-				
+
 				// Track unique contributors by email
 				contributors[c.Author.Email] = true
-				
+
 				return nil
 			})
 			commitIter.Close()
@@ -1086,7 +1113,7 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 					// Get file size
 					fileSize := file.Size
 					totalBytes += fileSize
-					
+
 					// Detect language
 					var content []byte
 					if fileSize < 1024*1024 { // Only read content for files smaller than 1MB
@@ -1095,12 +1122,12 @@ func (s *gitService) GetRepositoryStats(ctx context.Context, repoPath string) (*
 							reader.Close()
 						}
 					}
-					
+
 					language := langDetector.DetectLanguage(file.Name, content)
 					if language != "Unknown" {
 						languageBytes[language] += fileSize
 					}
-					
+
 					return nil
 				})
 				if err != nil {
@@ -1334,7 +1361,7 @@ func (s *gitService) MergeBranches(repoPath, base, head string, mergeMethod, tit
 				When:  time.Now(),
 			},
 			Committer: object.Signature{
-				Name:  "System", 
+				Name:  "System",
 				Email: "system@hub.local",
 				When:  time.Now(),
 			},
@@ -1356,7 +1383,7 @@ func (s *gitService) MergeBranches(repoPath, base, head string, mergeMethod, tit
 
 		s.logger.WithFields(logrus.Fields{
 			"base":         base,
-			"head":         head, 
+			"head":         head,
 			"merge_method": mergeMethod,
 			"merge_sha":    mergeCommitHash.String(),
 		}).Info("Created merge commit")
@@ -1501,7 +1528,7 @@ func (s *gitService) getFilesDiff(repo *git.Repository, base, head *object.Commi
 		patch, err := change.Patch()
 		if err == nil && patch != nil {
 			diffFile.Patch = patch.String()
-			
+
 			// Parse patch for stats
 			lines := strings.Split(patch.String(), "\n")
 			for _, line := range lines {
