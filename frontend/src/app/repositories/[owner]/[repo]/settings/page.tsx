@@ -24,7 +24,6 @@ export default function RepositorySettingsPage() {
     description: '',
     private: false,
     default_branch: 'main',
-    actions_enabled: true
   });
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function RepositorySettingsPage() {
           description: response.data.description || '',
           private: response.data.private,
           default_branch: response.data.default_branch,
-          actions_enabled: response.data.actions_enabled ?? true
         });
       } catch (err) {
         console.error('Failed to fetch repository', err);
@@ -98,7 +96,6 @@ export default function RepositorySettingsPage() {
     { id: 'access', name: 'Access', icon: '👥' },
     { id: 'branches', name: 'Branches', icon: '🌿' },
     { id: 'webhooks', name: 'Webhooks', icon: '🔗' },
-    { id: 'actions', name: 'Actions', icon: '⚡' },
     { id: 'security', name: 'Security', icon: '🔒' },
     { id: 'danger', name: 'Danger Zone', icon: '⚠️' }
   ];
@@ -299,66 +296,6 @@ export default function RepositorySettingsPage() {
                           Go to Webhooks
                         </Button>
                       </Link>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            )}
-
-            {activeTab === 'actions' && (
-              <div className="space-y-6">
-                <Card>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Actions Settings</h3>
-                    <div className="space-y-4">
-                      <div className="p-3 border border-border rounded-lg bg-card">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="actions-enabled"
-                            checked={formData.actions_enabled}
-                            onChange={(e) => setFormData(prev => ({ ...prev, actions_enabled: e.target.checked }))}
-                            className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
-                          />
-                          <label htmlFor="actions-enabled" className="ml-3 block text-sm font-medium text-foreground">
-                            Enable GitHub Actions for this repository
-                          </label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2 ml-7">
-                          Allow workflows to run on this repository
-                        </p>
-                      </div>
-                      
-                      <div className="border-t pt-4">
-                        <h4 className="font-medium text-foreground mb-3">Workflow Permissions</h4>
-                        <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer p-3 border border-border rounded-lg hover:bg-muted bg-card">
-                            <input 
-                              type="radio" 
-                              name="workflow-permissions" 
-                              defaultChecked 
-                              aria-label="Read repository contents and metadata permissions"
-                              className="h-4 w-4 text-primary focus:ring-primary border-border mr-3"
-                            />
-                            <div>
-                              <span className="text-sm font-medium text-foreground">Read repository contents and metadata permissions</span>
-                              <p className="text-xs text-muted-foreground mt-1">Actions can read repository contents and metadata</p>
-                            </div>
-                          </label>
-                          <label className="flex items-center cursor-pointer p-3 border border-border rounded-lg hover:bg-muted bg-card">
-                            <input 
-                              type="radio" 
-                              name="workflow-permissions" 
-                              aria-label="Read and write permissions"
-                              className="h-4 w-4 text-primary focus:ring-primary border-border mr-3"
-                            />
-                            <div>
-                              <span className="text-sm font-medium text-foreground">Read and write permissions</span>
-                              <p className="text-xs text-muted-foreground mt-1">Actions can read and write to the repository</p>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </Card>

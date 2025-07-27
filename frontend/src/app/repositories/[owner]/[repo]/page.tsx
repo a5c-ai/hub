@@ -258,19 +258,7 @@ export default function RepositoryDetailsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Code
-                </Link>
-                <Link
-                  href={`/repositories/${owner}/${repo}/issues`}
-                  className="border-transparent text-muted-foreground hover:text-foreground hover:border-border border-b-2 py-2 px-1 text-sm font-medium"
-                >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.732L13.732 4.268c-.77-1.064-2.694-1.064-3.464 0L3.34 16.268C2.57 17.333 3.532 19 5.072 19z" />
-                  </svg>
-                  Issues
-                  <Badge variant="secondary" className="ml-2">
-                    {repository.open_issues_count}
-                  </Badge>
-                </Link>
+                </Link>                
                 <Link
                   href={`/repositories/${owner}/${repo}/pulls`}
                   className="border-transparent text-muted-foreground hover:text-foreground hover:border-border border-b-2 py-2 px-1 text-sm font-medium"
@@ -279,15 +267,6 @@ export default function RepositoryDetailsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                   Pull requests
-                </Link>
-                <Link
-                  href={`/repositories/${owner}/${repo}/actions`}
-                  className="border-transparent text-muted-foreground hover:text-foreground hover:border-border border-b-2 py-2 px-1 text-sm font-medium"
-                >
-                  <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Actions
                 </Link>
                 <Link
                   href={`/repositories/${owner}/${repo}/insights`}

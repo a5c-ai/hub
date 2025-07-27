@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import {
   Button,
+  buttonVariants,
   Avatar,
   Dropdown,
   Input,
@@ -19,6 +20,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const router = useRouter();
@@ -117,11 +119,13 @@ export function Header() {
           
           <Dropdown
             trigger={
-              <Button variant="ghost" size="icon" asChild>
-                <span>
-                  <PlusIcon className="h-5 w-5" />
-                </span>
-              </Button>
+              <div className={cn(
+                'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                buttonVariants.variant.ghost,
+                buttonVariants.size.icon
+              )}>
+                <PlusIcon className="h-5 w-5" />
+              </div>
             }
             items={createMenuItems}
           />

@@ -10,7 +10,6 @@ test.describe('Repository Settings & Administration', () => {
     private: false,
     language: 'TypeScript',
     default_branch: 'main',
-    actions_enabled: true,
     stargazers_count: 10,
     forks_count: 2,
     updated_at: '2024-07-20T10:00:00Z',
@@ -175,53 +174,6 @@ test.describe('Repository Settings & Administration', () => {
     });
   });
 
-  test.describe('Actions Settings', () => {
-    test('should display actions settings', async ({ page }) => {
-      await page.goto('/repositories/testuser/test-repo/settings');
-      
-      // Navigate to actions tab
-      await page.click('button:has-text("Actions")');
-      
-      // Should display actions settings
-      await expect(page.locator('h3')).toContainText('Actions Settings');
-      await expect(page.locator('text=Enable GitHub Actions')).toBeVisible();
-      await expect(page.locator('text=Workflow Permissions')).toBeVisible();
-    });
-
-    test('should toggle actions enabled state', async ({ page }) => {
-      await page.goto('/repositories/testuser/test-repo/settings');
-      await page.click('button:has-text("Actions")');
-      
-      // Should show actions checkbox
-      const actionsCheckbox = page.locator('input[type="checkbox"]#actions-enabled');
-      await expect(actionsCheckbox).toBeChecked(); // Enabled by default
-      
-      // Toggle actions off
-      await actionsCheckbox.uncheck();
-      await expect(actionsCheckbox).not.toBeChecked();
-      
-      // Toggle back on
-      await actionsCheckbox.check();
-      await expect(actionsCheckbox).toBeChecked();
-    });
-
-    test('should configure workflow permissions', async ({ page }) => {
-      await page.goto('/repositories/testuser/test-repo/settings');
-      await page.click('button:has-text("Actions")');
-      
-      // Should show workflow permission options
-      const readOnlyRadio = page.locator('input[type="radio"][aria-label*="Read repository contents"]');
-      const readWriteRadio = page.locator('input[type="radio"][aria-label*="Read and write permissions"]');
-      
-      await expect(readOnlyRadio).toBeChecked(); // Default is read-only
-      await expect(readWriteRadio).not.toBeChecked();
-      
-      // Change to read-write
-      await readWriteRadio.check();
-      await expect(readWriteRadio).toBeChecked();
-      await expect(readOnlyRadio).not.toBeChecked();
-    });
-  });
 
   test.describe('Security Settings', () => {
     test('should display security settings', async ({ page }) => {

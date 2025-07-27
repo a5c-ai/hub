@@ -10,7 +10,6 @@ test.describe('Repository Webhooks & Integrations', () => {
     private: false,
     language: 'TypeScript',
     default_branch: 'main',
-    actions_enabled: true,
     stargazers_count: 10,
     forks_count: 2,
     updated_at: '2024-07-20T10:00:00Z'
