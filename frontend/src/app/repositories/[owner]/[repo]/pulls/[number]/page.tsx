@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { PullRequestDetail } from '@/components/pullRequests/PullRequestDetail';
 import api from '@/lib/api';
-import { PullRequest } from '@/types';
+import { PullRequest, User } from '@/types';
 
 export default function PullRequestDetailPage() {
   const params = useParams();
@@ -260,7 +260,7 @@ export default function PullRequestDetailPage() {
                 <h3 className="text-sm font-medium text-foreground mb-3">Assignees</h3>
                 <div className="space-y-2">
                   {pullRequest.issue.assignees && pullRequest.issue.assignees.length > 0 ? (
-                    pullRequest.issue.assignees.map((assignee) => (
+                    pullRequest.issue.assignees.map((assignee: User) => (
                       <div key={assignee.id} className="flex items-center">
                         <Avatar
                           src={assignee.avatar_url}
