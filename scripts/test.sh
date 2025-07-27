@@ -131,6 +131,8 @@ export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
 setup_test_db() {
     test_log "Starting PostgreSQL test container..."
     docker run -d --name hub-test-db -e POSTGRES_PASSWORD=$DB_PASSWORD -e POSTGRES_USER=$DB_USER -e POSTGRES_DB=$DB_NAME -p $DB_PORT:5432 postgres:16
+    # Provide password for psql to connect without interactive prompt
+    export PGPASSWORD="$DB_PASSWORD"
     test_log "Waiting for PostgreSQL to be ready..."
     until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\l' &>/dev/null; do sleep 1; done
     test_log "PostgreSQL test container is ready."
