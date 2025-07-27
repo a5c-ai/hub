@@ -57,13 +57,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize analytics service
 	analyticsService := services.NewAnalyticsService(database.DB, logger)
 
-	// Initialize Redis service
-	redisService, err := services.NewRedisService(cfg.Redis, logger)
-	if err != nil {
-		logger.WithError(err).Error("Failed to initialize Redis service")
-		panic(err)
-	}
-
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
@@ -164,11 +157,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 		// Public search endpoints (for public content)
 		v1.GET("/search", searchHandlers.GlobalSearch)
-		v1.GET("/search/repositories", searchHandlers.SearchRepositories)
-
-		v1.GET("/search/users", searchHandlers.SearchUsers)
-		v1.GET("/search/commits", searchHandlers.SearchCommits)
-		v1.GET("/search/code", searchHandlers.SearchCode)
 
 		// Public user profile endpoints
 		v1.GET("/users/:username", userHandlers.GetUserProfile)
@@ -339,7 +327,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.POST("/:owner/:repo/fork", repoHandlers.ForkRepository)
 
 				// Repository-specific search
-				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
 
 				// Pull request operations
 				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
@@ -347,13 +334,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/pulls/:number", prHandlers.GetPullRequest)
 				repos.PATCH("/:owner/:repo/pulls/:number", prHandlers.UpdatePullRequest)
 				repos.PUT("/:owner/:repo/pulls/:number/merge", prHandlers.MergePullRequest)
-				repos.GET("/:owner/:repo/pulls/:number/files", prHandlers.GetPullRequestFiles)
-
-				// Review operations
-				repos.POST("/:owner/:repo/pulls/:number/reviews", prHandlers.CreateReview)
-				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
-				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
-				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
 
 				// Repository analytics endpoints (require authentication)
 				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)
@@ -369,7 +349,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			adminRepos := protected.Group("/repositories")
 			adminRepos.Use(middleware.AdminMiddleware())
 			{
-				adminRepos.DELETE("/:owner/:repo/issues/:number", issueHandlers.DeleteIssue)
+
 			}
 
 			// Organization management endpoints

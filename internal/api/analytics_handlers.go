@@ -275,36 +275,7 @@ func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
-	period := services.Period(c.DefaultQuery("period", "daily"))
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
 
-	var startDate, endDate *time.Time
-	if startDateStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, startDateStr); err == nil {
-			startDate = &parsed
-		}
-	}
-	if endDateStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, endDateStr); err == nil {
-			endDate = &parsed
-		}
-	}
-
-	// Resolve repository ID from owner/repo
-	repoID, err := h.getRepositoryID(c.Request.Context(), owner, repo)
-	if err != nil {
-		h.logger.WithError(err).Error("Failed to resolve repository")
-		c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
-		return
-	}
-
-	filters := services.InsightFilters{
-		StartDate: startDate,
-		EndDate:   endDate,
-		Period:    period,
-	}
 
 	c.JSON(http.StatusOK, gin.H{"error": "Issue analytics not available"})
 }
@@ -1351,7 +1322,7 @@ func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uui
 		"total_commits":            commitStats.TotalCommits,
 		"total_additions":          commitStats.TotalAdditions,
 		"total_deletions":          commitStats.TotalDeletions,
-		"total_issues":             issueCount,
+
 		"total_pull_requests":      prCount,
 		"repositories_contributed": repoCount,
 		"monthly_contributions":    monthlyContributions,

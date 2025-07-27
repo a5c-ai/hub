@@ -95,9 +95,8 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 		}
 	}
 
-	// Count open issues
-	var openIssuesCount int64
-	h.db.Model(&models.Issue{}).Where("repository_id = ? AND state = ?", repo.ID, models.IssueStateOpen).Count(&openIssuesCount)
+	// Issues removed - set count to 0
+	var openIssuesCount int64 = 0
 
 	return &RepositoryResponse{
 		Repository:      *repo,
