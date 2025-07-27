@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { PullRequestDetail } from '@/components/pullRequests/PullRequestDetail';
 import api from '@/lib/api';
-import { PullRequest, User } from '@/types';
+import { PullRequest, User, Label } from '@/types';
 
 export default function PullRequestDetailPage() {
   const params = useParams();
@@ -293,7 +293,7 @@ export default function PullRequestDetailPage() {
                 <div className="space-y-2">
                   {pullRequest.issue.labels && pullRequest.issue.labels.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {pullRequest.issue.labels.map((label) => (
+                      {pullRequest.issue.labels.map((label: Label) => (
                         <Badge
                           key={label.id}
                           style={{ backgroundColor: `#${label.color}` }}
