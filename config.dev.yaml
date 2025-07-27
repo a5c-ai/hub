@@ -30,3 +30,10 @@ elasticsearch:
   cloud_id: ""
   api_key: ""
   index_prefix: "hub_dev"
+  # Git LFS storage configuration for development
+lfs:
+  backend: "azure_blob"
+  azure:
+    account_name: "<dev-account-name>"
+    account_key: "<dev-account-key>"
+    container_name: "<dev-container-name>"

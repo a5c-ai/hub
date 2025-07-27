@@ -21,6 +21,15 @@ type Config struct {
 	SSH           SSH           `mapstructure:"ssh"`
 	Elasticsearch Elasticsearch `mapstructure:"elasticsearch"`
 	Application   Application   `mapstructure:"application"`
+	// Git LFS configuration
+	LFS LFS `mapstructure:"lfs"`
+}
+
+// LFS holds Git LFS storage configuration
+type LFS struct {
+	// Storage backend for Git LFS: "azure_blob", "s3", "filesystem"
+	Backend string       `mapstructure:"backend"`
+	Azure   AzureStorage `mapstructure:"azure"`
 }
 
 type Server struct {
@@ -61,12 +70,12 @@ type Storage struct {
 }
 
 type ArtifactStorage struct {
-	Backend       string        `mapstructure:"backend"`        // "azure", "s3", "filesystem"
-	Azure         AzureStorage  `mapstructure:"azure"`
-	S3            S3Storage     `mapstructure:"s3"`
-	MaxSizeMB     int64         `mapstructure:"max_size_mb"`    // Max artifact size in MB
-	RetentionDays int           `mapstructure:"retention_days"` // Retention period in days
-	BasePath      string        `mapstructure:"base_path"`      // For filesystem backend
+	Backend       string       `mapstructure:"backend"` // "azure", "s3", "filesystem"
+	Azure         AzureStorage `mapstructure:"azure"`
+	S3            S3Storage    `mapstructure:"s3"`
+	MaxSizeMB     int64        `mapstructure:"max_size_mb"`    // Max artifact size in MB
+	RetentionDays int          `mapstructure:"retention_days"` // Retention period in days
+	BasePath      string       `mapstructure:"base_path"`      // For filesystem backend
 }
 
 type AzureStorage struct {
@@ -158,13 +167,13 @@ type SMTP struct {
 }
 
 type Elasticsearch struct {
-	Enabled    bool     `mapstructure:"enabled"`
-	Addresses  []string `mapstructure:"addresses"`
-	Username   string   `mapstructure:"username"`
-	Password   string   `mapstructure:"password"`
-	CloudID    string   `mapstructure:"cloud_id"`
-	APIKey     string   `mapstructure:"api_key"`
-	IndexPrefix string  `mapstructure:"index_prefix"`
+	Enabled     bool     `mapstructure:"enabled"`
+	Addresses   []string `mapstructure:"addresses"`
+	Username    string   `mapstructure:"username"`
+	Password    string   `mapstructure:"password"`
+	CloudID     string   `mapstructure:"cloud_id"`
+	APIKey      string   `mapstructure:"api_key"`
+	IndexPrefix string   `mapstructure:"index_prefix"`
 }
 
 type Application struct {
@@ -219,6 +228,11 @@ func Load() (*Config, error) {
 	viper.SetDefault("elasticsearch.index_prefix", "hub")
 	viper.SetDefault("application.base_url", "http://localhost:3000")
 	viper.SetDefault("application.name", "A5C Hub")
+	// Git LFS defaults
+	viper.SetDefault("lfs.backend", "filesystem")
+	viper.SetDefault("lfs.azure.account_name", "")
+	viper.SetDefault("lfs.azure.account_key", "")
+	viper.SetDefault("lfs.azure.container_name", "lfs")
 
 	viper.AutomaticEnv()
 
@@ -284,6 +298,11 @@ func Load() (*Config, error) {
 	viper.BindEnv("elasticsearch.index_prefix", "ELASTICSEARCH_INDEX_PREFIX")
 	viper.BindEnv("application.base_url", "BASE_URL")
 	viper.BindEnv("application.name", "APPLICATION_NAME")
+	// Git LFS env bindings
+	viper.BindEnv("lfs.backend", "LFS_BACKEND")
+	viper.BindEnv("lfs.azure.account_name", "LFS_AZURE_ACCOUNT_NAME")
+	viper.BindEnv("lfs.azure.account_key", "LFS_AZURE_ACCOUNT_KEY")
+	viper.BindEnv("lfs.azure.container_name", "LFS_AZURE_CONTAINER_NAME")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

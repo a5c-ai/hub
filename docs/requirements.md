@@ -37,6 +37,7 @@ This document defines comprehensive functional and non-functional requirements f
 - **Repository Transfer**: Transfer ownership between users and organizations
 - **Repository Archiving**: Read-only archival with search capabilities
 - **Large File Support**: Git LFS integration with configurable storage backends
+  - Supported backends: Azure Blob Storage (primary), S3 (optional), local filesystem (fallback)
 - **Repository Statistics**: Commit frequency, contributor analytics, language breakdown
 
 #### 1.2 Branch and Tag Management
