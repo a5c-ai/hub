@@ -47,6 +47,11 @@ export interface Organization {
   updated_at: string;
 }
 
+/**
+ * Forward declaration for Issue to allow referencing in PullRequest before its full definition.
+ */
+export interface Issue {}
+
 export interface PullRequest {
   id: string;
   issue_id: string;
