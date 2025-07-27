@@ -127,6 +127,8 @@ export DB_PORT="${TEST_DB_PORT:-5433}"
 export DB_NAME="${TEST_DB_NAME:-hub_test}"
 export DB_USER="${TEST_DB_USER:-hub}"
 export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
+# Override DATABASE_URL to ensure tests connect to the test database
+export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
 # Setup and teardown for PostgreSQL test container
 setup_test_db() {
