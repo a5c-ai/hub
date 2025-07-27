@@ -250,8 +250,18 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 	if err := s.gitService.CreateBranch(ctx, repoPath, "settings", repo.DefaultBranch); err != nil {
 		return nil, fmt.Errorf("failed to create settings branch: %w", err)
 	}
-	// Initialize default repository settings file
-	defaultConfig := fmt.Sprintf("description: %s\nvisibility: %s\narchive: false\n", repo.Description, repo.Visibility)
+	// Initialize default repository settings file with core configuration
+	defaultConfig := fmt.Sprintf(
+		"name: %s\n"+
+			"description: %s\n"+
+			"private: %t\n"+
+			"default_branch: %s\n"+
+			"archive: false\n",
+		repo.Name,
+		repo.Description,
+		repo.Visibility != models.VisibilityPublic,
+		repo.DefaultBranch,
+	)
 	if _, err := s.gitService.CreateFile(ctx, repoPath, git.CreateFileRequest{
 		Path:    "repository.yaml",
 		Content: defaultConfig,

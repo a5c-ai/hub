@@ -224,6 +224,14 @@ export const repoApi = {
 
   updateRepositoryStats: (owner: string, repo: string) =>
     apiClient.post(`/repositories/${owner}/${repo}/stats/update`),
+  // Repository settings on dedicated branch
+  getRepositorySettings: (owner: string, repo: string) =>
+    apiClient.get(`/repositories/${owner}/${repo}/settings`),
+  updateRepositorySettings: (
+    owner: string,
+    repo: string,
+    data: Record<string, any>
+  ) => apiClient.put(`/repositories/${owner}/${repo}/settings`, data),
 };
 
 // Organization API methods
