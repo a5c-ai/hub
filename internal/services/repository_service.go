@@ -241,6 +241,27 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 		}
 	}
 
+	// Create 'settings' branch and default settings file
+	repoPath, err := s.GetRepositoryPath(ctx, repo.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get repository path for settings branch: %w", err)
+	}
+	// Create settings branch from default branch
+	if err := s.gitService.CreateBranch(ctx, repoPath, "settings", repo.DefaultBranch); err != nil {
+		return nil, fmt.Errorf("failed to create settings branch: %w", err)
+	}
+	// Initialize default repository settings file
+	defaultConfig := fmt.Sprintf("description: %s\nvisibility: %s\narchive: false\n", repo.Description, repo.Visibility)
+	if _, err := s.gitService.CreateFile(ctx, repoPath, git.CreateFileRequest{
+		Path:    "repository.yaml",
+		Content: defaultConfig,
+		Branch:  "settings",
+		Message: "Initialize repository settings",
+		Author:  git.CommitAuthor{Name: "system", Email: "system@localhost", Date: time.Now()},
+	}); err != nil {
+		return nil, fmt.Errorf("failed to create default settings file: %w", err)
+	}
+
 	return repo, nil
 }
 
