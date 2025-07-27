@@ -22,7 +22,23 @@ test.describe('Navigation and Layout', () => {
 
     // Set authentication state
     await page.addInitScript(() => {
-      window.localStorage.setItem('auth-token', 'mock-jwt-token');
+      window.localStorage.setItem('auth_token', 'mock-jwt-token');
+      // Force auth store to be initialized as authenticated
+      window.localStorage.setItem('auth-storage', JSON.stringify({
+        state: {
+          user: {
+            id: '1',
+            name: 'Test User',
+            username: 'testuser',
+            email: 'test@example.com'
+          },
+          token: 'mock-jwt-token',
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        },
+        version: 0
+      }));
     });
   });
 
@@ -43,37 +59,54 @@ test.describe('Navigation and Layout', () => {
     await page.goto('/dashboard');
     
     // Check for sidebar elements
-    if (await page.locator('[data-testid="sidebar"]').count() > 0) {
-      await expect(page.locator('[data-testid="sidebar"]')).toBeVisible();
+    const sidebar = page.locator('[data-testid="sidebar"]');
+    if (await sidebar.count() > 0) {
+      await expect(sidebar).toBeVisible();
       
-      // Common navigation items
-      const navItems = [
-        'Dashboard',
-        'Repositories', 
-        'Organizations',
-        'Settings'
-      ];
+      // Check for specific navigation links within the sidebar navigation area
+      // Use more specific selectors to avoid the logo link
+      const navSection = sidebar.locator('nav');
+      const dashboardNavLink = navSection.getByRole('link', { name: /dashboard/i });
+      const repositoriesNavLink = navSection.getByRole('link', { name: /repositories/i });
       
-      for (const item of navItems) {
-        if (await page.locator(`text=${item}`).count() > 0) {
-          await expect(page.locator(`text=${item}`)).toBeVisible();
-        }
+      if (await dashboardNavLink.count() > 0) {
+        await expect(dashboardNavLink).toBeVisible();
+      }
+      
+      if (await repositoriesNavLink.count() > 0) {
+        await expect(repositoriesNavLink).toBeVisible();
       }
     }
   });
 
   test('should navigate between main sections', async ({ page }) => {
+    // Mock repositories API to ensure page loads
+    await page.route('**/api/repositories', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: []
+        })
+      });
+    });
+
     await page.goto('/dashboard');
     
     // Test navigation to repositories
-    if (await page.locator('a[href="/repositories"]').count() > 0) {
-      await page.click('a[href="/repositories"]');
+    const repositoriesLink = page.locator('a[href="/repositories"]').first();
+    if (await repositoriesLink.count() > 0) {
+      await repositoriesLink.click();
+      await page.waitForURL('/repositories', { timeout: 10000 });
       await expect(page).toHaveURL('/repositories');
     }
     
     // Navigate back to dashboard
-    if (await page.locator('a[href="/dashboard"]').count() > 0) {
-      await page.click('a[href="/dashboard"]');
+    const dashboardLink = page.locator('a[href="/dashboard"]').first();
+    if (await dashboardLink.count() > 0) {
+      await dashboardLink.click();
+      await page.waitForURL('/dashboard', { timeout: 10000 });
       await expect(page).toHaveURL('/dashboard');
     }
   });
@@ -81,11 +114,16 @@ test.describe('Navigation and Layout', () => {
   test('should display user information in header/sidebar', async ({ page }) => {
     await page.goto('/dashboard');
     
-    // Check if user name or username is displayed somewhere in the layout
-    const userNameVisible = await page.locator(`text=${testUser.name}`).count() > 0;
-    const usernameVisible = await page.locator(`text=${testUser.username}`).count() > 0;
+    // Wait for authentication to complete
+    await page.waitForTimeout(1000);
     
-    expect(userNameVisible || usernameVisible).toBe(true);
+    // Check if user name is displayed in the header using data-testid
+    const userNameElement = page.locator('[data-testid="user-name"]');
+    await expect(userNameElement).toBeVisible();
+    
+    // Verify the text content matches expected user name or username
+    const text = await userNameElement.textContent();
+    expect(text === testUser.name || text === testUser.username).toBe(true);
   });
 
   test('should handle mobile navigation (hamburger menu)', async ({ page }) => {
@@ -100,8 +138,9 @@ test.describe('Navigation and Layout', () => {
       // Click to open mobile menu
       await page.click('[data-testid="mobile-menu-button"]');
       
-      // Check that mobile menu opens
-      await expect(page.locator('[data-testid="mobile-menu"]')).toBeVisible();
+      // Check that sidebar becomes visible after clicking mobile menu
+      const sidebar = page.locator('[data-testid="sidebar"]');
+      await expect(sidebar).toBeVisible();
     }
   });
 

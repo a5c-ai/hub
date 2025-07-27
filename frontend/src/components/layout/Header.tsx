@@ -11,7 +11,6 @@ import {
 } from '@heroicons/react/24/outline';
 import {
   Button,
-  buttonVariants,
   Avatar,
   Dropdown,
   Input,
@@ -20,7 +19,6 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
-import { cn } from '@/lib/utils';
 
 export function Header() {
   const router = useRouter();
@@ -119,18 +117,11 @@ export function Header() {
           
           <Dropdown
             trigger={
-              <div 
-                className={cn(
-                  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-                  buttonVariants.variant.ghost,
-                  buttonVariants.size.icon
-                )}
-                tabIndex={0}
-                role="button"
-                aria-label="Create new"
-              >
-                <PlusIcon className="h-5 w-5" />
-              </div>
+              <Button variant="ghost" size="icon" asChild>
+                <button aria-label="Create new">
+                  <PlusIcon className="h-5 w-5" />
+                </button>
+              </Button>
             }
             items={createMenuItems}
           />
@@ -153,7 +144,7 @@ export function Header() {
                   size="sm"
                   data-testid="user-avatar"
                 />
-                <span className="hidden sm:inline-block text-sm font-medium">
+                <span className="text-sm font-medium" data-testid="user-name">
                   {user?.name || user?.username}
                 </span>
               </div>
