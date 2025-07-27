@@ -32,13 +32,13 @@ func NewAdminHandlers(authService auth.AuthService, db *gorm.DB, logger *logrus.
 
 // UserQueryParams represents query parameters for user listing and filtering
 type UserQueryParams struct {
-	Page     int    `form:"page,default=1"`
-	PerPage  int    `form:"per_page,default=30"`
-	Search   string `form:"search"`
-	Role     string `form:"role"`
-	Status   string `form:"status"`
-	SortBy   string `form:"sort_by,default=created_at"`
-	SortDir  string `form:"sort_dir,default=desc"`
+	Page    int    `form:"page,default=1"`
+	PerPage int    `form:"per_page,default=30"`
+	Search  string `form:"search"`
+	Role    string `form:"role"`
+	Status  string `form:"status"`
+	SortBy  string `form:"sort_by,default=created_at"`
+	SortDir string `form:"sort_dir,default=desc"`
 }
 
 // AdminUserResponse represents the user data returned by admin endpoints
@@ -616,15 +616,15 @@ func (h *AdminHandlers) SetUserRole(c *gin.Context) {
 // GetUserStats handles GET /api/v1/admin/users/stats
 func (h *AdminHandlers) GetUserStats(c *gin.Context) {
 	var stats struct {
-		TotalUsers        int64 `json:"total_users"`
-		ActiveUsers       int64 `json:"active_users"`
-		InactiveUsers     int64 `json:"inactive_users"`
-		AdminUsers        int64 `json:"admin_users"`
-		VerifiedUsers     int64 `json:"verified_users"`
-		MFAEnabledUsers   int64 `json:"mfa_enabled_users"`
-		UsersThisMonth    int64 `json:"users_this_month"`
-		UsersLastMonth    int64 `json:"users_last_month"`
-		LoginThisWeek     int64 `json:"logins_this_week"`
+		TotalUsers      int64 `json:"total_users"`
+		ActiveUsers     int64 `json:"active_users"`
+		InactiveUsers   int64 `json:"inactive_users"`
+		AdminUsers      int64 `json:"admin_users"`
+		VerifiedUsers   int64 `json:"verified_users"`
+		MFAEnabledUsers int64 `json:"mfa_enabled_users"`
+		UsersThisMonth  int64 `json:"users_this_month"`
+		UsersLastMonth  int64 `json:"users_last_month"`
+		LoginThisWeek   int64 `json:"logins_this_week"`
 	}
 
 	// Get total users
@@ -670,7 +670,7 @@ func (h *AdminHandlers) GetUserStats(c *gin.Context) {
 	}
 
 	// Get users created this month
-	thisMonth := time.Now().Truncate(24 * time.Hour).AddDate(0, 0, -time.Now().Day()+1)
+	thisMonth := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -time.Now().Day()+1)
 	if err := h.db.Model(&models.User{}).Where("created_at >= ?", thisMonth).Count(&stats.UsersThisMonth).Error; err != nil {
 		h.logger.WithError(err).Error("Failed to count users this month")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user stats"})
@@ -687,7 +687,7 @@ func (h *AdminHandlers) GetUserStats(c *gin.Context) {
 	}
 
 	// Get users who logged in this week
-	thisWeek := time.Now().Truncate(24 * time.Hour).AddDate(0, 0, -int(time.Now().Weekday()))
+	thisWeek := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -int(time.Now().Weekday()))
 	if err := h.db.Model(&models.User{}).Where("last_login_at >= ?", thisWeek).Count(&stats.LoginThisWeek).Error; err != nil {
 		h.logger.WithError(err).Error("Failed to count logins this week")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user stats"})

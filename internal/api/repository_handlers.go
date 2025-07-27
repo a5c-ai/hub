@@ -27,7 +27,6 @@ type RepositoryResponse struct {
 	StargazersCount int        `json:"stargazers_count"`
 	ForksCount      int        `json:"forks_count"`
 	WatchersCount   int        `json:"watchers_count"`
-	OpenIssuesCount int        `json:"open_issues_count"`
 	CloneURL        string     `json:"clone_url"`
 	SSHURL          string     `json:"ssh_url"`
 	Size            int64      `json:"size"`
@@ -95,10 +94,6 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 		}
 	}
 
-	// Count open issues
-	var openIssuesCount int64
-	h.db.Model(&models.Issue{}).Where("repository_id = ? AND state = ?", repo.ID, models.IssueStateOpen).Count(&openIssuesCount)
-
 	return &RepositoryResponse{
 		Repository:      *repo,
 		FullName:        fullName,
@@ -109,7 +104,6 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 		StargazersCount: repo.StarsCount,
 		ForksCount:      repo.ForksCount,
 		WatchersCount:   repo.WatchersCount,
-		OpenIssuesCount: int(openIssuesCount),
 		CloneURL:        fmt.Sprintf("http://localhost:8080/%s/%s.git", owner.Username, repo.Name),
 		SSHURL:          fmt.Sprintf("git@localhost:%s/%s.git", owner.Username, repo.Name),
 		Size:            repo.SizeKB,

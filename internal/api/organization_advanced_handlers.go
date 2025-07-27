@@ -12,13 +12,13 @@ import (
 
 // Organization Advanced Handlers
 type OrganizationAdvancedHandlers struct {
-	customRoleService       services.CustomRoleService
-	policyService          services.OrganizationPolicyService
-	templateService        services.OrganizationTemplateService
-	settingsService        services.OrganizationSettingsService
-	analyticsService       services.OrganizationAnalyticsService
-	auditService          services.OrganizationAuditService
-	teamTemplateService   services.TeamTemplateService
+	customRoleService   services.CustomRoleService
+	policyService       services.OrganizationPolicyService
+	templateService     services.OrganizationTemplateService
+	settingsService     services.OrganizationSettingsService
+	analyticsService    services.OrganizationAnalyticsService
+	auditService        services.OrganizationAuditService
+	teamTemplateService services.TeamTemplateService
 }
 
 func NewOrganizationAdvancedHandlers(
@@ -31,20 +31,20 @@ func NewOrganizationAdvancedHandlers(
 	teamTemplateService services.TeamTemplateService,
 ) *OrganizationAdvancedHandlers {
 	return &OrganizationAdvancedHandlers{
-		customRoleService:     customRoleService,
-		policyService:        policyService,
-		templateService:      templateService,
-		settingsService:      settingsService,
-		analyticsService:     analyticsService,
-		auditService:         auditService,
-		teamTemplateService:  teamTemplateService,
+		customRoleService:   customRoleService,
+		policyService:       policyService,
+		templateService:     templateService,
+		settingsService:     settingsService,
+		analyticsService:    analyticsService,
+		auditService:        auditService,
+		teamTemplateService: teamTemplateService,
 	}
 }
 
 // Custom Roles Handlers
 func (h *OrganizationAdvancedHandlers) CreateCustomRole(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	var req services.CreateCustomRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -63,7 +63,7 @@ func (h *OrganizationAdvancedHandlers) CreateCustomRole(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) GetCustomRole(c *gin.Context) {
 	orgName := c.Param("org")
 	roleIDStr := c.Param("role_id")
-	
+
 	roleID, err := uuid.Parse(roleIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role ID"})
@@ -82,7 +82,7 @@ func (h *OrganizationAdvancedHandlers) GetCustomRole(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) UpdateCustomRole(c *gin.Context) {
 	orgName := c.Param("org")
 	roleIDStr := c.Param("role_id")
-	
+
 	roleID, err := uuid.Parse(roleIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role ID"})
@@ -107,7 +107,7 @@ func (h *OrganizationAdvancedHandlers) UpdateCustomRole(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) DeleteCustomRole(c *gin.Context) {
 	orgName := c.Param("org")
 	roleIDStr := c.Param("role_id")
-	
+
 	roleID, err := uuid.Parse(roleIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role ID"})
@@ -137,7 +137,7 @@ func (h *OrganizationAdvancedHandlers) ListCustomRoles(c *gin.Context) {
 // Policy Handlers
 func (h *OrganizationAdvancedHandlers) CreatePolicy(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	var req services.CreatePolicyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -156,7 +156,7 @@ func (h *OrganizationAdvancedHandlers) CreatePolicy(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) GetPolicy(c *gin.Context) {
 	orgName := c.Param("org")
 	policyIDStr := c.Param("policy_id")
-	
+
 	policyID, err := uuid.Parse(policyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy ID"})
@@ -175,7 +175,7 @@ func (h *OrganizationAdvancedHandlers) GetPolicy(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) UpdatePolicy(c *gin.Context) {
 	orgName := c.Param("org")
 	policyIDStr := c.Param("policy_id")
-	
+
 	policyID, err := uuid.Parse(policyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy ID"})
@@ -200,7 +200,7 @@ func (h *OrganizationAdvancedHandlers) UpdatePolicy(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) DeletePolicy(c *gin.Context) {
 	orgName := c.Param("org")
 	policyIDStr := c.Param("policy_id")
-	
+
 	policyID, err := uuid.Parse(policyIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy ID"})
@@ -315,21 +315,21 @@ func (h *OrganizationAdvancedHandlers) GetUsageAndCostMetrics(c *gin.Context) {
 // Audit Handlers
 func (h *OrganizationAdvancedHandlers) GetActivitiesWithFilters(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	var filters services.ActivityFilters
-	
+
 	// Parse query parameters into filters
 	if actions := c.QueryArray("actions"); len(actions) > 0 {
 		// Convert string array to ActivityAction array
 		// This is a simplified implementation
 	}
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil {
 			filters.Limit = limit
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil {
 			filters.Offset = offset
@@ -351,10 +351,10 @@ func (h *OrganizationAdvancedHandlers) GetActivitiesWithFilters(c *gin.Context) 
 func (h *OrganizationAdvancedHandlers) SearchActivities(c *gin.Context) {
 	orgName := c.Param("org")
 	query := c.Query("q")
-	
+
 	var filters services.ActivityFilters
 	// Parse filters from query parameters (similar to above)
-	
+
 	response, err := h.auditService.SearchActivities(c.Request.Context(), orgName, query, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -367,10 +367,10 @@ func (h *OrganizationAdvancedHandlers) SearchActivities(c *gin.Context) {
 func (h *OrganizationAdvancedHandlers) ExportActivities(c *gin.Context) {
 	orgName := c.Param("org")
 	format := c.DefaultQuery("format", "csv")
-	
+
 	var filters services.ActivityFilters
 	// Parse filters from query parameters
-	
+
 	data, err := h.auditService.ExportActivities(c.Request.Context(), orgName, format, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -419,7 +419,7 @@ func (h *OrganizationAdvancedHandlers) GetRetentionPolicyStatus(c *gin.Context) 
 func (h *OrganizationAdvancedHandlers) CreateTeamFromTemplate(c *gin.Context) {
 	orgName := c.Param("org")
 	templateIDStr := c.Param("template_id")
-	
+
 	templateID, err := uuid.Parse(templateIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid template ID"})

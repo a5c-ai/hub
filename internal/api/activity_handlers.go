@@ -16,6 +16,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// parseUserID extracts a UUID from the context value or returns an error
+func parseUserID(val interface{}) (uuid.UUID, error) {
+	id, ok := val.(uuid.UUID)
+	if !ok {
+		return uuid.Nil, fmt.Errorf("invalid user ID type")
+	}
+	return id, nil
+}
+
 // ActivityHandlers contains handlers for activity-related endpoints
 type ActivityHandlers struct {
 	repositoryService services.RepositoryService

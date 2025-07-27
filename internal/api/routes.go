@@ -34,7 +34,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
-	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
 
 	// Initialize organization services
 	activityService := services.NewActivityService(database.DB)
@@ -45,30 +44,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	teamMembershipService := services.NewTeamMembershipService(database.DB, activityService)
 	permissionService := services.NewPermissionService(database.DB, activityService)
 
-	// Initialize Elasticsearch service
-	elasticsearchService, err := services.NewElasticsearchService(&cfg.Elasticsearch, logger)
-	if err != nil {
-		logger.WithError(err).Fatal("Failed to initialize Elasticsearch service")
-	}
-
-	// Initialize search service
-	searchService := services.NewSearchService(database.DB, elasticsearchService, logger)
-
-	// Initialize analytics service
-	analyticsService := services.NewAnalyticsService(database.DB, logger)
-
-	// Initialize Redis service
-	redisService, err := services.NewRedisService(cfg.Redis, logger)
-	if err != nil {
-		logger.WithError(err).Error("Failed to initialize Redis service")
-		panic(err)
-	}
-
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
-	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
-	searchHandlers := NewSearchHandlers(searchService, logger)
 
 	userHandlers := NewUserHandlers(authService, database.DB, cfg, logger)
 	adminEmailHandlers := NewAdminEmailHandlers(database.DB, cfg, logger)
@@ -78,7 +56,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	deployKeyService := services.NewDeployKeyService(database.DB, logger)
 	hooksHandlers := NewHooksHandlers(repositoryService, webhookDeliveryService, deployKeyService, logger)
 	branchProtectionHandlers := NewBranchProtectionHandlers(repositoryService, branchService, logger)
-	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
 
@@ -162,19 +139,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
 		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
 
-		// Public search endpoints (for public content)
-		v1.GET("/search", searchHandlers.GlobalSearch)
-		v1.GET("/search/repositories", searchHandlers.SearchRepositories)
-
-		v1.GET("/search/users", searchHandlers.SearchUsers)
-		v1.GET("/search/commits", searchHandlers.SearchCommits)
-		v1.GET("/search/code", searchHandlers.SearchCode)
-
 		// Public user profile endpoints
 		v1.GET("/users/:username", userHandlers.GetUserProfile)
 		v1.GET("/users/:username/repositories", userHandlers.GetUserRepositories)
 		v1.GET("/users/:username/organizations", userHandlers.GetUserOrganizations)
-		v1.GET("/users/:username/analytics/public", analyticsHandlers.GetPublicUserAnalytics)
 
 		// Public invitation acceptance endpoint
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
@@ -226,9 +194,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.GET("/user/organizations", orgController.GetUserOrganizations)
 
 			// User analytics endpoints
-			protected.GET("/user/analytics/activity", analyticsHandlers.GetUserAnalytics)
-			protected.GET("/user/analytics/contributions", analyticsHandlers.GetUserContributions)
-			protected.GET("/user/analytics/repositories", analyticsHandlers.GetUserRepositories)
 
 			// SSH Keys management
 			protected.GET("/user/keys", sshKeyHandlers.ListSSHKeys)
@@ -251,11 +216,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				admin.PATCH("/users/:id/role", adminHandlers.SetUserRole)
 
 				// Admin analytics endpoints
-				admin.GET("/analytics/platform", analyticsHandlers.GetPlatformAnalytics)
-				admin.GET("/analytics/usage", analyticsHandlers.GetUsageAnalytics)
-				admin.GET("/analytics/performance", analyticsHandlers.GetPerformanceAnalytics)
-				admin.GET("/analytics/costs", analyticsHandlers.GetCostAnalytics)
-				admin.GET("/analytics/export", analyticsHandlers.ExportAnalytics)
 
 				// Admin email management endpoints
 				adminEmail := admin.Group("/email")
@@ -338,38 +298,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Repository forking
 				repos.POST("/:owner/:repo/fork", repoHandlers.ForkRepository)
 
-				// Repository-specific search
-				repos.GET("/:owner/:repo/search", searchHandlers.SearchInRepository)
-
-				// Pull request operations
-				repos.GET("/:owner/:repo/pulls", prHandlers.ListPullRequests)
-				repos.POST("/:owner/:repo/pulls", prHandlers.CreatePullRequest)
-				repos.GET("/:owner/:repo/pulls/:number", prHandlers.GetPullRequest)
-				repos.PATCH("/:owner/:repo/pulls/:number", prHandlers.UpdatePullRequest)
-				repos.PUT("/:owner/:repo/pulls/:number/merge", prHandlers.MergePullRequest)
-				repos.GET("/:owner/:repo/pulls/:number/files", prHandlers.GetPullRequestFiles)
-
-				// Review operations
-				repos.POST("/:owner/:repo/pulls/:number/reviews", prHandlers.CreateReview)
-				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
-				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
-				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
-
-				// Repository analytics endpoints (require authentication)
-				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)
-				repos.GET("/:owner/:repo/analytics/code-stats", analyticsHandlers.GetRepositoryCodeStats)
-				repos.GET("/:owner/:repo/analytics/contributors", analyticsHandlers.GetRepositoryContributors)
-				repos.GET("/:owner/:repo/analytics/activity", analyticsHandlers.GetRepositoryActivity)
-				repos.GET("/:owner/:repo/analytics/performance", analyticsHandlers.GetRepositoryPerformance)
-				repos.GET("/:owner/:repo/analytics/issues", analyticsHandlers.GetRepositoryIssues)
-				repos.GET("/:owner/:repo/analytics/pulls", analyticsHandlers.GetRepositoryPulls)
-			}
-
-			// Admin-only operations
-			adminRepos := protected.Group("/repositories")
-			adminRepos.Use(middleware.AdminMiddleware())
-			{
-				adminRepos.DELETE("/:owner/:repo/issues/:number", issueHandlers.DeleteIssue)
 			}
 
 			// Organization management endpoints
@@ -423,11 +351,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				orgs.GET("/:org/members/:username/teams", teamController.GetUserTeams)
 
 				// Organization analytics endpoints
-				orgs.GET("/:org/analytics/overview", analyticsHandlers.GetOrganizationAnalytics)
-				orgs.GET("/:org/analytics/members", analyticsHandlers.GetOrganizationMembers)
-				orgs.GET("/:org/analytics/repositories", analyticsHandlers.GetOrganizationRepositories)
-				orgs.GET("/:org/analytics/teams", analyticsHandlers.GetOrganizationTeams)
-				orgs.GET("/:org/analytics/security", analyticsHandlers.GetOrganizationSecurity)
 			}
 		}
 	}

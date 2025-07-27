@@ -66,7 +66,7 @@ func (h *AuthHandlers) RefreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -154,7 +154,7 @@ func (h *AuthHandlers) VerifyEmail(c *gin.Context) {
 // GET /api/v1/auth/oauth/{provider}
 func (h *AuthHandlers) OAuthRedirect(c *gin.Context) {
 	provider := c.Param("provider")
-	
+
 	oauthProvider, err := h.oauthService.GetProvider(provider)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -163,7 +163,7 @@ func (h *AuthHandlers) OAuthRedirect(c *gin.Context) {
 
 	// Generate state parameter for security
 	state := generateState()
-	
+
 	// Store state in session/cache (simplified implementation)
 	// In production, store in Redis or secure session
 	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutes
@@ -214,7 +214,6 @@ func (h *AuthHandlers) OAuthCallback(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-
 // MFA Handlers
 
 // POST /api/v1/auth/mfa/setup
@@ -240,7 +239,7 @@ func (h *AuthHandlers) VerifyMFA(c *gin.Context) {
 		Secret string `json:"secret" binding:"required"`
 		Code   string `json:"code" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

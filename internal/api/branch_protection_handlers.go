@@ -14,7 +14,7 @@ import (
 type BranchProtectionHandlers struct {
 	repositoryService services.RepositoryService
 	branchService     services.BranchService
-	logger           *logrus.Logger
+	logger            *logrus.Logger
 }
 
 // NewBranchProtectionHandlers creates a new branch protection handlers instance
@@ -22,21 +22,21 @@ func NewBranchProtectionHandlers(repositoryService services.RepositoryService, b
 	return &BranchProtectionHandlers{
 		repositoryService: repositoryService,
 		branchService:     branchService,
-		logger:           logger,
+		logger:            logger,
 	}
 }
 
 // BranchProtection represents branch protection rules
 type BranchProtection struct {
-	URL                      string                    `json:"url"`
-	RequiredStatusChecks     *RequiredStatusChecks     `json:"required_status_checks"`
-	RequiredPullRequestReviews *RequiredPullRequestReviews `json:"required_pull_request_reviews"`
-	EnforceAdmins            bool                      `json:"enforce_admins"`
-	Restrictions             *BranchRestrictions       `json:"restrictions"`
-	RequireLinearHistory     bool                      `json:"require_linear_history"`
-	AllowForcePushes         bool                      `json:"allow_force_pushes"`
-	AllowDeletions           bool                      `json:"allow_deletions"`
-	RequireConversationResolution bool                 `json:"require_conversation_resolution"`
+	URL                           string                      `json:"url"`
+	RequiredStatusChecks          *RequiredStatusChecks       `json:"required_status_checks"`
+	RequiredPullRequestReviews    *RequiredPullRequestReviews `json:"required_pull_request_reviews"`
+	EnforceAdmins                 bool                        `json:"enforce_admins"`
+	Restrictions                  *BranchRestrictions         `json:"restrictions"`
+	RequireLinearHistory          bool                        `json:"require_linear_history"`
+	AllowForcePushes              bool                        `json:"allow_force_pushes"`
+	AllowDeletions                bool                        `json:"allow_deletions"`
+	RequireConversationResolution bool                        `json:"require_conversation_resolution"`
 }
 
 // RequiredStatusChecks represents required status checks configuration
@@ -47,10 +47,10 @@ type RequiredStatusChecks struct {
 
 // RequiredPullRequestReviews represents required pull request reviews configuration
 type RequiredPullRequestReviews struct {
-	DismissStaleReviews          bool   `json:"dismiss_stale_reviews"`
-	RequireCodeOwnerReviews      bool   `json:"require_code_owner_reviews"`
-	RequiredApprovingReviewCount int    `json:"required_approving_review_count"`
-	RequireLastPushApproval      bool   `json:"require_last_push_approval"`
+	DismissStaleReviews          bool                `json:"dismiss_stale_reviews"`
+	RequireCodeOwnerReviews      bool                `json:"require_code_owner_reviews"`
+	RequiredApprovingReviewCount int                 `json:"required_approving_review_count"`
+	RequireLastPushApproval      bool                `json:"require_last_push_approval"`
 	DismissalRestrictions        *BranchRestrictions `json:"dismissal_restrictions,omitempty"`
 }
 
@@ -90,7 +90,7 @@ func convertToServiceRestrictions(req *BranchRestrictions) *services.BranchRestr
 	if req == nil {
 		return nil
 	}
-	
+
 	var users, teams []string
 	for _, user := range req.Users {
 		if name, ok := user["login"].(string); ok {
@@ -102,7 +102,7 @@ func convertToServiceRestrictions(req *BranchRestrictions) *services.BranchRestr
 			teams = append(teams, name)
 		}
 	}
-	
+
 	return &services.BranchRestrictions{
 		Users: users,
 		Teams: teams,
@@ -167,15 +167,15 @@ func (h *BranchProtectionHandlers) GetBranchProtection(c *gin.Context) {
 	}
 
 	protection := BranchProtection{
-		URL:                        "/api/v1/repositories/" + owner + "/" + repoName + "/branches/" + branch + "/protection",
-		RequiredStatusChecks:       requiredStatusChecks,
-		RequiredPullRequestReviews: requiredPRReviews,
-		EnforceAdmins:              rule.EnforceAdmins,
-		RequireLinearHistory:       false, // Not yet implemented in model
-		AllowForcePushes:           false, // Not yet implemented in model
-		AllowDeletions:             false, // Not yet implemented in model
+		URL:                           "/api/v1/repositories/" + owner + "/" + repoName + "/branches/" + branch + "/protection",
+		RequiredStatusChecks:          requiredStatusChecks,
+		RequiredPullRequestReviews:    requiredPRReviews,
+		EnforceAdmins:                 rule.EnforceAdmins,
+		RequireLinearHistory:          false, // Not yet implemented in model
+		AllowForcePushes:              false, // Not yet implemented in model
+		AllowDeletions:                false, // Not yet implemented in model
 		RequireConversationResolution: false, // Not yet implemented in model
-		Restrictions:               restrictions,
+		Restrictions:                  restrictions,
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -209,14 +209,14 @@ func (h *BranchProtectionHandlers) UpdateBranchProtection(c *gin.Context) {
 	}
 
 	var req struct {
-		RequiredStatusChecks       *RequiredStatusChecks       `json:"required_status_checks,omitempty"`
-		RequiredPullRequestReviews *RequiredPullRequestReviews `json:"required_pull_request_reviews,omitempty"`
-		EnforceAdmins              *bool                       `json:"enforce_admins,omitempty"`
-		Restrictions               *BranchRestrictions         `json:"restrictions,omitempty"`
-		RequireLinearHistory       *bool                       `json:"require_linear_history,omitempty"`
-		AllowForcePushes           *bool                       `json:"allow_force_pushes,omitempty"`
-		AllowDeletions             *bool                       `json:"allow_deletions,omitempty"`
-		RequireConversationResolution *bool                    `json:"require_conversation_resolution,omitempty"`
+		RequiredStatusChecks          *RequiredStatusChecks       `json:"required_status_checks,omitempty"`
+		RequiredPullRequestReviews    *RequiredPullRequestReviews `json:"required_pull_request_reviews,omitempty"`
+		EnforceAdmins                 *bool                       `json:"enforce_admins,omitempty"`
+		Restrictions                  *BranchRestrictions         `json:"restrictions,omitempty"`
+		RequireLinearHistory          *bool                       `json:"require_linear_history,omitempty"`
+		AllowForcePushes              *bool                       `json:"allow_force_pushes,omitempty"`
+		AllowDeletions                *bool                       `json:"allow_deletions,omitempty"`
+		RequireConversationResolution *bool                       `json:"require_conversation_resolution,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -226,7 +226,7 @@ func (h *BranchProtectionHandlers) UpdateBranchProtection(c *gin.Context) {
 
 	// Check if protection rule already exists for this branch
 	existingRule, err := h.branchService.GetProtectionRuleForBranch(c.Request.Context(), repo.ID, branch)
-	
+
 	var rule *models.BranchProtectionRule
 	if err != nil && err.Error() == "no protection rule found for branch '"+branch+"'" {
 		// Create new protection rule
@@ -237,7 +237,7 @@ func (h *BranchProtectionHandlers) UpdateBranchProtection(c *gin.Context) {
 			RequiredPullRequestReviews: convertToServicePRReviews(req.RequiredPullRequestReviews),
 			Restrictions:               convertToServiceRestrictions(req.Restrictions),
 		}
-		
+
 		rule, err = h.branchService.CreateProtectionRule(c.Request.Context(), repo.ID, createReq)
 		if err != nil {
 			h.logger.WithError(err).Error("Failed to create branch protection rule")
@@ -256,7 +256,7 @@ func (h *BranchProtectionHandlers) UpdateBranchProtection(c *gin.Context) {
 			RequiredPullRequestReviews: convertToServicePRReviews(req.RequiredPullRequestReviews),
 			Restrictions:               convertToServiceRestrictions(req.Restrictions),
 		}
-		
+
 		rule, err = h.branchService.UpdateProtectionRule(c.Request.Context(), existingRule.ID, updateReq)
 		if err != nil {
 			h.logger.WithError(err).Error("Failed to update branch protection rule")
@@ -289,15 +289,15 @@ func (h *BranchProtectionHandlers) UpdateBranchProtection(c *gin.Context) {
 	}
 
 	protection := BranchProtection{
-		URL:                        "/api/v1/repositories/" + owner + "/" + repoName + "/branches/" + branch + "/protection",
-		RequiredStatusChecks:       requiredStatusChecks,
-		RequiredPullRequestReviews: requiredPRReviews,
-		EnforceAdmins:              rule.EnforceAdmins,
-		RequireLinearHistory:       false, // Not yet implemented in model
-		AllowForcePushes:           false, // Not yet implemented in model
-		AllowDeletions:             false, // Not yet implemented in model
+		URL:                           "/api/v1/repositories/" + owner + "/" + repoName + "/branches/" + branch + "/protection",
+		RequiredStatusChecks:          requiredStatusChecks,
+		RequiredPullRequestReviews:    requiredPRReviews,
+		EnforceAdmins:                 rule.EnforceAdmins,
+		RequireLinearHistory:          false, // Not yet implemented in model
+		AllowForcePushes:              false, // Not yet implemented in model
+		AllowDeletions:                false, // Not yet implemented in model
 		RequireConversationResolution: false, // Not yet implemented in model
-		Restrictions:               restrictions,
+		Restrictions:                  restrictions,
 	}
 
 	h.logger.WithFields(logrus.Fields{
@@ -637,12 +637,12 @@ func (h *BranchProtectionHandlers) UpdateRequiredPullRequestReviews(c *gin.Conte
 	}
 
 	h.logger.WithFields(logrus.Fields{
-		"repo_id":                          repo.ID,
-		"branch":                           branch,
-		"dismiss_stale_reviews":            req.DismissStaleReviews,
-		"require_code_owner_reviews":       req.RequireCodeOwnerReviews,
-		"required_approving_review_count":  req.RequiredApprovingReviewCount,
-		"require_last_push_approval":       req.RequireLastPushApproval,
+		"repo_id":                         repo.ID,
+		"branch":                          branch,
+		"dismiss_stale_reviews":           req.DismissStaleReviews,
+		"require_code_owner_reviews":      req.RequireCodeOwnerReviews,
+		"required_approving_review_count": req.RequiredApprovingReviewCount,
+		"require_last_push_approval":      req.RequireLastPushApproval,
 	}).Info("Updated required pull request reviews")
 
 	c.JSON(http.StatusOK, req)
