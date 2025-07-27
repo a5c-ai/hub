@@ -47,6 +47,24 @@ export interface Organization {
   updated_at: string;
 }
 
+/**
+ * Issue model returned by the API and used in UI components.
+ */
+export interface Issue {
+  id: string;
+  number: number;
+  title: string;
+  body?: string;
+  user?: User;
+  state: 'open' | 'closed';
+  comments_count: number;
+  created_at: string;
+  updated_at: string;
+  labels?: Label[];
+  assignees?: User[];
+  milestone?: Milestone;
+}
+
 export interface PullRequest {
   id: string;
   issue_id: string;
