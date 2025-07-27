@@ -140,17 +140,16 @@ setup_test_db() {
     export PGPASSWORD="$DB_PASSWORD"
     test_log "Waiting for PostgreSQL to be ready..."
     local retries=0
-    local max_retries=60
+    # Increase timeout to allow PostgreSQL service container sufficient startup time in CI
+    local max_retries=120
     until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
         sleep 1
         retries=$((retries+1))
         if (( retries >= max_retries )); then
             test_log "PostgreSQL did not become ready after $max_retries seconds"
-            if [[ "$CI" != "true" ]]; then
-                test_log "Container logs:"
-                docker logs hub-test-db || true
-                docker rm -f hub-test-db || true
-            fi
+            test_log "Container logs:"
+            docker logs hub-test-db || true
+            docker rm -f hub-test-db || true
             exit 1
         fi
     done
