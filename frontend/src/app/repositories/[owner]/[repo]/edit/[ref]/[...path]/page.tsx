@@ -13,6 +13,7 @@ import { repoApi } from '@/lib/api';
 import api from '@/lib/api';
 import { Repository, File } from '@/types';
 import { useAuthStore } from '@/store/auth';
+import { MarkdownEditor } from '@/components/MarkdownEditor';
 
 export default function EditPage() {
   const params = useParams();
@@ -32,6 +33,13 @@ export default function EditPage() {
   const [commitMessage, setCommitMessage] = useState('');
   const [commitDescription, setCommitDescription] = useState('');
   const [isCommitting, setIsCommitting] = useState(false);
+  // Editor extension state for supported file types
+  const supportedExtensions = ['md', 'markdown'];
+  const fileExtension = file?.name.split('.').pop()?.toLowerCase() ?? '';
+  const isExtensionSupported = supportedExtensions.includes(fileExtension);
+  const [editorMode, setEditorMode] = useState<'raw' | 'extension'>(
+    isExtensionSupported ? 'extension' : 'raw'
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -218,7 +226,7 @@ export default function EditPage() {
                   <Button size="sm" variant="outline" onClick={cancelEdit}>
                     Cancel
                   </Button>
-                  <Link 
+                  <Link
                     href={`/repositories/${owner}/${repo}/blob/${ref}/${filePath}`}
                     className="inline-flex"
                   >
@@ -226,17 +234,39 @@ export default function EditPage() {
                       Preview
                     </Button>
                   </Link>
+                  {isExtensionSupported && (
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        size="sm"
+                        variant={editorMode === 'raw' ? 'default' : 'outline'}
+                        onClick={() => setEditorMode('raw')}
+                      >
+                        Raw
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={editorMode === 'extension' ? 'default' : 'outline'}
+                        onClick={() => setEditorMode('extension')}
+                      >
+                        Editor
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             <div className="p-6">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full h-96 p-4 border border-input rounded-md font-mono text-sm resize-y bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring placeholder:text-muted-foreground"
-                placeholder="Enter file content..."
-                style={{ minHeight: '400px' }}
-              />
+              {editorMode === 'raw' || !isExtensionSupported ? (
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full h-96 p-4 border border-input rounded-md font-mono text-sm resize-y bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring placeholder:text-muted-foreground"
+                  placeholder="Enter file content..."
+                  style={{ minHeight: '400px' }}
+                />
+              ) : (
+                <MarkdownEditor value={content} onChange={setContent} />
+              )}
             </div>
           </Card>
 
