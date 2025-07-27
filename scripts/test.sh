@@ -122,8 +122,12 @@ export GO_ENV="test"
 
 # Configure test database parameters
 export DB_HOST="${TEST_DB_HOST:-localhost}"
-# Use non-default port to avoid conflicts with local PostgreSQL instances
-export DB_PORT="${TEST_DB_PORT:-5433}"
+# Determine port based on environment: use default Postgres port for CI service container, non-default locally
+if [[ "$CI" == "true" ]]; then
+    export DB_PORT="${TEST_DB_PORT:-5432}"
+else
+    export DB_PORT="${TEST_DB_PORT:-5433}"
+fi
 export DB_NAME="${TEST_DB_NAME:-hub_test}"
 export DB_USER="${TEST_DB_USER:-hub}"
 export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
