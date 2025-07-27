@@ -136,13 +136,11 @@ setup_test_db() {
         -e POSTGRES_USER=$DB_USER \
         -e POSTGRES_DB=$DB_NAME \
         -p $DB_PORT:5432 postgres:16
-    # Provide password for psql to connect without interactive prompt
-    export PGPASSWORD="$DB_PASSWORD"
     test_log "Waiting for PostgreSQL to be ready..."
     local retries=0
     # Increase timeout to allow PostgreSQL service container sufficient startup time in CI
     local max_retries=120
-    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
+    until docker exec hub-test-db psql -U "$DB_USER" -d "$DB_NAME" -c '\\l' &>/dev/null; do
         sleep 1
         retries=$((retries+1))
         if (( retries >= max_retries )); then
