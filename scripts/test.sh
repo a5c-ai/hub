@@ -139,6 +139,8 @@ setup_test_db() {
             -e POSTGRES_DB=$DB_NAME \
             -p $DB_PORT:5432 postgres:16
     fi
+    # Provide password for psql to connect without interactive prompt
+    export PGPASSWORD="$DB_PASSWORD"
     test_log "Waiting for PostgreSQL to be ready..."
     local retries=0
     local max_retries=60
