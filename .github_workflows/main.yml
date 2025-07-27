@@ -110,6 +110,7 @@ jobs:
           cache-dependency-path: |
             go.sum
             go.mod
+          clean: true  # Ensure prior Go installation is removed before extraction
           check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with better caching
@@ -219,6 +220,7 @@ jobs:
           cache-dependency-path: |
             go.sum
             go.mod
+          clean: true  # Ensure prior Go installation is removed before extraction
           check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with caching
@@ -268,6 +270,7 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
+          clean: true  # Ensure prior Go installation is removed before extraction
           cache-dependency-path: |
             go.sum
             go.mod
