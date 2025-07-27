@@ -134,16 +134,12 @@ export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
 
 # Setup and teardown for PostgreSQL test container
 setup_test_db() {
-    if [[ "$CI" == "true" ]]; then
-        test_log "Using PostgreSQL service container"
-    else
-        test_log "Starting PostgreSQL test container..."
-        docker run -d --name hub-test-db \
-            -e POSTGRES_PASSWORD=$DB_PASSWORD \
-            -e POSTGRES_USER=$DB_USER \
-            -e POSTGRES_DB=$DB_NAME \
-            -p $DB_PORT:5432 postgres:16
-    fi
+    test_log "Starting PostgreSQL test container..."
+    docker run -d --name hub-test-db \
+        -e POSTGRES_PASSWORD=$DB_PASSWORD \
+        -e POSTGRES_USER=$DB_USER \
+        -e POSTGRES_DB=$DB_NAME \
+        -p $DB_PORT:5432 postgres:16
     # Provide password for psql to connect without interactive prompt
     export PGPASSWORD="$DB_PASSWORD"
     test_log "Waiting for PostgreSQL to be ready..."
@@ -165,13 +161,9 @@ setup_test_db() {
     test_log "PostgreSQL is ready."
 }
 cleanup_test_db() {
-    if [[ "$CI" == "true" ]]; then
-        test_log "Skipping cleanup of PostgreSQL service container"
-    else
-        test_log "Stopping PostgreSQL test container..."
-        docker stop hub-test-db
-        docker rm -f hub-test-db || true
-    fi
+    test_log "Stopping PostgreSQL test container..."
+    docker stop hub-test-db
+    docker rm -f hub-test-db || true
 }
 trap cleanup_test_db EXIT
 
