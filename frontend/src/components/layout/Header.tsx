@@ -117,8 +117,10 @@ export function Header() {
           
           <Dropdown
             trigger={
-              <Button variant="ghost" size="icon">
-                <PlusIcon className="h-5 w-5" />
+              <Button variant="ghost" size="icon" asChild>
+                <span>
+                  <PlusIcon className="h-5 w-5" />
+                </span>
               </Button>
             }
             items={createMenuItems}

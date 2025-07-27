@@ -101,12 +101,12 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     for i in {1..3}; do
         echo "Attempt $i: Installing frontend dependencies..."
         if [[ -f "package-lock.json" ]]; then
-            if timeout 30m npm ci --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 30m npm ci --prefer-offline --no-audit --no-fund --progress=false --force; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi
         else
-            if timeout 30m npm install --prefer-offline --no-audit --no-fund --progress=false; then
+            if timeout 30m npm install --prefer-offline --no-audit --no-fund --progress=false --force; then
                 echo "✅ Frontend dependencies installed successfully"
                 break
             fi
