@@ -4,13 +4,13 @@ import { testUser, expectDashboardPage } from './helpers/test-utils';
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     // Mock authentication for all dashboard tests
-    await page.route('**/api/auth/me', async route => {
+    await page.route('**/api/v1/profile', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          user: {
+          data: {
             id: '1',
             name: testUser.name,
             username: testUser.username,
@@ -21,7 +21,7 @@ test.describe('Dashboard', () => {
     });
 
     // Mock repositories data
-    await page.route('**/api/repositories', async route => {
+    await page.route('**/api/v1/repositories', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -56,7 +56,7 @@ test.describe('Dashboard', () => {
     });
 
     // Mock activity data
-    await page.route('**/api/activity', async route => {
+    await page.route('**/api/v1/activity**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -84,7 +84,22 @@ test.describe('Dashboard', () => {
 
     // Set authentication state
     await page.addInitScript(() => {
-      window.localStorage.setItem('auth-token', 'mock-jwt-token');
+      const testUser = {
+        id: '1',
+        name: 'Test User',
+        username: 'testuser',
+        email: 'test@example.com'
+      };
+      
+      window.localStorage.setItem('auth_token', 'mock-jwt-token');
+      window.localStorage.setItem('auth-storage', JSON.stringify({
+        state: {
+          user: testUser,
+          token: 'mock-jwt-token',
+          isAuthenticated: true
+        },
+        version: 0
+      }));
     });
   });
 
@@ -194,7 +209,7 @@ test.describe('Dashboard', () => {
 
   test('should handle empty states appropriately', async ({ page }) => {
     // Mock empty repositories response
-    await page.route('**/api/repositories', async route => {
+    await page.route('**/api/v1/repositories', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

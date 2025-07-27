@@ -30,9 +30,9 @@ test.describe('Notifications Center & Management', () => {
       const mockNotifications = [
         {
           id: '1',
-          type: 'issue',
-          title: 'New issue opened',
-          body: 'Issue description here',
+                type: 'pull_request',
+      title: 'New pull request opened',
+      body: 'Pull request description here',
           repository: {
             id: '1',
             name: 'test-repo',
@@ -44,8 +44,8 @@ test.describe('Notifications Center & Management', () => {
           },
           subject: {
             title: 'Bug in authentication system #123',
-            url: '/repositories/alice/test-repo/issues/123',
-            type: 'issue'
+                    url: '/repositories/alice/test-repo/pulls/123',
+        type: 'pull_request'
           },
           reason: 'mentioned',
           unread: true,
@@ -138,10 +138,10 @@ test.describe('Notifications Center & Management', () => {
       const allNotifications = [
         {
           id: '1',
-          type: 'issue',
-          title: 'Issue notification',
+                      type: 'pull_request',
+            title: 'Pull request notification',
           repository: { id: '1', name: 'repo1', full_name: 'user/repo1', owner: { username: 'user' } },
-          subject: { title: 'Issue #1', url: '/issues/1', type: 'issue' },
+          subject: { title: 'Pull Request #1', url: '/pulls/1', type: 'pull_request' },
           reason: 'mentioned',
           unread: true,
           updated_at: new Date().toISOString()
@@ -410,33 +410,14 @@ test.describe('Notifications Center & Management', () => {
   });
 
   test.describe('Notification Types', () => {
-    test('should display issue and pull request notifications correctly', async ({ page }) => {
+    test('should display pull request notifications correctly', async ({ page }) => {
       const notifications = [
         {
           id: '1',
-          type: 'issue',
-          title: 'Issue comment notification',
-          repository: {
-            id: '1',
-            name: 'project-alpha',
-            full_name: 'team/project-alpha',
-            owner: { username: 'team', avatar_url: 'https://example.com/team.jpg' }
-          },
-          subject: {
-            title: 'Database connection timeout #789',
-            url: '/repositories/team/project-alpha/issues/789',
-            type: 'issue'
-          },
-          reason: 'comment',
-          unread: true,
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
           type: 'pull_request',
           title: 'Pull request review',
           repository: {
-            id: '2',
+            id: '1',
             name: 'web-frontend',
             full_name: 'company/web-frontend',
             owner: { username: 'company', avatar_url: 'https://example.com/company.jpg' }
@@ -447,6 +428,25 @@ test.describe('Notifications Center & Management', () => {
             type: 'pull_request'
           },
           reason: 'assigned',
+          unread: true,
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          type: 'pull_request',
+          title: 'Pull request comment',
+          repository: {
+            id: '2',
+            name: 'project-alpha',
+            full_name: 'team/project-alpha',
+            owner: { username: 'team', avatar_url: 'https://example.com/team.jpg' }
+          },
+          subject: {
+            title: 'Fix authentication bug #789',
+            url: '/repositories/team/project-alpha/pulls/789',
+            type: 'pull_request'
+          },
+          reason: 'comment',
           unread: true,
           updated_at: new Date().toISOString()
         }
@@ -464,19 +464,19 @@ test.describe('Notifications Center & Management', () => {
       await page.goto('/notifications');
       await waitForLoadingToComplete(page);
 
-      // Check issue notification
-      const issueNotification = page.locator('[data-testid="notification-item"]').first();
-      await expect(issueNotification).toContainText('team/project-alpha');
-      await expect(issueNotification).toContainText('Database connection timeout #789');
-      await expect(issueNotification).toContainText('Comment');
-      await expect(issueNotification.locator('[data-testid="notification-icon-issue"]')).toBeVisible();
+      // Check first pull request notification
+      const firstPrNotification = page.locator('[data-testid="notification-item"]').first();
+      await expect(firstPrNotification).toContainText('company/web-frontend');
+      await expect(firstPrNotification).toContainText('Implement dark mode toggle #567');
+      await expect(firstPrNotification).toContainText('Assigned');
+      await expect(firstPrNotification.locator('[data-testid="notification-icon-pull_request"]')).toBeVisible();
 
-      // Check pull request notification
-      const prNotification = page.locator('[data-testid="notification-item"]').last();
-      await expect(prNotification).toContainText('company/web-frontend');
-      await expect(prNotification).toContainText('Implement dark mode toggle #567');
-      await expect(prNotification).toContainText('Assigned');
-      await expect(prNotification.locator('[data-testid="notification-icon-pull_request"]')).toBeVisible();
+      // Check second pull request notification
+      const secondPrNotification = page.locator('[data-testid="notification-item"]').last();
+      await expect(secondPrNotification).toContainText('team/project-alpha');
+      await expect(secondPrNotification).toContainText('Fix authentication bug #789');
+      await expect(secondPrNotification).toContainText('Comment');
+      await expect(secondPrNotification.locator('[data-testid="notification-icon-pull_request"]')).toBeVisible();
     });
 
     test('should display comment and mention notifications', async ({ page }) => {

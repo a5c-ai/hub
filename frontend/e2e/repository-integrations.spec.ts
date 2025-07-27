@@ -31,12 +31,12 @@ test.describe('Repository Webhooks & Integrations', () => {
     },
     {
       id: '2',
-      name: 'Issue Tracker',
+      name: 'PR Tracker',
       config: {
         url: 'https://tracker.example.com/api/webhook',
         content_type: 'form'
       },
-      events: ['issues', 'issue_comment'],
+      events: ['pull_request', 'pull_request_review'],
       active: false,
       created_at: '2024-07-19T15:30:00Z',
       updated_at: '2024-07-19T15:30:00Z'
@@ -107,7 +107,7 @@ test.describe('Repository Webhooks & Integrations', () => {
       
       // Should display webhook list
       await expect(page.locator('text=CI/CD Webhook')).toBeVisible();
-      await expect(page.locator('text=Issue Tracker')).toBeVisible();
+      await expect(page.locator('text=PR Tracker')).toBeVisible();
       
       // Should show webhook details
       await expect(page.locator('text=https://ci.example.com/webhook')).toBeVisible();
@@ -118,10 +118,9 @@ test.describe('Repository Webhooks & Integrations', () => {
       await expect(page.locator('text=Inactive')).toBeVisible();
       
       // Should show event tags
-      await expect(page.locator('text=push')).toBeVisible();
-      await expect(page.locator('text=pull_request')).toBeVisible();
-      await expect(page.locator('text=issues')).toBeVisible();
-      await expect(page.locator('text=issue_comment')).toBeVisible();
+              await expect(page.locator('text=push')).toBeVisible();
+        await expect(page.locator('text=pull_request')).toBeVisible();
+        await expect(page.locator('text=pull_request_review')).toBeVisible();
     });
 
     test('should show empty state when no webhooks exist', async ({ page }) => {
@@ -200,7 +199,7 @@ test.describe('Repository Webhooks & Integrations', () => {
       
       // Should show event checkboxes
       const expectedEvents = [
-        'push', 'pull_request', 'issues', 'issue_comment', 'create', 'delete',
+        'push', 'pull_request', 'pull_request_review', 'create', 'delete',
         'fork', 'star', 'watch', 'release', 'pull_request_review', 'pull_request_review_comment'
       ];
       
@@ -279,7 +278,7 @@ test.describe('Repository Webhooks & Integrations', () => {
       
       // Select additional events
       await page.check('text=pull_request');
-      await page.check('text=issues');
+      await page.check('text=pull_request_review');
       
       // Ensure active is checked
       await page.check('input[type="checkbox"]#active');
@@ -454,15 +453,15 @@ test.describe('Repository Webhooks & Integrations', () => {
       
       // Test event selection
       const pushCheckbox = page.locator('text=push').locator('..').locator('input[type="checkbox"]');
-      const issuesCheckbox = page.locator('text=issues').locator('..').locator('input[type="checkbox"]');
+      const prReviewCheckbox = page.locator('text=pull_request_review').locator('..').locator('input[type="checkbox"]');
       
       // Push should be checked by default
       await expect(pushCheckbox).toBeChecked();
-      await expect(issuesCheckbox).not.toBeChecked();
+      await expect(prReviewCheckbox).not.toBeChecked();
       
-      // Check issues
-      await issuesCheckbox.check();
-      await expect(issuesCheckbox).toBeChecked();
+      // Check pull_request_review
+      await prReviewCheckbox.check();
+      await expect(prReviewCheckbox).toBeChecked();
       
       // Uncheck push
       await pushCheckbox.uncheck();

@@ -532,13 +532,11 @@ test.describe('Organization Management Features', () => {
                 totalMembers: 45,
                 totalTeams: 8,
                 totalCommits: 1234,
-                totalPullRequests: 567,
-                totalIssues: 89
+                                  totalPullRequests: 567
               },
               activity: {
                 commitsThisMonth: 156,
-                pullRequestsThisMonth: 45,
-                issuesThisMonth: 23
+                                  pullRequestsThisMonth: 45
               },
               topContributors: [
                 { name: 'John Doe', contributions: 89 },

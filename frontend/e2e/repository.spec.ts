@@ -156,7 +156,7 @@ test.describe('Repository Management', () => {
             clone_url: 'https://hub.example.com/testuser/awesome-project.git',
             stargazers_count: 42,
             forks_count: 8,
-            issues_count: 5,
+  
             updated_at: '2024-07-20T10:00:00Z',
           }
         })

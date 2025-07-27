@@ -109,9 +109,8 @@ test.describe('Admin System Analytics', () => {
       // Verify feature usage analytics
       await expect(page.locator('text=Feature Adoption')).toBeVisible();
       await expect(page.locator('text=Repository Creation')).toBeVisible();
-      await expect(page.locator('text=Issue Tracking Usage')).toBeVisible();
       await expect(page.locator('text=Pull Request Activity')).toBeVisible();
-      await expect(page.locator('text=Actions Usage')).toBeVisible();
+      await expect(page.locator('text=Webhook Usage')).toBeVisible();
 
       // Check adoption rates
       await expect(page.locator('text=Adoption Rate')).toBeVisible();
@@ -189,7 +188,7 @@ test.describe('Admin System Analytics', () => {
       await expect(page.locator('text=Most Used Endpoints')).toBeVisible();
       await expect(page.locator('text=/api/v1/repositories')).toBeVisible();
       await expect(page.locator('text=/api/v1/users')).toBeVisible();
-      await expect(page.locator('text=/api/v1/issues')).toBeVisible();
+      await expect(page.locator('text=/api/v1/webhooks')).toBeVisible();
     });
 
     test('should show rate limiting statistics', async ({ page }) => {

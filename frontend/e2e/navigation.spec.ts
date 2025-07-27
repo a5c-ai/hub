@@ -4,13 +4,13 @@ import { testUser } from './helpers/test-utils';
 test.describe('Navigation and Layout', () => {
   test.beforeEach(async ({ page }) => {
     // Mock authentication for all navigation tests
-    await page.route('**/api/auth/me', async route => {
+    await page.route('**/api/v1/profile', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          user: {
+          data: {
             id: '1',
             name: testUser.name,
             username: testUser.username,
@@ -81,7 +81,7 @@ test.describe('Navigation and Layout', () => {
 
   test('should navigate between main sections', async ({ page }) => {
     // Mock repositories API to ensure page loads
-    await page.route('**/api/repositories', async route => {
+    await page.route('**/api/v1/repositories', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -146,7 +146,7 @@ test.describe('Navigation and Layout', () => {
 
   test('should display breadcrumbs on nested pages', async ({ page }) => {
     // Mock a repository page to test breadcrumbs
-    await page.route('**/api/repositories/testuser/awesome-project', async route => {
+    await page.route('**/api/v1/repositories/testuser/awesome-project', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -175,7 +175,7 @@ test.describe('Navigation and Layout', () => {
     await page.goto('/dashboard');
     
     // Add a delay to API response to test loading state
-    await page.route('**/api/repositories', async route => {
+    await page.route('**/api/v1/repositories', async route => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await route.fulfill({
         status: 200,
@@ -197,7 +197,7 @@ test.describe('Navigation and Layout', () => {
       }
       
       // Wait for loading to complete
-      await page.waitForResponse('**/api/repositories');
+      await page.waitForResponse('**/api/v1/repositories');
     }
   });
 

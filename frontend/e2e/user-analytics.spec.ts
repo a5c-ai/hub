@@ -16,7 +16,6 @@ test.describe('User Analytics Dashboard', () => {
             repositories: { total: 12, private: 8, public: 4 },
             contributions: { total: 156, thisMonth: 23, thisWeek: 5 },
             pullRequests: { total: 45, merged: 38, open: 4, closed: 3 },
-            issues: { total: 32, closed: 28, open: 4 },
             codeActivity: [
               { date: '2024-01-01', commits: 5, linesAdded: 245, linesDeleted: 12 },
               { date: '2024-01-02', commits: 3, linesAdded: 156, linesDeleted: 8 }
@@ -65,12 +64,12 @@ test.describe('User Analytics Dashboard', () => {
     await expect(page.locator('text=Jan')).toBeVisible();
   });
 
-  test('should show pull request and issue metrics', async ({ page }) => {
+  test('should show pull request metrics', async ({ page }) => {
     await page.goto('/analytics');
     await waitForLoadingToComplete(page);
 
     // Navigate to detailed view
-    await page.click('[data-testid="pr-issues-tab"]');
+    await page.click('[data-testid="pr-metrics-tab"]');
     await waitForLoadingToComplete(page);
 
     // Verify PR metrics
@@ -79,12 +78,6 @@ test.describe('User Analytics Dashboard', () => {
     await expect(page.locator('text=38 Merged')).toBeVisible();
     await expect(page.locator('text=4 Open')).toBeVisible();
     await expect(page.locator('text=3 Closed')).toBeVisible();
-
-    // Verify issue metrics
-    await expect(page.locator('text=Issue Statistics')).toBeVisible();
-    await expect(page.locator('text=32 Total Issues')).toBeVisible();
-    await expect(page.locator('text=28 Closed')).toBeVisible();
-    await expect(page.locator('text=4 Open')).toBeVisible();
   });
 
   test('should display code activity trends', async ({ page }) => {

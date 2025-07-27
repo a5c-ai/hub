@@ -47,7 +47,7 @@ test.describe('User Preferences & Notifications', () => {
             success: true,
             data: {
               email_notifications: {
-                issues_and_prs: true,
+                pull_requests: true,
                 repository_updates: true,
                 security_alerts: true,
                 mentions: true,
@@ -108,7 +108,7 @@ test.describe('User Preferences & Notifications', () => {
     await expect(page.locator('h3:has-text("Email Notifications")')).toBeVisible();
     
     // Verify notification options are displayed
-    await expect(page.locator('text=Issues and Pull Requests')).toBeVisible();
+    await expect(page.locator('text=Pull Requests')).toBeVisible();
     await expect(page.locator('text=Repository Updates')).toBeVisible();
     await expect(page.locator('text=Security Alerts')).toBeVisible();
     
@@ -138,8 +138,8 @@ test.describe('User Preferences & Notifications', () => {
     });
     
     // Toggle some notification settings
-    const issuesCheckbox = page.locator('text=Issues and Pull Requests').locator('..').locator('input[type="checkbox"]');
-    await issuesCheckbox.uncheck();
+    const prCheckbox = page.locator('text=Pull Requests').locator('..').locator('input[type="checkbox"]');
+    await prCheckbox.uncheck();
     
     const repoUpdatesCheckbox = page.locator('text=Repository Updates').locator('..').locator('input[type="checkbox"]');
     await repoUpdatesCheckbox.uncheck();

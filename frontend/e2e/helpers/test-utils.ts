@@ -72,7 +72,7 @@ export async function expectLoginPage(page: Page) {
  */
 export async function expectDashboardPage(page: Page) {
   await expect(page).toHaveURL('/dashboard');
-  await expect(page.locator('h1')).toContainText('Welcome back');
+  await expect(page.locator('h1')).toContainText('Welcome back,');
 }
 
 /**
