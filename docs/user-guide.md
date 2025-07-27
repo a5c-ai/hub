@@ -149,6 +149,17 @@ git push origin --delete feature/new-feature
 ```
 
 ### Large File Support (Git LFS)
+#### Server Configuration
+
+Before using Git LFS, configure the storage backend in your `config.yaml`:
+```yaml
+lfs:
+  backend: azure_blob
+  azure:
+    account_name: <your-account-name>
+    account_key: <your-account-key>
+    container_name: <your-container-name>
+```
 
 #### Setup
 ```bash

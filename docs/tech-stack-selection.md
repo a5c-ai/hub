@@ -270,7 +270,7 @@ modules/
 - **Pack file generation**: Optimized pack creation for faster clones
 - **Delta compression**: Efficient storage and transfer
 - **Shallow clones**: Support for partial repository clones
-- **LFS integration**: Large file storage with configurable backends
+- **LFS integration**: Large file storage with configurable backends (Azure Blob Storage primary, S3, filesystem)
 
 ---
 

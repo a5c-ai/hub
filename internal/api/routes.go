@@ -105,6 +105,15 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 	v1 := router.Group("/api/v1")
 	{
+		// Git LFS endpoints (batch API, upload, download, verify)
+		lfsHandlers := NewLFSHandlers()
+		lfs := v1.Group("/git-lfs")
+		{
+			lfs.POST("/objects/batch", lfsHandlers.Batch)
+			lfs.POST("/objects/:oid", lfsHandlers.Upload)
+			lfs.GET("/objects/:oid", lfsHandlers.Download)
+			lfs.HEAD("/objects/:oid", lfsHandlers.Verify)
+		}
 		v1.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "pong"})
 		})
