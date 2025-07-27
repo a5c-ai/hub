@@ -14,6 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"gopkg.in/yaml.v3"
+	"time"
 )
 
 // RepositoryResponse represents a repository with additional fields for API responses
@@ -258,6 +261,90 @@ func (h *RepositoryHandlers) UpdateRepository(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updatedRepo)
+}
+
+// GetRepositorySettings handles GET /api/v1/repositories/{owner}/{repo}/settings
+func (h *RepositoryHandlers) GetRepositorySettings(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Owner and repository name are required"})
+		return
+	}
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Repository not found"})
+		return
+	}
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to access repository"})
+		return
+	}
+	file, err := h.gitService.GetFile(c.Request.Context(), repoPath, "settings", "repository.yaml")
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Settings not found"})
+		return
+	}
+	var settings map[string]interface{}
+	if err := yaml.Unmarshal([]byte(file.Content), &settings); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to parse settings"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": settings})
+}
+
+// UpdateRepositorySettings handles PUT /api/v1/repositories/{owner}/{repo}/settings
+func (h *RepositoryHandlers) UpdateRepositorySettings(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Owner and repository name are required"})
+		return
+	}
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Repository not found"})
+		return
+	}
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to access repository"})
+		return
+	}
+	// Bind JSON into generic map
+	var settings map[string]interface{}
+	if err := c.ShouldBindJSON(&settings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid settings payload"})
+		return
+	}
+	// Read existing file to get current SHA for conflict detection
+	file, err := h.gitService.GetFile(c.Request.Context(), repoPath, "settings", "repository.yaml")
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Settings not found"})
+		return
+	}
+	// Marshal updated settings to YAML
+	data, err := yaml.Marshal(settings)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to encode settings"})
+		return
+	}
+	// Prepare update request
+	req := git.UpdateFileRequest{
+		Path:    "repository.yaml",
+		Content: string(data),
+		Branch:  "settings",
+		Message: "Update repository settings",
+		SHA:     file.SHA,
+		Author:  git.CommitAuthor{Name: "system", Email: "system@localhost", Date: time.Now()},
+	}
+	commit, err := h.gitService.UpdateFile(c.Request.Context(), repoPath, req)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"sha": commit.SHA}})
 }
 
 // DeleteRepository handles DELETE /api/v1/repositories/{owner}/{repo}

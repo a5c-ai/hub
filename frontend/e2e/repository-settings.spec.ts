@@ -34,8 +34,8 @@ test.describe('Repository Settings & Administration', () => {
       });
     });
 
-    // Mock repository details
-    await page.route('**/api/v1/repositories/testuser/test-repo', async route => {
+    // Mock repository settings details
+    await page.route('**/api/v1/repositories/testuser/test-repo/settings', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -68,7 +68,7 @@ test.describe('Repository Settings & Administration', () => {
 
     test('should edit repository name and description', async ({ page }) => {
       // Mock update repository API
-      await page.route('**/api/v1/repositories/testuser/test-repo', async route => {
+      await page.route('**/api/v1/repositories/testuser/test-repo/settings', async route => {
         if (route.request().method() === 'PUT') {
           await route.fulfill({
             status: 200,

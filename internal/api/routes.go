@@ -338,6 +338,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				// Repository forking
 				repos.POST("/:owner/:repo/fork", repoHandlers.ForkRepository)
 
+				// Repository settings read/write in dedicated branch
+				repos.GET("/:owner/:repo/settings", repoHandlers.GetRepositorySettings)
+				repos.PUT("/:owner/:repo/settings", repoHandlers.UpdateRepositorySettings)
+
 				// Repository-specific search
 
 				// Pull request operations

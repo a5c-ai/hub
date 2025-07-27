@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import api from '@/lib/api';
+import api, { repoApi } from '@/lib/api';
 import { Repository } from '@/types';
 
 export default function RepositorySettingsPage() {
@@ -30,13 +30,13 @@ export default function RepositorySettingsPage() {
     const fetchRepository = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/repositories/${owner}/${repo}`);
-        setRepository(response.data);
+        const response = await repoApi.getRepositorySettings(owner, repo);
+        const settings = response.data;
         setFormData({
-          name: response.data.name,
-          description: response.data.description || '',
-          private: response.data.private,
-          default_branch: response.data.default_branch,
+          name: settings.name,
+          description: settings.description || '',
+          private: settings.private,
+          default_branch: settings.default_branch,
         });
       } catch (err) {
         console.error('Failed to fetch repository', err);
@@ -51,7 +51,7 @@ export default function RepositorySettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await api.put(`/repositories/${owner}/${repo}`, formData);
+      await repoApi.updateRepositorySettings(owner, repo, formData);
       // Show success message
     } catch (err) {
       console.error('Failed to save repository settings', err);
