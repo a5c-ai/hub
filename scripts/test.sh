@@ -115,9 +115,33 @@ log "E2E tests: $E2E"
 log "Build first: $BUILD_FIRST"
 
 # Set test environment variables
+# Set test environment variables
 export ENVIRONMENT="$TEST_ENV"
 export NODE_ENV="test"
 export GO_ENV="test"
+
+# Configure test database parameters
+export DB_HOST="${TEST_DB_HOST:-localhost}"
+export DB_PORT="${TEST_DB_PORT:-5432}"
+export DB_NAME="${TEST_DB_NAME:-hub_test}"
+export DB_USER="${TEST_DB_USER:-hub}"
+export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
+
+# Setup and teardown for PostgreSQL test container
+setup_test_db() {
+    test_log "Starting PostgreSQL test container..."
+    docker run -d --name hub-test-db -e POSTGRES_PASSWORD=$DB_PASSWORD -e POSTGRES_USER=$DB_USER -e POSTGRES_DB=$DB_NAME -p $DB_PORT:5432 postgres:16
+    test_log "Waiting for PostgreSQL to be ready..."
+    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\l' &>/dev/null; do sleep 1; done
+    test_log "PostgreSQL test container is ready."
+}
+cleanup_test_db() {
+    test_log "Stopping PostgreSQL test container..."
+    docker stop hub-test-db
+}
+trap cleanup_test_db EXIT
+
+setup_test_db
 
 # Build before testing if requested
 if [[ "$BUILD_FIRST" == "true" && "$E2E_ONLY" == "false" ]]; then
