@@ -129,15 +129,42 @@ export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
 
 # Setup and teardown for PostgreSQL test container
 setup_test_db() {
-    test_log "Starting PostgreSQL test container..."
-    docker run -d --name hub-test-db -e POSTGRES_PASSWORD=$DB_PASSWORD -e POSTGRES_USER=$DB_USER -e POSTGRES_DB=$DB_NAME -p $DB_PORT:5432 postgres:16
+    if [[ "$CI" == "true" ]]; then
+        test_log "Using PostgreSQL service container"
+    else
+        test_log "Starting PostgreSQL test container..."
+        docker run -d --name hub-test-db \
+            -e POSTGRES_PASSWORD=$DB_PASSWORD \
+            -e POSTGRES_USER=$DB_USER \
+            -e POSTGRES_DB=$DB_NAME \
+            -p $DB_PORT:5432 postgres:16
+    fi
     test_log "Waiting for PostgreSQL to be ready..."
-    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\l' &>/dev/null; do sleep 1; done
-    test_log "PostgreSQL test container is ready."
+    local retries=0
+    local max_retries=60
+    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
+        sleep 1
+        retries=$((retries+1))
+        if (( retries >= max_retries )); then
+            test_log "PostgreSQL did not become ready after $max_retries seconds"
+            if [[ "$CI" != "true" ]]; then
+                test_log "Container logs:"
+                docker logs hub-test-db || true
+                docker rm -f hub-test-db || true
+            fi
+            exit 1
+        fi
+    done
+    test_log "PostgreSQL is ready."
 }
 cleanup_test_db() {
-    test_log "Stopping PostgreSQL test container..."
-    docker stop hub-test-db
+    if [[ "$CI" == "true" ]]; then
+        test_log "Skipping cleanup of PostgreSQL service container"
+    else
+        test_log "Stopping PostgreSQL test container..."
+        docker stop hub-test-db
+        docker rm -f hub-test-db || true
+    fi
 }
 trap cleanup_test_db EXIT
 
