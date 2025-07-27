@@ -20,7 +20,6 @@ const (
 	EventRepositoryStar        EventType = "repository.star"
 	EventRepositoryWatch       EventType = "repository.watch"
 	EventRepositoryPullRequest EventType = "repository.pull_request"
-	EventRepositoryIssue       EventType = "repository.issue"
 
 	// User Events
 	EventUserLogin         EventType = "user.login"
@@ -37,7 +36,7 @@ const (
 	EventOrgRepositoryAdd EventType = "organization.repository_add"
 
 	// CI/CD Events
-	EventWorkflowRun  EventType = "workflow.run"
+
 	EventJobStarted   EventType = "job.started"
 	EventJobCompleted EventType = "job.completed"
 	EventDeployment   EventType = "deployment"
@@ -171,17 +170,15 @@ type RepositoryAnalytics struct {
 	StarsCount    int64 `json:"stars_count" gorm:"default:0"`
 	WatchersCount int64 `json:"watchers_count" gorm:"default:0"`
 
-	// Issue and PR metrics
-	IssuesOpened       int64 `json:"issues_opened" gorm:"default:0"`
-	IssuesClosed       int64 `json:"issues_closed" gorm:"default:0"`
+	// PR metrics
 	PullRequestsOpened int64 `json:"pull_requests_opened" gorm:"default:0"`
 	PullRequestsClosed int64 `json:"pull_requests_closed" gorm:"default:0"`
 	PullRequestsMerged int64 `json:"pull_requests_merged" gorm:"default:0"`
 
 	// Performance metrics
-	AveragePRMergeTime    *float64 `json:"average_pr_merge_time,omitempty"`    // in hours
-	AverageIssueCloseTime *float64 `json:"average_issue_close_time,omitempty"` // in hours
-	BuildSuccessRate      *float64 `json:"build_success_rate,omitempty"`       // percentage
+	AveragePRMergeTime *float64 `json:"average_pr_merge_time,omitempty"` // in hours
+
+	BuildSuccessRate *float64 `json:"build_success_rate,omitempty"` // percentage
 
 	// Language breakdown (stored as JSON)
 	LanguageStats string `json:"language_stats" gorm:"type:jsonb"`
@@ -208,8 +205,8 @@ type UserAnalytics struct {
 	LoginCount          int64 `json:"login_count" gorm:"default:0"`
 	CommitsCount        int64 `json:"commits_count" gorm:"default:0"`
 	PullRequestsCreated int64 `json:"pull_requests_created" gorm:"default:0"`
-	IssuesCreated       int64 `json:"issues_created" gorm:"default:0"`
-	CommentsCreated     int64 `json:"comments_created" gorm:"default:0"`
+
+	CommentsCreated int64 `json:"comments_created" gorm:"default:0"`
 
 	// Repository interactions
 	RepositoriesCreated int64 `json:"repositories_created" gorm:"default:0"`
@@ -250,7 +247,6 @@ type OrganizationAnalytics struct {
 	// Activity metrics
 	TotalCommits      int64 `json:"total_commits" gorm:"default:0"`
 	TotalPullRequests int64 `json:"total_pull_requests" gorm:"default:0"`
-	TotalIssues       int64 `json:"total_issues" gorm:"default:0"`
 
 	// Resource usage
 	StorageUsedMB      int64 `json:"storage_used_mb" gorm:"default:0"`

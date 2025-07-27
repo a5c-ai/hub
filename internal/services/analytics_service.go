@@ -29,7 +29,7 @@ type AnalyticsService interface {
 	GetRepositoryCodeStats(ctx context.Context, repoID uuid.UUID) (*CodeStatistics, error)
 	GetRepositoryContributorStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*ContributorStatistics, error)
 	GetRepositoryActivityStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*ActivityStatistics, error)
-	GetRepositoryIssueStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*IssueStatistics, error)
+
 	GetRepositoryPRStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*PullRequestStatistics, error)
 	GetRepositoryPerformanceStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*PerformanceStatistics, error)
 
@@ -125,9 +125,9 @@ type RepositoryInsights struct {
 	CodeStats        *CodeStatistics               `json:"code_stats"`
 	ActivityStats    *ActivityStatistics           `json:"activity_stats"`
 	ContributorStats *ContributorStatistics        `json:"contributor_stats"`
-	IssueStats       *IssueStatistics              `json:"issue_stats"`
-	PullRequestStats *PullRequestStatistics        `json:"pull_request_stats"`
-	PerformanceStats *PerformanceStatistics        `json:"performance_stats"`
+
+	PullRequestStats *PullRequestStatistics `json:"pull_request_stats"`
+	PerformanceStats *PerformanceStatistics `json:"performance_stats"`
 }
 
 type CodeStatistics struct {
@@ -161,14 +161,6 @@ type ContributorStat struct {
 	CommitCount  int64     `json:"commit_count"`
 	LinesAdded   int64     `json:"lines_added"`
 	LinesDeleted int64     `json:"lines_deleted"`
-}
-
-type IssueStatistics struct {
-	TotalIssues    int64             `json:"total_issues"`
-	OpenIssues     int64             `json:"open_issues"`
-	ClosedIssues   int64             `json:"closed_issues"`
-	AvgTimeToClose *float64          `json:"avg_time_to_close"`
-	IssueActivity  []TimeSeriesPoint `json:"issue_activity"`
 }
 
 type PullRequestStatistics struct {
@@ -207,7 +199,6 @@ type UserActivityStats struct {
 type UserContributionStats struct {
 	TotalCommits      int64             `json:"total_commits"`
 	TotalPullRequests int64             `json:"total_pull_requests"`
-	TotalIssues       int64             `json:"total_issues"`
 	TotalComments     int64             `json:"total_comments"`
 	ContributionTrend []TimeSeriesPoint `json:"contribution_trend"`
 }
@@ -246,7 +237,6 @@ type OrganizationRepositoryStats struct {
 type OrganizationActivityStats struct {
 	TotalCommits      int64             `json:"total_commits"`
 	TotalPullRequests int64             `json:"total_pull_requests"`
-	TotalIssues       int64             `json:"total_issues"`
 	ActivityTrend     []TimeSeriesPoint `json:"activity_trend"`
 }
 
@@ -523,10 +513,6 @@ func (s *analyticsService) GetRepositoryActivityStats(ctx context.Context, repoI
 	return s.getRepositoryActivityStats(ctx, repoID, filters)
 }
 
-func (s *analyticsService) GetRepositoryIssueStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*IssueStatistics, error) {
-	return s.getRepositoryIssueStats(ctx, repoID, filters)
-}
-
 func (s *analyticsService) GetRepositoryPRStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*PullRequestStatistics, error) {
 	return s.getRepositoryPRStats(ctx, repoID, filters)
 }
@@ -574,12 +560,6 @@ func (s *analyticsService) GetRepositoryInsights(ctx context.Context, repoID uui
 		return nil, fmt.Errorf("failed to get contributor stats: %w", err)
 	}
 
-	// Get issue statistics
-	issueStats, err := s.getRepositoryIssueStats(ctx, repoID, filters)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get issue stats: %w", err)
-	}
-
 	// Get pull request statistics
 	prStats, err := s.getRepositoryPRStats(ctx, repoID, filters)
 	if err != nil {
@@ -598,7 +578,7 @@ func (s *analyticsService) GetRepositoryInsights(ctx context.Context, repoID uui
 		CodeStats:        codeStats,
 		ActivityStats:    activityStats,
 		ContributorStats: contributorStats,
-		IssueStats:       issueStats,
+
 		PullRequestStats: prStats,
 		PerformanceStats: perfStats,
 	}, nil
@@ -871,13 +851,13 @@ func (s *analyticsService) GetPerformanceMetrics(ctx context.Context, filters Pe
 
 	// Calculate performance metrics
 	var metrics struct {
-		AvgResponseTime   float64 `json:"avg_response_time"`
-		P50ResponseTime   float64 `json:"p50_response_time"`
-		P95ResponseTime   float64 `json:"p95_response_time"`
-		P99ResponseTime   float64 `json:"p99_response_time"`
-		TotalRequests     int64   `json:"total_requests"`
-		ErrorRequests     int64   `json:"error_requests"`
-		ThroughputPerMin  float64 `json:"throughput_per_min"`
+		AvgResponseTime  float64 `json:"avg_response_time"`
+		P50ResponseTime  float64 `json:"p50_response_time"`
+		P95ResponseTime  float64 `json:"p95_response_time"`
+		P99ResponseTime  float64 `json:"p99_response_time"`
+		TotalRequests    int64   `json:"total_requests"`
+		ErrorRequests    int64   `json:"error_requests"`
+		ThroughputPerMin float64 `json:"throughput_per_min"`
 	}
 
 	// Get basic metrics
@@ -1016,19 +996,19 @@ func (s *analyticsService) ExportData(ctx context.Context, exportType ExportType
 
 func (s *analyticsService) getRepositoryAnalyticsData(ctx context.Context, repoID uuid.UUID, filters InsightFilters) ([]*models.RepositoryAnalytics, error) {
 	query := s.db.WithContext(ctx).Model(&models.RepositoryAnalytics{}).Where("repository_id = ?", repoID)
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("date >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("date <= ?", *filters.EndDate)
 	}
-	
+
 	var analytics []*models.RepositoryAnalytics
 	if err := query.Order("date ASC").Find(&analytics).Error; err != nil {
 		return nil, fmt.Errorf("failed to get repository analytics: %w", err)
 	}
-	
+
 	return analytics, nil
 }
 
@@ -1040,13 +1020,13 @@ func (s *analyticsService) getRepositoryCodeStats(ctx context.Context, repoID uu
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to get repository analytics: %w", err)
 	}
-	
+
 	// Get commits count from database
 	var totalCommits int64
 	if err := s.db.WithContext(ctx).Model(&models.Commit{}).Where("repository_id = ?", repoID).Count(&totalCommits).Error; err != nil {
 		s.logger.WithError(err).Warn("Failed to count commits")
 	}
-	
+
 	// Get branches count from database
 	var totalBranches int64
 	if err := s.db.WithContext(ctx).Model(&models.Branch{}).Where("repository_id = ?", repoID).Count(&totalBranches).Error; err != nil {
@@ -1059,7 +1039,7 @@ func (s *analyticsService) getRepositoryCodeStats(ctx context.Context, repoID uu
 		s.logger.WithError(err).Warn("Failed to get commit activity")
 		commitActivity = []TimeSeriesPoint{}
 	}
-	
+
 	// Parse language stats if available
 	languageBreakdown := make(map[string]int64)
 	if latest.LanguageStats != "" {
@@ -1069,7 +1049,7 @@ func (s *analyticsService) getRepositoryCodeStats(ctx context.Context, repoID uu
 		languageBreakdown["JavaScript"] = 20
 		languageBreakdown["TypeScript"] = 10
 	}
-	
+
 	return &CodeStatistics{
 		TotalLinesOfCode:  latest.LinesOfCode,
 		TotalFiles:        latest.FileCount,
@@ -1088,14 +1068,14 @@ func (s *analyticsService) getRepositoryActivityStats(ctx context.Context, repoI
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to get repository analytics: %w", err)
 	}
-	
+
 	// Get activity trend data
 	activityTrend, err := s.getActivityTrend(ctx, repoID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get activity trend")
 		activityTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &ActivityStatistics{
 		TotalViews:    latest.ViewsCount,
 		TotalClones:   latest.ClonesCount,
@@ -1115,7 +1095,7 @@ func (s *analyticsService) getRepositoryContributorStats(ctx context.Context, re
 		LinesAdded   int64     `json:"lines_added"`
 		LinesDeleted int64     `json:"lines_deleted"`
 	}
-	
+
 	query := `
 		SELECT 
 			u.id as user_id,
@@ -1127,16 +1107,16 @@ func (s *analyticsService) getRepositoryContributorStats(ctx context.Context, re
 		JOIN users u ON c.author_id = u.id
 		WHERE c.repository_id = ?
 	`
-	
+
 	if filters.StartDate != nil {
 		query += " AND c.created_at >= ?"
 	}
 	if filters.EndDate != nil {
 		query += " AND c.created_at <= ?"
 	}
-	
+
 	query += " GROUP BY u.id, u.username ORDER BY commit_count DESC LIMIT 10"
-	
+
 	var args []interface{}
 	args = append(args, repoID)
 	if filters.StartDate != nil {
@@ -1145,12 +1125,12 @@ func (s *analyticsService) getRepositoryContributorStats(ctx context.Context, re
 	if filters.EndDate != nil {
 		args = append(args, *filters.EndDate)
 	}
-	
+
 	var contributors []contributorData
 	if err := s.db.WithContext(ctx).Raw(query, args...).Scan(&contributors).Error; err != nil {
 		return nil, fmt.Errorf("failed to get contributors: %w", err)
 	}
-	
+
 	// Convert to ContributorStat format
 	var topContributors []ContributorStat
 	for _, c := range contributors {
@@ -1162,27 +1142,27 @@ func (s *analyticsService) getRepositoryContributorStats(ctx context.Context, re
 			LinesDeleted: c.LinesDeleted,
 		})
 	}
-	
+
 	// Get total and active contributor counts
 	var totalContributors int64
 	var activeContributors int64
-	
+
 	s.db.WithContext(ctx).Model(&models.Commit{}).
 		Where("repository_id = ?", repoID).
 		Distinct("author_id").Count(&totalContributors)
-	
+
 	// Active contributors in the last 30 days
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 	s.db.WithContext(ctx).Model(&models.Commit{}).
 		Where("repository_id = ? AND created_at >= ?", repoID, thirtyDaysAgo).
 		Distinct("author_id").Count(&activeContributors)
-	
+
 	contributorActivity, err := s.getContributorActivity(ctx, repoID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get contributor activity")
 		contributorActivity = []TimeSeriesPoint{}
 	}
-	
+
 	return &ContributorStatistics{
 		TotalContributors:   totalContributors,
 		ActiveContributors:  activeContributors,
@@ -1191,60 +1171,21 @@ func (s *analyticsService) getRepositoryContributorStats(ctx context.Context, re
 	}, nil
 }
 
-func (s *analyticsService) getRepositoryIssueStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*IssueStatistics, error) {
-	var totalIssues, openIssues, closedIssues int64
-	
-	// Total issues
-	s.db.WithContext(ctx).Model(&models.Issue{}).Where("repository_id = ?", repoID).Count(&totalIssues)
-	
-	// Open issues
-	s.db.WithContext(ctx).Model(&models.Issue{}).Where("repository_id = ? AND state = ?", repoID, "open").Count(&openIssues)
-	
-	// Closed issues
-	s.db.WithContext(ctx).Model(&models.Issue{}).Where("repository_id = ? AND state = ?", repoID, "closed").Count(&closedIssues)
-	
-	// Average time to close (in hours)
-	var avgTimeToClose *float64
-	var avgDuration float64
-	err := s.db.WithContext(ctx).Model(&models.Issue{}).
-		Select("AVG(EXTRACT(EPOCH FROM (closed_at - created_at))/3600) as avg_duration").
-		Where("repository_id = ? AND closed_at IS NOT NULL", repoID).
-		Scan(&avgDuration).Error
-	if err == nil && avgDuration > 0 {
-		avgTimeToClose = &avgDuration
-	}
-	
-	// Get issue activity trend
-	issueActivity, err := s.getIssueActivity(ctx, repoID, filters)
-	if err != nil {
-		s.logger.WithError(err).Warn("Failed to get issue activity")
-		issueActivity = []TimeSeriesPoint{}
-	}
-	
-	return &IssueStatistics{
-		TotalIssues:    totalIssues,
-		OpenIssues:     openIssues,
-		ClosedIssues:   closedIssues,
-		AvgTimeToClose: avgTimeToClose,
-		IssueActivity:  issueActivity,
-	}, nil
-}
-
 func (s *analyticsService) getRepositoryPRStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*PullRequestStatistics, error) {
 	var totalPRs, openPRs, mergedPRs, closedPRs int64
-	
+
 	// Total pull requests
 	s.db.WithContext(ctx).Model(&models.PullRequest{}).Where("repository_id = ?", repoID).Count(&totalPRs)
-	
+
 	// Open pull requests
 	s.db.WithContext(ctx).Model(&models.PullRequest{}).Where("repository_id = ? AND state = ?", repoID, "open").Count(&openPRs)
-	
+
 	// Merged pull requests
 	s.db.WithContext(ctx).Model(&models.PullRequest{}).Where("repository_id = ? AND state = ?", repoID, "merged").Count(&mergedPRs)
-	
+
 	// Closed pull requests (excluding merged)
 	s.db.WithContext(ctx).Model(&models.PullRequest{}).Where("repository_id = ? AND state = ?", repoID, "closed").Count(&closedPRs)
-	
+
 	// Average time to merge (in hours)
 	var avgTimeToMerge *float64
 	var avgDuration float64
@@ -1255,14 +1196,14 @@ func (s *analyticsService) getRepositoryPRStats(ctx context.Context, repoID uuid
 	if err == nil && avgDuration > 0 {
 		avgTimeToMerge = &avgDuration
 	}
-	
+
 	// Get PR activity trend
 	prActivity, err := s.getPRActivity(ctx, repoID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get PR activity")
 		prActivity = []TimeSeriesPoint{}
 	}
-	
+
 	return &PullRequestStatistics{
 		TotalPullRequests:  totalPRs,
 		OpenPullRequests:   openPRs,
@@ -1276,46 +1217,46 @@ func (s *analyticsService) getRepositoryPRStats(ctx context.Context, repoID uuid
 func (s *analyticsService) getRepositoryPerformanceStats(ctx context.Context, repoID uuid.UUID, filters InsightFilters) (*PerformanceStatistics, error) {
 	var avgResponseTime, p95ResponseTime, errorRate *float64
 	var avgResp, p95Resp, errRate float64
-	
+
 	// Get performance metrics from performance logs
 	query := s.db.WithContext(ctx).Model(&models.PerformanceLog{}).Where("repository_id = ?", repoID)
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("created_at >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("created_at <= ?", *filters.EndDate)
 	}
-	
+
 	// Average response time
 	err := query.Select("AVG(duration)").Scan(&avgResp).Error
 	if err == nil && avgResp > 0 {
 		avgResponseTime = &avgResp
 	}
-	
+
 	// 95th percentile response time
 	err = query.Select("PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration)").Scan(&p95Resp).Error
 	if err == nil && p95Resp > 0 {
 		p95ResponseTime = &p95Resp
 	}
-	
+
 	// Error rate
 	var totalRequests, errorRequests int64
 	query.Count(&totalRequests)
 	query.Where("status_code >= 400").Count(&errorRequests)
-	
+
 	if totalRequests > 0 {
 		errRate = float64(errorRequests) / float64(totalRequests) * 100
 		errorRate = &errRate
 	}
-	
+
 	// Get throughput trend
 	throughputTrend, err := s.getThroughputTrend(ctx, repoID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get throughput trend")
 		throughputTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &PerformanceStatistics{
 		AvgResponseTime: avgResponseTime,
 		P95ResponseTime: p95ResponseTime,
@@ -1328,23 +1269,23 @@ func (s *analyticsService) getRepositoryPerformanceStats(ctx context.Context, re
 
 func (s *analyticsService) getCommitActivity(ctx context.Context, repoID uuid.UUID, days int) ([]TimeSeriesPoint, error) {
 	since := time.Now().AddDate(0, 0, -days)
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Commit{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("repository_id = ? AND created_at >= ?", repoID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var activity []TimeSeriesPoint
 	for _, r := range results {
 		activity = append(activity, TimeSeriesPoint{
@@ -1352,7 +1293,7 @@ func (s *analyticsService) getCommitActivity(ctx context.Context, repoID uuid.UU
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return activity, nil
 }
 
@@ -1362,24 +1303,24 @@ func (s *analyticsService) getActivityTrend(ctx context.Context, repoID uuid.UUI
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
-		Where("repository_id = ? AND created_at >= ? AND event_type IN (?)", 
+		Where("repository_id = ? AND created_at >= ? AND event_type IN (?)",
 			repoID, since, []string{"repository.clone", "repository.view"}).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1387,7 +1328,7 @@ func (s *analyticsService) getActivityTrend(ctx context.Context, repoID uuid.UUI
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1396,56 +1337,23 @@ func (s *analyticsService) getContributorActivity(ctx context.Context, repoID uu
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Commit{}).
 		Select("DATE(created_at) as date, COUNT(DISTINCT author_id) as count").
 		Where("repository_id = ? AND created_at >= ?", repoID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	var activity []TimeSeriesPoint
-	for _, r := range results {
-		activity = append(activity, TimeSeriesPoint{
-			Timestamp: r.Date,
-			Value:     float64(r.Count),
-		})
-	}
-	
-	return activity, nil
-}
 
-func (s *analyticsService) getIssueActivity(ctx context.Context, repoID uuid.UUID, filters InsightFilters) ([]TimeSeriesPoint, error) {
-	since := time.Now().AddDate(0, 0, -30)
-	if filters.StartDate != nil {
-		since = *filters.StartDate
-	}
-	
-	var results []struct {
-		Date  time.Time `json:"date"`
-		Count int64     `json:"count"`
-	}
-	
-	err := s.db.WithContext(ctx).Model(&models.Issue{}).
-		Select("DATE(created_at) as date, COUNT(*) as count").
-		Where("repository_id = ? AND created_at >= ?", repoID, since).
-		Group("DATE(created_at)").
-		Order("date ASC").
-		Scan(&results).Error
-	
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var activity []TimeSeriesPoint
 	for _, r := range results {
 		activity = append(activity, TimeSeriesPoint{
@@ -1453,7 +1361,7 @@ func (s *analyticsService) getIssueActivity(ctx context.Context, repoID uuid.UUI
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return activity, nil
 }
 
@@ -1462,23 +1370,23 @@ func (s *analyticsService) getPRActivity(ctx context.Context, repoID uuid.UUID, 
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.PullRequest{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("repository_id = ? AND created_at >= ?", repoID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var activity []TimeSeriesPoint
 	for _, r := range results {
 		activity = append(activity, TimeSeriesPoint{
@@ -1486,7 +1394,7 @@ func (s *analyticsService) getPRActivity(ctx context.Context, repoID uuid.UUID, 
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return activity, nil
 }
 
@@ -1495,23 +1403,23 @@ func (s *analyticsService) getThroughputTrend(ctx context.Context, repoID uuid.U
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.PerformanceLog{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("repository_id = ? AND created_at >= ?", repoID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1519,7 +1427,7 @@ func (s *analyticsService) getThroughputTrend(ctx context.Context, repoID uuid.U
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1527,19 +1435,19 @@ func (s *analyticsService) getThroughputTrend(ctx context.Context, repoID uuid.U
 
 func (s *analyticsService) getUserAnalyticsData(ctx context.Context, userID uuid.UUID, filters InsightFilters) ([]*models.UserAnalytics, error) {
 	query := s.db.WithContext(ctx).Model(&models.UserAnalytics{}).Where("user_id = ?", userID)
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("date >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("date <= ?", *filters.EndDate)
 	}
-	
+
 	var analytics []*models.UserAnalytics
 	if err := query.Order("date ASC").Find(&analytics).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user analytics: %w", err)
 	}
-	
+
 	return analytics, nil
 }
 
@@ -1551,14 +1459,14 @@ func (s *analyticsService) getUserActivityStats(ctx context.Context, userID uuid
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to get user analytics: %w", err)
 	}
-	
+
 	// Get activity trend data
 	activityTrend, err := s.getUserActivityTrend(ctx, userID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get user activity trend")
 		activityTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &UserActivityStats{
 		TotalLogins:    latest.LoginCount,
 		TotalSessions:  latest.LoginCount, // Assuming 1 session per login for simplicity
@@ -1570,8 +1478,8 @@ func (s *analyticsService) getUserActivityStats(ctx context.Context, userID uuid
 
 func (s *analyticsService) getUserContributionStats(ctx context.Context, userID uuid.UUID, filters InsightFilters) (*UserContributionStats, error) {
 	// Get contribution data from various sources
-	var totalCommits, totalPullRequests, totalIssues, totalComments int64
-	
+	var totalCommits, totalPullRequests, totalComments int64
+
 	// Count commits by user
 	commitQuery := s.db.WithContext(ctx).Model(&models.Commit{}).Where("author_id = ?", userID)
 	if filters.StartDate != nil {
@@ -1581,7 +1489,7 @@ func (s *analyticsService) getUserContributionStats(ctx context.Context, userID 
 		commitQuery = commitQuery.Where("created_at <= ?", *filters.EndDate)
 	}
 	commitQuery.Count(&totalCommits)
-	
+
 	// Count pull requests by user
 	prQuery := s.db.WithContext(ctx).Model(&models.PullRequest{}).Where("user_id = ?", userID)
 	if filters.StartDate != nil {
@@ -1591,32 +1499,21 @@ func (s *analyticsService) getUserContributionStats(ctx context.Context, userID 
 		prQuery = prQuery.Where("created_at <= ?", *filters.EndDate)
 	}
 	prQuery.Count(&totalPullRequests)
-	
-	// Count issues by user
-	issueQuery := s.db.WithContext(ctx).Model(&models.Issue{}).Where("user_id = ?", userID)
-	if filters.StartDate != nil {
-		issueQuery = issueQuery.Where("created_at >= ?", *filters.StartDate)
-	}
-	if filters.EndDate != nil {
-		issueQuery = issueQuery.Where("created_at <= ?", *filters.EndDate)
-	}
-	issueQuery.Count(&totalIssues)
-	
+
 	// Count comments by user (assuming there's a comments table)
 	// For now, using a placeholder
-	totalComments = totalPullRequests + totalIssues // Rough estimate
-	
+	totalComments = totalPullRequests // Rough estimate
+
 	// Get contribution trend
 	contributionTrend, err := s.getUserContributionTrend(ctx, userID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get user contribution trend")
 		contributionTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &UserContributionStats{
 		TotalCommits:      totalCommits,
 		TotalPullRequests: totalPullRequests,
-		TotalIssues:       totalIssues,
 		TotalComments:     totalComments,
 		ContributionTrend: contributionTrend,
 	}, nil
@@ -1628,34 +1525,34 @@ func (s *analyticsService) getUserRepositoryStats(ctx context.Context, userID uu
 	s.db.WithContext(ctx).Model(&models.Repository{}).
 		Where("owner_id = ? AND owner_type = ?", userID, "user").
 		Count(&totalRepositories)
-	
+
 	// Get total stars and forks for user's repositories
 	var totalStars, totalForks int64
-	
+
 	// Sum stars and forks from repository analytics
 	var starsForks struct {
 		TotalStars int64 `json:"total_stars"`
 		TotalForks int64 `json:"total_forks"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.RepositoryAnalytics{}).
 		Select("COALESCE(SUM(stars_count), 0) as total_stars, COALESCE(SUM(forks_count), 0) as total_forks").
 		Joins("JOIN repositories r ON repository_analytics.repository_id = r.id").
 		Where("r.owner_id = ? AND r.owner_type = ?", userID, "user").
 		Scan(&starsForks).Error
-	
+
 	if err == nil {
 		totalStars = starsForks.TotalStars
 		totalForks = starsForks.TotalForks
 	}
-	
+
 	// Get repository trend
 	repositoryTrend, err := s.getUserRepositoryTrend(ctx, userID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get user repository trend")
 		repositoryTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &UserRepositoryStats{
 		TotalRepositories: totalRepositories,
 		TotalStars:        totalStars,
@@ -1671,24 +1568,24 @@ func (s *analyticsService) getUserActivityTrend(ctx context.Context, userID uuid
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
-		Where("actor_id = ? AND created_at >= ? AND event_type IN (?)", 
+		Where("actor_id = ? AND created_at >= ? AND event_type IN (?)",
 			userID, since, []string{"user.login", "page.view"}).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1696,7 +1593,7 @@ func (s *analyticsService) getUserActivityTrend(ctx context.Context, userID uuid
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1705,23 +1602,23 @@ func (s *analyticsService) getUserContributionTrend(ctx context.Context, userID 
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Commit{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("author_id = ? AND created_at >= ?", userID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1729,7 +1626,7 @@ func (s *analyticsService) getUserContributionTrend(ctx context.Context, userID 
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1738,23 +1635,23 @@ func (s *analyticsService) getUserRepositoryTrend(ctx context.Context, userID uu
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Repository{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("owner_id = ? AND owner_type = ? AND created_at >= ?", userID, "user", since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1762,7 +1659,7 @@ func (s *analyticsService) getUserRepositoryTrend(ctx context.Context, userID uu
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1770,34 +1667,34 @@ func (s *analyticsService) getUserRepositoryTrend(ctx context.Context, userID uu
 
 func (s *analyticsService) getSystemAnalyticsData(ctx context.Context, filters InsightFilters) ([]*models.SystemAnalytics, error) {
 	query := s.db.WithContext(ctx).Model(&models.SystemAnalytics{})
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("date >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("date <= ?", *filters.EndDate)
 	}
-	
+
 	var analytics []*models.SystemAnalytics
 	if err := query.Order("date ASC").Find(&analytics).Error; err != nil {
 		return nil, fmt.Errorf("failed to get system analytics: %w", err)
 	}
-	
+
 	return analytics, nil
 }
 
 func (s *analyticsService) getSystemUserStats(ctx context.Context, filters InsightFilters) (*SystemUserStats, error) {
 	var totalUsers, activeUsers, newRegistrations int64
-	
+
 	// Count total users
 	s.db.WithContext(ctx).Model(&models.User{}).Count(&totalUsers)
-	
+
 	// Count active users in the last 30 days
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 	s.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
 		Where("event_type = ? AND created_at >= ?", "user.login", thirtyDaysAgo).
 		Distinct("actor_id").Count(&activeUsers)
-	
+
 	// Count new registrations in the filter period
 	regQuery := s.db.WithContext(ctx).Model(&models.User{})
 	if filters.StartDate != nil {
@@ -1809,21 +1706,21 @@ func (s *analyticsService) getSystemUserStats(ctx context.Context, filters Insig
 		regQuery = regQuery.Where("created_at <= ?", *filters.EndDate)
 	}
 	regQuery.Count(&newRegistrations)
-	
+
 	// Get user trend
 	userTrend, err := s.getSystemUserTrend(ctx, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get user trend")
 		userTrend = []TimeSeriesPoint{}
 	}
-	
+
 	// Calculate churn rate (placeholder)
 	var churnRate *float64
 	if totalUsers > 0 {
 		rate := float64(newRegistrations) / float64(totalUsers) * 5 // Rough estimate
 		churnRate = &rate
 	}
-	
+
 	return &SystemUserStats{
 		TotalUsers:       totalUsers,
 		ActiveUsers:      activeUsers,
@@ -1835,22 +1732,22 @@ func (s *analyticsService) getSystemUserStats(ctx context.Context, filters Insig
 
 func (s *analyticsService) getSystemRepositoryStats(ctx context.Context, filters InsightFilters) (*SystemRepositoryStats, error) {
 	var totalRepos, publicRepos, privateRepos, totalOrgs int64
-	
+
 	// Count repositories
 	s.db.WithContext(ctx).Model(&models.Repository{}).Count(&totalRepos)
 	s.db.WithContext(ctx).Model(&models.Repository{}).Where("visibility = ?", "public").Count(&publicRepos)
 	s.db.WithContext(ctx).Model(&models.Repository{}).Where("visibility = ?", "private").Count(&privateRepos)
-	
+
 	// Count organizations
 	s.db.WithContext(ctx).Model(&models.Organization{}).Count(&totalOrgs)
-	
+
 	// Get repository trend
 	repoTrend, err := s.getSystemRepositoryTrend(ctx, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get repository trend")
 		repoTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &SystemRepositoryStats{
 		TotalRepositories:   totalRepos,
 		PublicRepositories:  publicRepos,
@@ -1863,50 +1760,50 @@ func (s *analyticsService) getSystemRepositoryStats(ctx context.Context, filters
 func (s *analyticsService) getSystemPerformanceStats(ctx context.Context, filters InsightFilters) (*SystemPerformanceStats, error) {
 	// Get performance metrics from performance logs
 	query := s.db.WithContext(ctx).Model(&models.PerformanceLog{})
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("created_at >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("created_at <= ?", *filters.EndDate)
 	}
-	
+
 	var avgResponseTime, p95ResponseTime, errorRate, uptime *float64
 	var avgResp, p95Resp, errRate float64
-	
+
 	// Average response time
 	err := query.Select("AVG(duration)").Scan(&avgResp).Error
 	if err == nil && avgResp > 0 {
 		avgResponseTime = &avgResp
 	}
-	
+
 	// 95th percentile response time
 	err = query.Select("PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration)").Scan(&p95Resp).Error
 	if err == nil && p95Resp > 0 {
 		p95ResponseTime = &p95Resp
 	}
-	
+
 	// Error rate
 	var totalRequests, errorRequests int64
 	query.Count(&totalRequests)
 	query.Where("status_code >= 400").Count(&errorRequests)
-	
+
 	if totalRequests > 0 {
 		errRate = float64(errorRequests) / float64(totalRequests) * 100
 		errorRate = &errRate
 	}
-	
+
 	// Uptime (placeholder - 99.9%)
 	uptimeVal := 99.9
 	uptime = &uptimeVal
-	
+
 	// Get performance trend
 	perfTrend, err := s.getSystemPerformanceTrend(ctx, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get performance trend")
 		perfTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &SystemPerformanceStats{
 		AvgResponseTime:  avgResponseTime,
 		P95ResponseTime:  p95ResponseTime,
@@ -1920,14 +1817,14 @@ func (s *analyticsService) getSystemResourceStats(ctx context.Context, filters I
 	// Placeholder resource stats (would integrate with actual monitoring)
 	var cpuUsage, memoryUsage, diskUsage float64 = 45.2, 67.8, 23.4
 	var networkInMB, networkOutMB int64 = 1024, 2048
-	
+
 	// Get resource trend
 	resourceTrend, err := s.getSystemResourceTrend(ctx, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get resource trend")
 		resourceTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &SystemResourceStats{
 		CPUUsage:      &cpuUsage,
 		MemoryUsage:   &memoryUsage,
@@ -1945,23 +1842,23 @@ func (s *analyticsService) getSystemUserTrend(ctx context.Context, filters Insig
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.User{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("created_at >= ?", since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -1969,7 +1866,7 @@ func (s *analyticsService) getSystemUserTrend(ctx context.Context, filters Insig
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -1978,23 +1875,23 @@ func (s *analyticsService) getSystemRepositoryTrend(ctx context.Context, filters
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Repository{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("created_at >= ?", since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2002,7 +1899,7 @@ func (s *analyticsService) getSystemRepositoryTrend(ctx context.Context, filters
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2011,23 +1908,23 @@ func (s *analyticsService) getSystemPerformanceTrend(ctx context.Context, filter
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
-		Date  time.Time `json:"date"`
-		Avg   float64   `json:"avg"`
+		Date time.Time `json:"date"`
+		Avg  float64   `json:"avg"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.PerformanceLog{}).
 		Select("DATE(created_at) as date, AVG(duration) as avg").
 		Where("created_at >= ?", since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2035,7 +1932,7 @@ func (s *analyticsService) getSystemPerformanceTrend(ctx context.Context, filter
 			Value:     r.Avg,
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2045,7 +1942,7 @@ func (s *analyticsService) getSystemResourceTrend(ctx context.Context, filters I
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var trend []TimeSeriesPoint
 	// Generate some sample data points
 	for d := since; d.Before(time.Now()); d = d.AddDate(0, 0, 1) {
@@ -2054,7 +1951,7 @@ func (s *analyticsService) getSystemResourceTrend(ctx context.Context, filters I
 			Value:     45.0 + float64(len(trend)%10), // Sample CPU usage
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2067,7 +1964,7 @@ func (s *analyticsService) exportToCSV(data interface{}, includeHeaders bool) ([
 }
 
 func (s *analyticsService) exportToXLSX(data interface{}, includeHeaders bool) ([]byte, error) {
-	// Simple XLSX export implementation  
+	// Simple XLSX export implementation
 	// In a real implementation, you would use a library like excelize
 	return []byte("XLSX export not fully implemented"), nil
 }
@@ -2076,44 +1973,44 @@ func (s *analyticsService) exportToXLSX(data interface{}, includeHeaders bool) (
 
 func (s *analyticsService) getOrganizationAnalyticsData(ctx context.Context, orgID uuid.UUID, filters InsightFilters) ([]*models.OrganizationAnalytics, error) {
 	query := s.db.WithContext(ctx).Model(&models.OrganizationAnalytics{}).Where("organization_id = ?", orgID)
-	
+
 	if filters.StartDate != nil {
 		query = query.Where("date >= ?", *filters.StartDate)
 	}
 	if filters.EndDate != nil {
 		query = query.Where("date <= ?", *filters.EndDate)
 	}
-	
+
 	var analytics []*models.OrganizationAnalytics
 	if err := query.Order("date ASC").Find(&analytics).Error; err != nil {
 		return nil, fmt.Errorf("failed to get organization analytics: %w", err)
 	}
-	
+
 	return analytics, nil
 }
 
 func (s *analyticsService) getOrganizationMemberStats(ctx context.Context, orgID uuid.UUID, filters InsightFilters) (*OrganizationMemberStats, error) {
 	var totalMembers, activeMembers, totalTeams int64
-	
+
 	// Get total members
 	s.db.WithContext(ctx).Model(&models.OrganizationMember{}).Where("organization_id = ?", orgID).Count(&totalMembers)
-	
+
 	// Get active members (those with activity in the last 30 days)
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
 	s.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
 		Where("organization_id = ? AND created_at >= ? AND actor_type = ?", orgID, thirtyDaysAgo, "user").
 		Distinct("actor_id").Count(&activeMembers)
-	
+
 	// Get total teams
 	s.db.WithContext(ctx).Model(&models.Team{}).Where("organization_id = ?", orgID).Count(&totalTeams)
-	
+
 	// Get member trend
 	memberTrend, err := s.getOrganizationMemberTrend(ctx, orgID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get member trend")
 		memberTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &OrganizationMemberStats{
 		TotalMembers:  totalMembers,
 		ActiveMembers: activeMembers,
@@ -2124,19 +2021,19 @@ func (s *analyticsService) getOrganizationMemberStats(ctx context.Context, orgID
 
 func (s *analyticsService) getOrganizationRepositoryStats(ctx context.Context, orgID uuid.UUID, filters InsightFilters) (*OrganizationRepositoryStats, error) {
 	var totalRepos, publicRepos, privateRepos int64
-	
+
 	// Count repositories
-	s.db.WithContext(ctx).Model(&models.Repository{}).Where("owner_id = ? AND owner_type = ?", orgID, "organization").Count(&totalRepos)  
+	s.db.WithContext(ctx).Model(&models.Repository{}).Where("owner_id = ? AND owner_type = ?", orgID, "organization").Count(&totalRepos)
 	s.db.WithContext(ctx).Model(&models.Repository{}).Where("owner_id = ? AND owner_type = ? AND visibility = ?", orgID, "organization", "public").Count(&publicRepos)
 	s.db.WithContext(ctx).Model(&models.Repository{}).Where("owner_id = ? AND owner_type = ? AND visibility = ?", orgID, "organization", "private").Count(&privateRepos)
-	
-	// Get repository trend  
+
+	// Get repository trend
 	repoTrend, err := s.getOrganizationRepositoryTrend(ctx, orgID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get repository trend")
 		repoTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &OrganizationRepositoryStats{
 		TotalRepositories:   totalRepos,
 		PublicRepositories:  publicRepos,
@@ -2146,38 +2043,31 @@ func (s *analyticsService) getOrganizationRepositoryStats(ctx context.Context, o
 }
 
 func (s *analyticsService) getOrganizationActivityStats(ctx context.Context, orgID uuid.UUID, filters InsightFilters) (*OrganizationActivityStats, error) {
-	var totalCommits, totalPRs, totalIssues int64
-	
+	var totalCommits, totalPRs int64
+
 	// Count activity across organization repositories
 	s.db.WithContext(ctx).Raw(`
 		SELECT COUNT(c.id) FROM commits c 
 		JOIN repositories r ON c.repository_id = r.id 
 		WHERE r.owner_id = ? AND r.owner_type = ?
 	`, orgID, "organization").Scan(&totalCommits)
-	
+
 	s.db.WithContext(ctx).Raw(`
 		SELECT COUNT(pr.id) FROM pull_requests pr 
 		JOIN repositories r ON pr.repository_id = r.id 
 		WHERE r.owner_id = ? AND r.owner_type = ?
 	`, orgID, "organization").Scan(&totalPRs)
-	
-	s.db.WithContext(ctx).Raw(`
-		SELECT COUNT(i.id) FROM issues i 
-		JOIN repositories r ON i.repository_id = r.id 
-		WHERE r.owner_id = ? AND r.owner_type = ?
-	`, orgID, "organization").Scan(&totalIssues)
-	
+
 	// Get activity trend
 	activityTrend, err := s.getOrganizationActivityTrend(ctx, orgID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get activity trend")
 		activityTrend = []TimeSeriesPoint{}
 	}
-	
+
 	return &OrganizationActivityStats{
 		TotalCommits:      totalCommits,
 		TotalPullRequests: totalPRs,
-		TotalIssues:       totalIssues,
 		ActivityTrend:     activityTrend,
 	}, nil
 }
@@ -2190,19 +2080,19 @@ func (s *analyticsService) getOrganizationResourceStats(ctx context.Context, org
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to get organization analytics: %w", err)
 	}
-	
+
 	// Get resource trend
 	resourceTrend, err := s.getOrganizationResourceTrend(ctx, orgID, filters)
 	if err != nil {
 		s.logger.WithError(err).Warn("Failed to get resource trend")
 		resourceTrend = []TimeSeriesPoint{}
 	}
-	
+
 	// Calculate estimated cost (simplified)
 	var estimatedCost *float64
 	cost := float64(latest.StorageUsedMB)*0.0001 + float64(latest.BandwidthUsedMB)*0.00005 + float64(latest.ComputeTimeMinutes)*0.01
 	estimatedCost = &cost
-	
+
 	return &OrganizationResourceStats{
 		StorageUsedMB:      latest.StorageUsedMB,
 		BandwidthUsedMB:    latest.BandwidthUsedMB,
@@ -2219,23 +2109,23 @@ func (s *analyticsService) getOrganizationMemberTrend(ctx context.Context, orgID
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.OrganizationMember{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("organization_id = ? AND created_at >= ?", orgID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2243,7 +2133,7 @@ func (s *analyticsService) getOrganizationMemberTrend(ctx context.Context, orgID
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2252,23 +2142,23 @@ func (s *analyticsService) getOrganizationRepositoryTrend(ctx context.Context, o
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.Repository{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("owner_id = ? AND owner_type = ? AND created_at >= ?", orgID, "organization", since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2276,7 +2166,7 @@ func (s *analyticsService) getOrganizationRepositoryTrend(ctx context.Context, o
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2285,23 +2175,23 @@ func (s *analyticsService) getOrganizationActivityTrend(ctx context.Context, org
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.AnalyticsEvent{}).
 		Select("DATE(created_at) as date, COUNT(*) as count").
 		Where("organization_id = ? AND created_at >= ?", orgID, since).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2309,7 +2199,7 @@ func (s *analyticsService) getOrganizationActivityTrend(ctx context.Context, org
 			Value:     float64(r.Count),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2318,22 +2208,22 @@ func (s *analyticsService) getOrganizationResourceTrend(ctx context.Context, org
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	var results []struct {
 		Date    time.Time `json:"date"`
 		Storage int64     `json:"storage"`
 	}
-	
+
 	err := s.db.WithContext(ctx).Model(&models.OrganizationAnalytics{}).
 		Select("date, storage_used_mb as storage").
 		Where("organization_id = ? AND date >= ?", orgID, since).
 		Order("date ASC").
 		Scan(&results).Error
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2341,7 +2231,7 @@ func (s *analyticsService) getOrganizationResourceTrend(ctx context.Context, org
 			Value:     float64(r.Storage),
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2352,11 +2242,11 @@ func (s *analyticsService) getResponseTimeTrend(ctx context.Context, filters Per
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	query := s.db.WithContext(ctx).Model(&models.PerformanceLog{}).
 		Select("DATE(created_at) as date, AVG(duration) as avg_duration").
 		Where("created_at >= ?", since)
-	
+
 	// Apply additional filters
 	if len(filters.Methods) > 0 {
 		query = query.Where("method IN ?", filters.Methods)
@@ -2370,17 +2260,17 @@ func (s *analyticsService) getResponseTimeTrend(ctx context.Context, filters Per
 	if filters.OrganizationID != nil {
 		query = query.Where("organization_id = ?", *filters.OrganizationID)
 	}
-	
+
 	var results []struct {
 		Date        time.Time `json:"date"`
 		AvgDuration float64   `json:"avg_duration"`
 	}
-	
+
 	err := query.Group("DATE(created_at)").Order("date ASC").Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		trend = append(trend, TimeSeriesPoint{
@@ -2388,7 +2278,7 @@ func (s *analyticsService) getResponseTimeTrend(ctx context.Context, filters Per
 			Value:     r.AvgDuration,
 		})
 	}
-	
+
 	return trend, nil
 }
 
@@ -2397,7 +2287,7 @@ func (s *analyticsService) getErrorRateTrend(ctx context.Context, filters Perfor
 	if filters.StartDate != nil {
 		since = *filters.StartDate
 	}
-	
+
 	query := s.db.WithContext(ctx).Model(&models.PerformanceLog{}).
 		Select(`
 			DATE(created_at) as date, 
@@ -2405,7 +2295,7 @@ func (s *analyticsService) getErrorRateTrend(ctx context.Context, filters Perfor
 			COUNT(CASE WHEN status_code >= 400 THEN 1 END) as error_requests
 		`).
 		Where("created_at >= ?", since)
-	
+
 	// Apply additional filters
 	if len(filters.Methods) > 0 {
 		query = query.Where("method IN ?", filters.Methods)
@@ -2419,18 +2309,18 @@ func (s *analyticsService) getErrorRateTrend(ctx context.Context, filters Perfor
 	if filters.OrganizationID != nil {
 		query = query.Where("organization_id = ?", *filters.OrganizationID)
 	}
-	
+
 	var results []struct {
 		Date          time.Time `json:"date"`
 		TotalRequests int64     `json:"total_requests"`
 		ErrorRequests int64     `json:"error_requests"`
 	}
-	
+
 	err := query.Group("DATE(created_at)").Order("date ASC").Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var trend []TimeSeriesPoint
 	for _, r := range results {
 		errorRate := float64(0)
@@ -2442,6 +2332,6 @@ func (s *analyticsService) getErrorRateTrend(ctx context.Context, filters Perfor
 			Value:     errorRate,
 		})
 	}
-	
+
 	return trend, nil
 }

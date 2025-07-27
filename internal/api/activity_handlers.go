@@ -308,8 +308,7 @@ func (h *ActivityHandlers) getRepositoryActivities(ctx context.Context, repoID u
 		switch activityType {
 		case "push":
 			query = query.Where("event_type = ?", models.EventRepositoryPush)
-		case "issues":
-			query = query.Where("event_type = ?", models.EventRepositoryIssue)
+
 		case "pull_request":
 			query = query.Where("event_type = ?", models.EventRepositoryPullRequest)
 		}
@@ -384,8 +383,7 @@ func (h *ActivityHandlers) countRepositoryActivities(ctx context.Context, repoID
 		switch activityType {
 		case "push":
 			query = query.Where("event_type = ?", models.EventRepositoryPush)
-		case "issues":
-			query = query.Where("event_type = ?", models.EventRepositoryIssue)
+
 		case "pull_request":
 			query = query.Where("event_type = ?", models.EventRepositoryPullRequest)
 		}
@@ -467,8 +465,7 @@ func (h *ActivityHandlers) eventTypeToActivityType(eventType models.EventType) s
 	switch eventType {
 	case models.EventRepositoryPush:
 		return "push"
-	case models.EventRepositoryIssue:
-		return "issues"
+
 	case models.EventRepositoryPullRequest:
 		return "pull_request"
 	case models.EventRepositoryFork:
@@ -499,13 +496,7 @@ func (h *ActivityHandlers) buildActivityPayload(event models.AnalyticsEvent) gin
 				},
 			},
 		}
-	case models.EventRepositoryIssue:
-		payload["action"] = "opened" // Could be parsed from metadata
-		payload["issue"] = gin.H{
-			"id":    event.TargetID,
-			"title": "Issue title", // Would come from metadata
-			"state": "open",
-		}
+
 	case models.EventRepositoryPullRequest:
 		payload["action"] = "opened"
 		payload["pull_request"] = gin.H{

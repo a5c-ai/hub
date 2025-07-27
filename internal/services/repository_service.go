@@ -46,7 +46,7 @@ type RepositoryService interface {
 	UpdateGitHook(ctx context.Context, hookID uuid.UUID, req UpdateGitHookRequest) (*models.GitHook, error)
 	DeleteGitHook(ctx context.Context, hookID uuid.UUID) error
 	GetGitHooks(ctx context.Context, repoID uuid.UUID) ([]*models.GitHook, error)
-	
+
 	// Repository templates
 	CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateTemplateRequest) (*models.RepositoryTemplate, error)
 	GetTemplates(ctx context.Context, filters TemplateFilters) ([]*models.RepositoryTemplate, error)
@@ -55,39 +55,39 @@ type RepositoryService interface {
 
 // CreateRepositoryRequest represents a request to create a repository
 type CreateRepositoryRequest struct {
-	OwnerID             uuid.UUID         `json:"owner_id"`
-	OwnerType           models.OwnerType  `json:"owner_type"`
-	Name                string            `json:"name"`
-	Description         string            `json:"description,omitempty"`
-	DefaultBranch       string            `json:"default_branch,omitempty"`
-	Visibility          models.Visibility `json:"visibility"`
-	IsTemplate          bool              `json:"is_template,omitempty"`
-	HasIssues           bool              `json:"has_issues"`
-	HasProjects         bool              `json:"has_projects"`
-	HasWiki             bool              `json:"has_wiki"`
-	HasDownloads        bool              `json:"has_downloads"`
-	AllowMergeCommit    bool              `json:"allow_merge_commit"`
-	AllowSquashMerge    bool              `json:"allow_squash_merge"`
-	AllowRebaseMerge    bool              `json:"allow_rebase_merge"`
-	DeleteBranchOnMerge bool              `json:"delete_branch_on_merge"`
-	AutoInit            bool              `json:"auto_init"` // Initialize with README
+	OwnerID       uuid.UUID         `json:"owner_id"`
+	OwnerType     models.OwnerType  `json:"owner_type"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description,omitempty"`
+	DefaultBranch string            `json:"default_branch,omitempty"`
+	Visibility    models.Visibility `json:"visibility"`
+	IsTemplate    bool              `json:"is_template,omitempty"`
+	HasIssues     bool              `json:"has_issues"`
+
+	HasWiki             bool `json:"has_wiki"`
+	HasDownloads        bool `json:"has_downloads"`
+	AllowMergeCommit    bool `json:"allow_merge_commit"`
+	AllowSquashMerge    bool `json:"allow_squash_merge"`
+	AllowRebaseMerge    bool `json:"allow_rebase_merge"`
+	DeleteBranchOnMerge bool `json:"delete_branch_on_merge"`
+	AutoInit            bool `json:"auto_init"` // Initialize with README
 }
 
 // UpdateRepositoryRequest represents a request to update a repository
 type UpdateRepositoryRequest struct {
-	Name                *string            `json:"name,omitempty"`
-	Description         *string            `json:"description,omitempty"`
-	DefaultBranch       *string            `json:"default_branch,omitempty"`
-	Visibility          *models.Visibility `json:"visibility,omitempty"`
-	IsTemplate          *bool              `json:"is_template,omitempty"`
-	HasIssues           *bool              `json:"has_issues,omitempty"`
-	HasProjects         *bool              `json:"has_projects,omitempty"`
-	HasWiki             *bool              `json:"has_wiki,omitempty"`
-	HasDownloads        *bool              `json:"has_downloads,omitempty"`
-	AllowMergeCommit    *bool              `json:"allow_merge_commit,omitempty"`
-	AllowSquashMerge    *bool              `json:"allow_squash_merge,omitempty"`
-	AllowRebaseMerge    *bool              `json:"allow_rebase_merge,omitempty"`
-	DeleteBranchOnMerge *bool              `json:"delete_branch_on_merge,omitempty"`
+	Name          *string            `json:"name,omitempty"`
+	Description   *string            `json:"description,omitempty"`
+	DefaultBranch *string            `json:"default_branch,omitempty"`
+	Visibility    *models.Visibility `json:"visibility,omitempty"`
+	IsTemplate    *bool              `json:"is_template,omitempty"`
+	HasIssues     *bool              `json:"has_issues,omitempty"`
+
+	HasWiki             *bool `json:"has_wiki,omitempty"`
+	HasDownloads        *bool `json:"has_downloads,omitempty"`
+	AllowMergeCommit    *bool `json:"allow_merge_commit,omitempty"`
+	AllowSquashMerge    *bool `json:"allow_squash_merge,omitempty"`
+	AllowRebaseMerge    *bool `json:"allow_rebase_merge,omitempty"`
+	DeleteBranchOnMerge *bool `json:"delete_branch_on_merge,omitempty"`
 }
 
 // ForkRequest represents a request to fork a repository
@@ -151,8 +151,8 @@ type TemplateFilters struct {
 	Category   string `json:"category,omitempty"`
 	IsFeatured *bool  `json:"is_featured,omitempty"`
 	IsPublic   *bool  `json:"is_public,omitempty"`
-	Search     string `json:"search,omitempty"` // Search in name and description
-	Sort       string `json:"sort,omitempty"`   // name, created, usage_count
+	Search     string `json:"search,omitempty"`    // Search in name and description
+	Sort       string `json:"sort,omitempty"`      // name, created, usage_count
 	Direction  string `json:"direction,omitempty"` // asc, desc
 	Page       int    `json:"page,omitempty"`
 	PerPage    int    `json:"per_page,omitempty"`
@@ -206,15 +206,14 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 
 	// Create repository model
 	repo := &models.Repository{
-		OwnerID:             req.OwnerID,
-		OwnerType:           req.OwnerType,
-		Name:                req.Name,
-		Description:         req.Description,
-		DefaultBranch:       req.DefaultBranch,
-		Visibility:          req.Visibility,
-		IsTemplate:          req.IsTemplate,
-		HasIssues:           req.HasIssues,
-		HasProjects:         req.HasProjects,
+		OwnerID:       req.OwnerID,
+		OwnerType:     req.OwnerType,
+		Name:          req.Name,
+		Description:   req.Description,
+		DefaultBranch: req.DefaultBranch,
+		Visibility:    req.Visibility,
+		IsTemplate:    req.IsTemplate,
+
 		HasWiki:             req.HasWiki,
 		HasDownloads:        req.HasDownloads,
 		AllowMergeCommit:    req.AllowMergeCommit,
@@ -384,9 +383,7 @@ func (s *repositoryService) Update(ctx context.Context, id uuid.UUID, req Update
 	if req.HasIssues != nil {
 		updates["has_issues"] = *req.HasIssues
 	}
-	if req.HasProjects != nil {
-		updates["has_projects"] = *req.HasProjects
-	}
+
 	if req.HasWiki != nil {
 		updates["has_wiki"] = *req.HasWiki
 	}
@@ -790,17 +787,16 @@ func (s *repositoryService) Fork(ctx context.Context, id uuid.UUID, req ForkRequ
 
 	// Create fork repository in database
 	fork := &models.Repository{
-		OwnerID:             req.OwnerID,
-		OwnerType:           req.OwnerType,
-		Name:                forkName,
-		Description:         sourceRepo.Description,
-		DefaultBranch:       sourceRepo.DefaultBranch,
-		Visibility:          sourceRepo.Visibility,
-		IsFork:              true,
-		ParentID:            &sourceRepo.ID,
-		IsTemplate:          false, // Forks cannot be templates
-		HasIssues:           sourceRepo.HasIssues,
-		HasProjects:         sourceRepo.HasProjects,
+		OwnerID:       req.OwnerID,
+		OwnerType:     req.OwnerType,
+		Name:          forkName,
+		Description:   sourceRepo.Description,
+		DefaultBranch: sourceRepo.DefaultBranch,
+		Visibility:    sourceRepo.Visibility,
+		IsFork:        true,
+		ParentID:      &sourceRepo.ID,
+		IsTemplate:    false, // Forks cannot be templates
+
 		HasWiki:             sourceRepo.HasWiki,
 		HasDownloads:        sourceRepo.HasDownloads,
 		AllowMergeCommit:    sourceRepo.AllowMergeCommit,
@@ -836,9 +832,9 @@ func (s *repositoryService) Fork(ctx context.Context, id uuid.UUID, req ForkRequ
 
 func (s *repositoryService) Transfer(ctx context.Context, id uuid.UUID, req TransferRequest) error {
 	s.logger.WithFields(logrus.Fields{
-		"repo_id":          id,
-		"new_owner_id":     req.NewOwnerID,
-		"new_owner_type":   req.NewOwnerType,
+		"repo_id":        id,
+		"new_owner_id":   req.NewOwnerID,
+		"new_owner_type": req.NewOwnerType,
 	}).Info("Transferring repository")
 
 	// Get the repository
@@ -905,9 +901,9 @@ func (s *repositoryService) Transfer(ctx context.Context, id uuid.UUID, req Tran
 	}
 
 	s.logger.WithFields(logrus.Fields{
-		"repo_id":      id,
-		"old_path":     oldRepoPath,
-		"new_path":     newRepoPath,
+		"repo_id":  id,
+		"old_path": oldRepoPath,
+		"new_path": newRepoPath,
 	}).Info("Repository transferred successfully")
 
 	return nil
@@ -956,7 +952,7 @@ func (s *repositoryService) SyncCommits(ctx context.Context, repoID uuid.UUID) e
 		batch := allCommits[i:end]
 		if err := s.syncCommitBatch(ctx, repoID, batch); err != nil {
 			s.logger.WithError(err).WithFields(logrus.Fields{
-				"repo_id":    repoID,
+				"repo_id":     repoID,
 				"batch_start": i,
 				"batch_end":   end,
 			}).Error("Failed to sync commit batch")
@@ -964,7 +960,7 @@ func (s *repositoryService) SyncCommits(ctx context.Context, repoID uuid.UUID) e
 		}
 
 		s.logger.WithFields(logrus.Fields{
-			"repo_id":    repoID,
+			"repo_id":     repoID,
 			"batch_start": i,
 			"batch_end":   end,
 		}).Debug("Successfully synced commit batch")
@@ -1542,8 +1538,8 @@ func (s *repositoryService) UseTemplate(ctx context.Context, templateID uuid.UUI
 	}
 
 	s.logger.WithFields(logrus.Fields{
-		"new_repo_id":  newRepo.ID,
-		"template_id":  templateID,
+		"new_repo_id": newRepo.ID,
+		"template_id": templateID,
 	}).Info("Repository created from template successfully")
 
 	return newRepo, nil

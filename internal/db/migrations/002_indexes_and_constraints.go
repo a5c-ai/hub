@@ -70,42 +70,11 @@ func migrate002Up(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_branch_protection_repo_id ON branch_protection_rules(repository_id)",
 		"CREATE INDEX IF NOT EXISTS idx_branch_protection_pattern ON branch_protection_rules(pattern)",
 
-		// Release indexes
-		"CREATE INDEX IF NOT EXISTS idx_releases_repo_id ON releases(repository_id)",
-		"CREATE INDEX IF NOT EXISTS idx_releases_user_id ON releases(user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_releases_tag_name ON releases(tag_name)",
-		"CREATE INDEX IF NOT EXISTS idx_releases_published_at ON releases(published_at)",
-		"CREATE INDEX IF NOT EXISTS idx_releases_draft ON releases(draft)",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_releases_repo_tag ON releases(repository_id, tag_name)",
-
-		// Milestone indexes
-		"CREATE INDEX IF NOT EXISTS idx_milestones_repo_id ON milestones(repository_id)",
-		"CREATE INDEX IF NOT EXISTS idx_milestones_state ON milestones(state)",
-		"CREATE INDEX IF NOT EXISTS idx_milestones_due_on ON milestones(due_on)",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_milestones_repo_number ON milestones(repository_id, number)",
-
 		// Label indexes
 		"CREATE INDEX IF NOT EXISTS idx_labels_repo_id ON labels(repository_id)",
 		"CREATE INDEX IF NOT EXISTS idx_labels_name ON labels(name)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_labels_repo_name ON labels(repository_id, name)",
 
-		// Issue indexes
-		"CREATE INDEX IF NOT EXISTS idx_issues_repo_id ON issues(repository_id)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_user_id ON issues(user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_assignee_id ON issues(assignee_id)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_milestone_id ON issues(milestone_id)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_state ON issues(state)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_created_at ON issues(created_at)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_updated_at ON issues(updated_at)",
-		"CREATE INDEX IF NOT EXISTS idx_issues_closed_at ON issues(closed_at)",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_repo_number ON issues(repository_id, number)",
-
-		// Issue label indexes
-		"CREATE INDEX IF NOT EXISTS idx_issue_labels_issue_id ON issue_labels(issue_id)",
-		"CREATE INDEX IF NOT EXISTS idx_issue_labels_label_id ON issue_labels(label_id)",
-
-		// Comment indexes
-		"CREATE INDEX IF NOT EXISTS idx_comments_issue_id ON comments(issue_id)",
 		"CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at)",
 
@@ -170,23 +139,14 @@ func migrate002Down(db *gorm.DB) error {
 		"DROP INDEX IF EXISTS idx_branches_repo_name",
 		"DROP INDEX IF EXISTS idx_branch_protection_repo_id",
 		"DROP INDEX IF EXISTS idx_branch_protection_pattern",
-		"DROP INDEX IF EXISTS idx_releases_repo_id",
-		"DROP INDEX IF EXISTS idx_releases_user_id",
-		"DROP INDEX IF EXISTS idx_releases_tag_name",
-		"DROP INDEX IF EXISTS idx_releases_published_at",
-		"DROP INDEX IF EXISTS idx_releases_draft",
-		"DROP INDEX IF EXISTS idx_releases_repo_tag",
-		"DROP INDEX IF EXISTS idx_milestones_repo_id",
-		"DROP INDEX IF EXISTS idx_milestones_state",
-		"DROP INDEX IF EXISTS idx_milestones_due_on",
-		"DROP INDEX IF EXISTS idx_milestones_repo_number",
+
 		"DROP INDEX IF EXISTS idx_labels_repo_id",
 		"DROP INDEX IF EXISTS idx_labels_name",
 		"DROP INDEX IF EXISTS idx_labels_repo_name",
 		"DROP INDEX IF EXISTS idx_issues_repo_id",
 		"DROP INDEX IF EXISTS idx_issues_user_id",
 		"DROP INDEX IF EXISTS idx_issues_assignee_id",
-		"DROP INDEX IF EXISTS idx_issues_milestone_id",
+
 		"DROP INDEX IF EXISTS idx_issues_state",
 		"DROP INDEX IF EXISTS idx_issues_created_at",
 		"DROP INDEX IF EXISTS idx_issues_updated_at",

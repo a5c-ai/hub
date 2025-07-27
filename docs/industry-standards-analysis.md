@@ -86,11 +86,7 @@ The findings provide a foundation for understanding what constitutes essential, 
 - **Review Requirements**: Mandatory reviews before merge with dismissal policies
 - **Code Quality Integration**: Automated code quality and security scanning results
 
-#### Issue Tracking and Project Management
-- **Issue Management**: Create, assign, label, milestone, and close issues
-- **Issue Templates**: Standardized issue creation with required fields
-- **Project Boards**: Kanban-style project management with automation
-- **Milestones**: Release planning and progress tracking
+
 - **Labels and Tags**: Categorization and filtering system
 - **Cross-linking**: Issues, PRs, and commits interconnection
 
@@ -281,7 +277,7 @@ These features are considered baseline requirements for any git hosting platform
 - Git repository hosting with full protocol compatibility
 - Web-based repository management and file operations
 - Pull request/merge request workflows with code review
-- Issue tracking with basic project management
+
 - User and organization management with access controls
 - Basic CI/CD integration with popular systems
 - REST API with comprehensive coverage
@@ -301,7 +297,7 @@ These features are necessary to compete effectively with established platforms:
 
 #### Enhanced Collaboration
 - Advanced code review features with inline suggestions
-- Project boards and milestone management
+
 - Repository templates and organizational policies
 - Team-based permissions and CODEOWNERS support
 - Cross-repository linking and dependency tracking

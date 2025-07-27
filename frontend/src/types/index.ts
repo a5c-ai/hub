@@ -72,30 +72,7 @@ export interface PullRequest {
   merged_by?: User;
 }
 
-export interface Issue {
-  id: string;
-  repository_id: string;
-  number: number;
-  title: string;
-  body: string;
-  user_id?: string;
-  assignee_id?: string;
-  milestone_id?: string;
-  state: 'open' | 'closed';
-  state_reason?: string;
-  locked: boolean;
-  comments_count: number;
-  closed_at?: string;
-  created_at: string;
-  updated_at: string;
-  user?: User;
-  assignee?: User;
-  assignees?: User[];
-  labels: Label[];
-  milestone?: Milestone;
-  repository?: Repository;
-  pull_request?: PullRequest;
-}
+
 
 export interface Comment {
   id: string;

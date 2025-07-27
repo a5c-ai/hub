@@ -165,7 +165,6 @@ src/
 **Search Features**:
 - Repository and organization search
 - Code search with syntax highlighting
-- Issue and pull request search
 - Advanced filtering and faceting
 - Real-time indexing
 
@@ -490,7 +489,6 @@ modules/
 
 ### Phase 2: Core Features (Months 7-12)
 - **Pull Requests**: Complete PR workflow with reviews
-- **Issue Tracking**: Issue management and project boards
 - **Team Management**: Organizations, teams, and permissions
 - **Search**: Code search and repository discovery
 - **Webhooks**: Event system and external integrations

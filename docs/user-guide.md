@@ -8,7 +8,7 @@ Welcome to Hub, a powerful self-hosted git hosting service designed to provide e
 - [Repository Management](#repository-management)
 - [Working with Git](#working-with-git)
 - [Collaboration Features](#collaboration-features)
-- [Issues and Project Management](#issues-and-project-management)
+
 - [Pull Requests and Code Review](#pull-requests-and-code-review)
 - [CI/CD and Automation](#cicd-and-automation)
 - [Team and Organization Management](#team-and-organization-management)
@@ -199,59 +199,6 @@ git push origin main
 - Repository-specific access
 - Permission inheritance from parent teams
 
-## Issues and Project Management
-
-### Creating Issues
-
-#### Basic Issue Creation
-1. Navigate to repository → "Issues" tab
-2. Click "New Issue"
-3. Fill in issue details:
-   - **Title**: Clear, descriptive summary
-   - **Description**: Detailed problem description
-   - **Labels**: Categorize the issue
-   - **Assignees**: Assign team members
-   - **Milestone**: Link to project milestone
-   - **Projects**: Add to project boards
-
-#### Issue Templates
-- Use predefined templates for consistency
-- Bug reports, feature requests, documentation
-- Custom fields and validation
-
-### Managing Issues
-
-#### Issue States
-- **Open**: Active issues requiring attention
-- **Closed**: Resolved or won't-fix issues
-- **Drafts**: Work-in-progress issues
-
-#### Labels and Organization
-- **Priority**: High, Medium, Low
-- **Type**: Bug, Enhancement, Documentation
-- **Status**: In Progress, Blocked, Ready for Review
-- **Custom labels**: Team-specific categorization
-
-#### Linking and References
-- Link issues to pull requests
-- Reference commits and other issues
-- Cross-repository issue linking
-
-### Project Boards
-
-#### Kanban Boards
-1. Go to repository → "Projects" tab
-2. Create new project board
-3. Add columns (To Do, In Progress, Done)
-4. Add issues and pull requests as cards
-5. Drag cards between columns
-
-#### Milestone Management
-1. Navigate to "Issues" → "Milestones"
-2. Create milestone with due date
-3. Assign issues to milestone
-4. Track progress and completion
-
 ## Pull Requests and Code Review
 
 ### Creating Pull Requests
@@ -266,7 +213,7 @@ git push origin main
    - **Description**: Detailed explanation
    - **Reviewers**: Request code reviews
    - **Labels**: Categorize the PR
-   - **Projects**: Link to project boards
+
 
 #### Draft Pull Requests
 - Create work-in-progress PRs

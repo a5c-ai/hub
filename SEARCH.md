@@ -8,7 +8,7 @@ The search system provides advanced full-text search capabilities across all con
 
 - **Users**: Search by username, full name, bio, company, location
 - **Repositories**: Search by name, description, language, topics
-- **Issues**: Search by title, body, labels, assignees
+
 - **Commits**: Search by message, author, committer
 - **Organizations**: Search by name, description, location
 - **Code**: Search within repository file contents (requires Elasticsearch)
@@ -91,7 +91,7 @@ GET /api/v1/search?q=query&type=all&page=1&per_page=30
 ### Type-Specific Search
 ```
 GET /api/v1/search/repositories?q=query&language=go&sort=stars
-GET /api/v1/search/issues?q=query&state=open&labels=bug
+
 GET /api/v1/search/users?q=query&sort=followers
 GET /api/v1/search/commits?q=query&sort=author-date
 GET /api/v1/search/code?q=query&language=go&repo=uuid
@@ -99,7 +99,7 @@ GET /api/v1/search/code?q=query&language=go&repo=uuid
 
 ### Repository-Specific Search
 ```
-GET /api/v1/repositories/:owner/:repo/search?q=query&type=issues
+
 ```
 
 ## Search Features
@@ -117,7 +117,7 @@ The search supports various query types:
 ### Filters
 
 - **Repository visibility**: `public`, `private`, `internal`
-- **Issue state**: `open`, `closed`
+
 - **Programming language**: `go`, `javascript`, `python`, etc.
 - **Date ranges**: `created:>2023-01-01`
 - **User/organization**: `user:username`, `org:orgname`
@@ -137,7 +137,7 @@ Documents are automatically indexed when:
 
 - Users are created or updated
 - Repositories are created, updated, or deleted
-- Issues are created, updated, or closed
+
 - Commits are pushed to repositories
 - Organizations are created or updated
 

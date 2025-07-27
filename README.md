@@ -1,6 +1,6 @@
 # Hub - Self-Hosted Git Hosting Service
 
-[![Build Status](https://github.com/a5c-ai/hub/workflows/CI/badge.svg)](https://github.com/a5c-ai/hub/actions)
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/a5c-ai/hub)](https://goreportcard.com/report/github.com/a5c-ai/hub)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docker Pulls](https://img.shields.io/docker/pulls/a5c-ai/hub)](https://hub.docker.com/r/a5c-ai/hub)
@@ -16,29 +16,22 @@ Hub is a powerful, self-hosted Git hosting service designed to provide enterpris
 - **Large File Support**: Git LFS integration with configurable storage backends
 - **Repository Templates**: Standardized project initialization with parameterized templates
 
-### Collaboration & Project Management
+### Collaboration
 - **Pull Requests**: Comprehensive code review workflows with approval requirements
-- **Issue Tracking**: Advanced issue management with custom fields and automation
-- **Project Boards**: Kanban-style project management with milestone tracking
 - **Team Management**: Hierarchical organizations with granular permission control
 - **Code Review**: Line-by-line commenting, suggestions, and review states
 
-### CI/CD & Automation
-- **GitHub Actions Compatible**: Complete CI/CD system with GitHub Actions compatibility and real-time log streaming
-- **Advanced Runner Management**: Multi-level runners (repository, organization, global) with Kubernetes execution
-- **Scalable Job Queue System**: Redis-based distributed job queue for processing 1,000+ parallel CI/CD jobs with automatic failover to database
-- **Comprehensive Artifact Management**: Multi-backend artifact storage (filesystem, Azure Blob, S3) with retention policies, automated cleanup, and secure access
-- **Real-time Build Monitoring**: Server-sent events for live log streaming and build status updates
+
+
 - **Comprehensive Webhooks**: Advanced webhook system with HMAC verification and trigger evaluation
 - **Branch Protection Rules**: Complete branch protection system with required status checks, PR reviews, admin enforcement, and pattern matching
-- **Status Checks**: Build status integration with merge protection
-- **Advanced Triggers**: Custom events and sophisticated automation rules
+
 
 ### Enterprise Features
 - **Advanced Authentication**: Complete multi-factor authentication with TOTP, SMS, WebAuthn/FIDO2, backup codes, and email notifications
 - **Enhanced Single Sign-On**: SAML 2.0, OpenID Connect (OIDC) with automatic organization assignment, LDAP, Active Directory, and OAuth integration
 - **Secure Session Management**: Refresh token validation, token blacklisting, OAuth state validation, and external team synchronization
-- **Advanced Search**: Elasticsearch-powered search across repositories, code, issues, and users with PostgreSQL fallback
+- **Advanced Search**: Elasticsearch-powered search across repositories, code, and users with PostgreSQL fallback
 - **Comprehensive Analytics**: Real-time analytics for users, organizations, repositories with performance metrics, usage statistics, and data export (JSON, CSV, XLSX)
 - **Organization Management**: Custom roles, policy enforcement, team hierarchies, and comprehensive analytics
 - **Complete Email System**: SMTP-configurable email service with MFA setup notifications, password reset, and professional templates
@@ -69,7 +62,7 @@ Hub is built with a modern, cloud-native architecture:
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Load Balancer │    │   Git Storage   │    │   CI/CD Engine  │
-│   (NGINX/ALB)   │    │   (Bare Repos)  │    │   (Runners)     │
+│   (NGINX/ALB)   │    │   (Bare Repos)  │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -146,9 +139,9 @@ terraform apply
 ### Feature Documentation
 - **[Authentication System](docs/authentication.md)** - Enterprise authentication, MFA, SSO, session management, and LDAP
 - **[Advanced Search](docs/search.md)** - Elasticsearch integration and search capabilities
-- **[CI/CD Actions](docs/cicd-actions.md)** - GitHub Actions compatible CI/CD with Redis job queue system
+
 - **[Analytics System](docs/analytics.md)** - Comprehensive real-time analytics with data export capabilities
-- **[Artifact Storage](docs/artifact-storage.md)** - Multi-backend artifact management with retention policies
+
 - **[Organization Management](docs/organization-management.md)** - Advanced organization features and policies
 - **[Mobile & PWA](docs/mobile-pwa.md)** - Progressive Web App and mobile optimization
 
@@ -264,7 +257,7 @@ STORAGE_BACKEND=local  # local, s3, azure_blob
 # Features
 ENABLE_REGISTRATION=true
 ENABLE_ORGANIZATIONS=true
-ENABLE_ACTIONS=true
+
 
 # Redis Configuration (Job Queue)
 REDIS_ENABLED=true
@@ -399,7 +392,7 @@ docker scan hub/backend:latest
 Hub includes a powerful search system with Elasticsearch integration and PostgreSQL fallback:
 
 ### Search Features
-- **Global Search**: Search across all content types (users, repositories, issues, commits, organizations)
+- **Global Search**: Search across all content types (users, repositories, commits, organizations)
 - **Code Search**: Search within repository files with syntax highlighting
 - **Advanced Filters**: Filter by language, visibility, state, labels, dates, and more
 - **Fuzzy Matching**: Find content even with typos or partial matches
@@ -455,32 +448,7 @@ curl "/api/v1/repos/{owner}/{repo}/analytics"
 curl -H "Authorization: Bearer {token}" "/api/v1/analytics/export?format=csv"
 ```
 
-## 🔧 Artifact Management
 
-Complete artifact storage and management system for CI/CD workflows:
-
-### Artifact Features
-- **Multi-Backend Support**: Filesystem, Azure Blob Storage, and S3-compatible storage
-- **Lifecycle Management**: Automated retention policies and cleanup
-- **Secure Access**: Authentication-protected upload/download with proper streaming
-- **Metadata Storage**: Comprehensive artifact information and statistics
-- **Build Log Storage**: Store and retrieve job logs with search capabilities
-
-### API Endpoints
-```bash
-# List artifacts for a workflow run
-curl "/api/v1/repos/{owner}/{repo}/actions/runs/{runId}/artifacts"
-
-# Upload artifact
-curl -X POST "/api/v1/repos/{owner}/{repo}/actions/runs/{runId}/artifacts" \
-  -H "Content-Type: multipart/form-data" -F "artifact=@build.zip"
-
-# Download artifact
-curl "/api/v1/repos/{owner}/{repo}/actions/artifacts/{artifactId}/download"
-
-# Delete artifact
-curl -X DELETE "/api/v1/repos/{owner}/{repo}/actions/artifacts/{artifactId}"
-```
 
 ## 🛡️ Branch Protection
 
@@ -629,7 +597,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## 🆘 Support
 
 ### Community Support
-- **GitHub Issues**: [Report bugs and request features](https://github.com/a5c-ai/hub/issues)
+- **GitHub Repository**: [Visit our repository](https://github.com/a5c-ai/hub)
 - **GitHub Discussions**: [Community discussions and Q&A](https://github.com/a5c-ai/hub/discussions)
 - **Documentation**: [Comprehensive guides and API docs](https://docs.hub.a5c.ai)
 
@@ -645,10 +613,10 @@ Contact: [enterprise@a5c.ai](mailto:enterprise@a5c.ai)
 ### Recently Completed ✅
 - [x] **Advanced Search System**: Elasticsearch integration with code search and PostgreSQL fallback
 - [x] **Enterprise Authentication**: Complete MFA, SAML, LDAP, and OAuth integration with enhanced session management
-- [x] **CI/CD Actions System**: GitHub Actions compatible CI/CD with real-time monitoring
-- [x] **Scalable Job Queue System**: Redis-based distributed job queue with database fallback for processing 1,000+ parallel jobs
+
+
 - [x] **Comprehensive Analytics Backend**: Real-time user, organization, and repository analytics with performance metrics and data export
-- [x] **Multi-Backend Artifact Storage**: Complete artifact management system with filesystem, Azure Blob, and S3 support
+
 - [x] **Branch Protection Rules**: Full branch protection implementation with status checks, PR reviews, and pattern matching
 - [x] **Complete Email Service**: SMTP-configurable email system with MFA notifications and professional templates
 - [x] **Enhanced Authentication Backend**: Refresh token management, token blacklisting, OIDC organization assignment, and external team sync
@@ -658,7 +626,7 @@ Contact: [enterprise@a5c.ai](mailto:enterprise@a5c.ai)
 ### Version 1.1 (Q2 2025)
 - [ ] Container registry integration
 - [ ] AI-powered code review assistance
-- [ ] Advanced workflow automation with custom triggers
+
 - [ ] Package registry integration
 
 ### Version 1.2 (Q3 2025)
@@ -677,7 +645,6 @@ Contact: [enterprise@a5c.ai](mailto:enterprise@a5c.ai)
 
 ![GitHub stars](https://img.shields.io/github/stars/a5c-ai/hub?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/a5c-ai/hub?style=social)
-![GitHub issues](https://img.shields.io/github/issues/a5c-ai/hub)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/a5c-ai/hub)
 
 ### Community

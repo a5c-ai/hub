@@ -30,12 +30,6 @@ func migrate001Up(db *gorm.DB) error {
 		&models.RepositoryPermission{},
 		&models.Branch{},
 		&models.BranchProtectionRule{},
-		&models.Release{},
-		&models.Milestone{},
-		&models.Label{},
-		&models.Issue{},
-		&models.IssueLabel{},
-		&models.Comment{},
 		&models.PullRequest{},
 	)
 }
@@ -44,12 +38,6 @@ func migrate001Down(db *gorm.DB) error {
 	// Drop tables in reverse order
 	return db.Migrator().DropTable(
 		&models.PullRequest{},
-		&models.Comment{},
-		&models.IssueLabel{},
-		&models.Issue{},
-		&models.Label{},
-		&models.Milestone{},
-		&models.Release{},
 		&models.BranchProtectionRule{},
 		&models.Branch{},
 		&models.RepositoryPermission{},

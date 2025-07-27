@@ -44,13 +44,7 @@ func main() {
 	}
 
 	// Initialize search service
-	searchService := services.NewSearchService(database.DB, elasticsearchService, logger)
-
-	// Perform reindex
-	logger.Info("Starting reindex operation...")
-	if err := searchService.ReindexAll(); err != nil {
-		logger.WithError(err).Fatal("Reindex operation failed")
-	}
-
-	logger.Info("Reindex operation completed successfully")
+	// Reindex is no longer needed as we're using database-only search
+	logger.Info("Reindex operation is not applicable for database-only search")
+	logger.Info("Search is now performed directly on the database")
 }

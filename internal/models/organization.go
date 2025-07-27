@@ -279,7 +279,7 @@ type TemplateType string
 const (
 	TemplateTypeRepository TemplateType = "repository"
 	TemplateTypeProject    TemplateType = "project"
-	TemplateTypeWorkflow   TemplateType = "workflow"
+
 	TemplateTypeTeam       TemplateType = "team"
 )
 

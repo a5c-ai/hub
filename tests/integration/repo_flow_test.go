@@ -56,10 +56,9 @@ func TestRepositoryDataFlow(t *testing.T) {
 	// Create a new repository
 	repoName := fmt.Sprintf("test-repo-%d", time.Now().UnixNano())
 	createReq := map[string]interface{}{
-		"name":                   repoName,
-		"visibility":             "public",
-		"has_issues":             true,
-		"has_projects":           true,
+		"name":       repoName,
+		"visibility": "public",
+
 		"has_wiki":               true,
 		"has_downloads":          true,
 		"allow_merge_commit":     true,

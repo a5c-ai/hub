@@ -98,7 +98,7 @@ The Hub git hosting service uses PostgreSQL 15+ as its primary database with a c
 - Issue tracking with comprehensive metadata
 - Sequential numbering per repository
 - State management (open, closed) with reasons
-- Assignment and milestone support
+
 - Comment count tracking
 
 **comments**
@@ -112,8 +112,7 @@ The Hub git hosting service uses PostgreSQL 15+ as its primary database with a c
 - Merge statistics and status
 - Draft support and merge conflict detection
 
-**milestones**
-- Project milestone management
+
 - Due date tracking and completion status
 
 **labels**

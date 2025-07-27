@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import api from '@/lib/api';
 import { createErrorHandler } from '@/lib/utils';
-import WebhookTestingModal from '@/components/actions/WebhookTestingModal';
+
 
 interface Webhook {
   id: string;
@@ -414,16 +414,7 @@ export default function WebhooksPage() {
           </div>
         </Modal>
 
-        {/* Webhook Testing Modal */}
-        {testingWebhook && (
-          <WebhookTestingModal
-            webhook={testingWebhook}
-            open={!!testingWebhook}
-            onClose={() => setTestingWebhook(null)}
-            owner={owner}
-            repo={repo}
-          />
-        )}
+
       </div>
     </AppLayout>
   );

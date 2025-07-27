@@ -10,7 +10,6 @@ import (
 	"github.com/a5c-ai/hub/internal/git"
 	"github.com/a5c-ai/hub/internal/middleware"
 	"github.com/a5c-ai/hub/internal/services"
-	"github.com/a5c-ai/hub/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -36,12 +35,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)
 	branchService := services.NewBranchService(database.DB, gitService, repositoryService, logger)
 	pullRequestService := services.NewPullRequestService(database.DB, gitService, repositoryService, logger, repoBasePath)
-
-	// Initialize issue-related services
-	issueService := services.NewIssueService(database.DB, logger)
-	commentService := services.NewCommentService(database.DB, logger)
-	labelService := services.NewLabelService(database.DB, logger)
-	milestoneService := services.NewMilestoneService(database.DB, logger)
 
 	// Initialize organization services
 	activityService := services.NewActivityService(database.DB)
@@ -71,64 +64,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		panic(err)
 	}
 
-	// Initialize Actions services
-	workflowService := services.NewWorkflowService(database.DB, logger)
-	jobQueueService := services.NewJobQueueService(database.DB, redisService, logger)
-	runnerService := services.NewRunnerService(database.DB, logger)
-	logStreamingService := services.NewLogStreamingService(database.DB, logger)
-	jobExecutorService := services.NewJobExecutorService(database.DB, jobQueueService, runnerService, logger)
-	actionsEventService := services.NewActionsEventService(database.DB, workflowService, repositoryService, gitService, logger)
-	webhookService := services.NewWebhookService(database.DB, logger, actionsEventService)
-
-	// Initialize secret service with encryption key from config
-	secretService := services.NewSecretService(database.DB, logger, cfg.Security.EncryptionKey)
-
-	// Initialize artifact storage backend
-	storageConfig := storage.Config{
-		Backend: cfg.Storage.Artifacts.Backend,
-		Azure: storage.AzureConfig{
-			AccountName:   cfg.Storage.Artifacts.Azure.AccountName,
-			AccountKey:    cfg.Storage.Artifacts.Azure.AccountKey,
-			ContainerName: cfg.Storage.Artifacts.Azure.ContainerName,
-			EndpointURL:   cfg.Storage.Artifacts.Azure.EndpointURL,
-		},
-		S3: storage.S3Config{
-			Region:          cfg.Storage.Artifacts.S3.Region,
-			Bucket:          cfg.Storage.Artifacts.S3.Bucket,
-			AccessKeyID:     cfg.Storage.Artifacts.S3.AccessKeyID,
-			SecretAccessKey: cfg.Storage.Artifacts.S3.SecretAccessKey,
-			EndpointURL:     cfg.Storage.Artifacts.S3.EndpointURL,
-			UseSSL:          cfg.Storage.Artifacts.S3.UseSSL,
-		},
-		Filesystem: storage.FilesystemConfig{
-			BasePath: cfg.Storage.Artifacts.BasePath,
-		},
-	}
-
-	storageBackend, err := storage.NewBackend(storageConfig)
-	if err != nil {
-		logger.WithError(err).Fatal("Failed to initialize artifact storage backend")
-	}
-
-	// Initialize artifact service
-	artifactService := services.NewArtifactService(database.DB, logger, storageBackend, cfg.Storage.Artifacts.MaxSizeMB, cfg.Storage.Artifacts.RetentionDays)
-
-	// Set job executor and secret service on workflow service to avoid circular dependencies
-	// Set job executor on workflow service to avoid circular dependencies
-	workflowService.SetJobExecutor(jobExecutorService)
-	workflowService.SetSecretService(secretService)
-
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	searchHandlers := NewSearchHandlers(searchService, logger)
-	issueHandlers := NewIssueHandlers(issueService, commentService, labelService, milestoneService, repositoryService, logger)
-	commentHandlers := NewCommentHandlers(commentService, issueService, logger)
-	labelHandlers := NewLabelHandlers(labelService, repositoryService, logger)
-	milestoneHandlers := NewMilestoneHandlers(milestoneService, repositoryService, logger)
-	actionsHandlers := NewActionsHandlers(workflowService, runnerService, repositoryService, logStreamingService, webhookService, artifactService, gitService, logger)
-	webhooksHandlers := NewWebhooksHandlers(actionsEventService, logger)
+
 	userHandlers := NewUserHandlers(authService, database.DB, cfg, logger)
 	adminEmailHandlers := NewAdminEmailHandlers(database.DB, cfg, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
@@ -140,7 +81,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	analyticsHandlers := NewAnalyticsHandlers(analyticsService, logger, database.DB)
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
-	adminStorageHandlers := NewAdminStorageHandlers(artifactService, storageBackend, logger)
+
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -221,21 +162,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/repositories/:owner/:repo/contents/*path", repoHandlers.GetTree)
 		v1.GET("/repositories/:owner/:repo/info", repoHandlers.GetRepositoryInfo)
 
-		// Public issue endpoints (for public repos)
-		v1.GET("/repositories/:owner/:repo/issues", issueHandlers.ListIssues)
-		v1.GET("/repositories/:owner/:repo/issues/search", issueHandlers.SearchIssues)
-		v1.GET("/repositories/:owner/:repo/issues/:number", issueHandlers.GetIssue)
-		v1.GET("/repositories/:owner/:repo/issues/:number/comments", commentHandlers.ListComments)
-		v1.GET("/repositories/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.GetComment)
-		v1.GET("/repositories/:owner/:repo/labels", labelHandlers.ListLabels)
-		v1.GET("/repositories/:owner/:repo/labels/:name", labelHandlers.GetLabel)
-		v1.GET("/repositories/:owner/:repo/milestones", milestoneHandlers.ListMilestones)
-		v1.GET("/repositories/:owner/:repo/milestones/:number", milestoneHandlers.GetMilestone)
-
 		// Public search endpoints (for public content)
 		v1.GET("/search", searchHandlers.GlobalSearch)
 		v1.GET("/search/repositories", searchHandlers.SearchRepositories)
-		v1.GET("/search/issues", searchHandlers.SearchIssues)
+
 		v1.GET("/search/users", searchHandlers.SearchUsers)
 		v1.GET("/search/commits", searchHandlers.SearchCommits)
 		v1.GET("/search/code", searchHandlers.SearchCode)
@@ -250,15 +180,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.POST("/invitations/accept", orgController.AcceptInvitation)
 
 		// Webhook endpoints (no authentication required for system-level webhooks)
-		webhooks := v1.Group("/webhooks")
-		{
-			webhooks.POST("/push", webhooksHandlers.HandlePushWebhook)
-			webhooks.POST("/pull_request", webhooksHandlers.HandlePullRequestWebhook)
-			webhooks.POST("/issues", webhooksHandlers.HandleIssuesWebhook)
-			webhooks.POST("/release", webhooksHandlers.HandleReleaseWebhook)
-			webhooks.POST("/scheduled", webhooksHandlers.HandleScheduledWebhook)
-			webhooks.POST("/generic", webhooksHandlers.HandleGenericWebhook)
-		}
 
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
@@ -347,17 +268,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				}
 
 				// Storage admin endpoints
-				adminStorage := admin.Group("/storage")
-				{
-					adminStorage.GET("/config", adminStorageHandlers.GetStorageConfig)
-					adminStorage.PUT("/config", adminStorageHandlers.UpdateStorageConfig)
-					adminStorage.GET("/usage", adminStorageHandlers.GetStorageUsage)
-					adminStorage.GET("/retention", adminStorageHandlers.GetRetentionPolicy)
-					adminStorage.PUT("/retention", adminStorageHandlers.UpdateRetentionPolicy)
-					adminStorage.DELETE("/cleanup", adminStorageHandlers.ManualCleanup)
-					adminStorage.POST("/artifacts/batch-delete", adminStorageHandlers.BatchDeleteArtifacts)
-					adminStorage.GET("/health", adminStorageHandlers.GetStorageHealth)
-				}
+
 			}
 
 			// Protected repository endpoints
@@ -443,72 +354,6 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/pulls/:number/reviews", prHandlers.ListReviews)
 				repos.POST("/:owner/:repo/pulls/:number/comments", prHandlers.CreateReviewComment)
 				repos.GET("/:owner/:repo/pulls/:number/comments", prHandlers.ListReviewComments)
-
-				// Issue operations (require authentication)
-				repos.POST("/:owner/:repo/issues", issueHandlers.CreateIssue)
-				repos.PATCH("/:owner/:repo/issues/:number", issueHandlers.UpdateIssue)
-				repos.POST("/:owner/:repo/issues/:number/close", issueHandlers.CloseIssue)
-				repos.POST("/:owner/:repo/issues/:number/reopen", issueHandlers.ReopenIssue)
-				repos.POST("/:owner/:repo/issues/:number/lock", issueHandlers.LockIssue)
-				repos.POST("/:owner/:repo/issues/:number/unlock", issueHandlers.UnlockIssue)
-
-				// Comment operations (require authentication)
-				repos.POST("/:owner/:repo/issues/:number/comments", commentHandlers.CreateComment)
-				repos.PATCH("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.UpdateComment)
-				repos.DELETE("/:owner/:repo/issues/:number/comments/:comment_id", commentHandlers.DeleteComment)
-
-				// Label operations (require authentication)
-				repos.POST("/:owner/:repo/labels", labelHandlers.CreateLabel)
-				repos.PATCH("/:owner/:repo/labels/:name", labelHandlers.UpdateLabel)
-				repos.DELETE("/:owner/:repo/labels/:name", labelHandlers.DeleteLabel)
-
-				// Milestone operations (require authentication)
-				repos.POST("/:owner/:repo/milestones", milestoneHandlers.CreateMilestone)
-				repos.PATCH("/:owner/:repo/milestones/:number", milestoneHandlers.UpdateMilestone)
-				repos.DELETE("/:owner/:repo/milestones/:number", milestoneHandlers.DeleteMilestone)
-				repos.POST("/:owner/:repo/milestones/:number/close", milestoneHandlers.CloseMilestone)
-				repos.POST("/:owner/:repo/milestones/:number/reopen", milestoneHandlers.ReopenMilestone)
-
-				// Actions workflow operations (require authentication)
-				repos.GET("/:owner/:repo/actions/workflows", actionsHandlers.ListWorkflows)
-				repos.POST("/:owner/:repo/actions/workflows", actionsHandlers.CreateWorkflow)
-				repos.GET("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.GetWorkflow)
-				repos.PATCH("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.UpdateWorkflow)
-				repos.DELETE("/:owner/:repo/actions/workflows/:workflow_id", actionsHandlers.DeleteWorkflow)
-				repos.PUT("/:owner/:repo/actions/workflows/:workflow_id/enable", actionsHandlers.EnableWorkflow)
-				repos.PUT("/:owner/:repo/actions/workflows/:workflow_id/disable", actionsHandlers.DisableWorkflow)
-				repos.POST("/:owner/:repo/actions/workflows/:workflow_id/dispatches", actionsHandlers.DispatchWorkflow)
-
-				// Actions workflow run operations (require authentication)
-				repos.GET("/:owner/:repo/actions/runs", actionsHandlers.ListWorkflowRuns)
-				repos.GET("/:owner/:repo/actions/runs/:run_id", actionsHandlers.GetWorkflowRun)
-				repos.POST("/:owner/:repo/actions/runs/:run_id/cancel", actionsHandlers.CancelWorkflowRun)
-				repos.POST("/:owner/:repo/actions/runs/:run_id/rerun", actionsHandlers.RerunWorkflowRun)
-				repos.DELETE("/:owner/:repo/actions/runs/:run_id", actionsHandlers.DeleteWorkflowRun)
-
-				// Actions secret operations (require authentication)
-				repos.GET("/:owner/:repo/actions/secrets", actionsHandlers.ListSecrets)
-				repos.POST("/:owner/:repo/actions/secrets", actionsHandlers.CreateSecret)
-				repos.PUT("/:owner/:repo/actions/secrets/:secret_id", actionsHandlers.UpdateSecret)
-				repos.DELETE("/:owner/:repo/actions/secrets/:secret_id", actionsHandlers.DeleteSecret)
-
-				// Actions runner operations (require authentication)
-				repos.GET("/:owner/:repo/actions/runners", actionsHandlers.ListRunners)
-				repos.POST("/:owner/:repo/actions/runners/registration-token", actionsHandlers.CreateRunnerRegistrationToken)
-				repos.DELETE("/:owner/:repo/actions/runners/:runner_id", actionsHandlers.DeleteRunner)
-
-				// Actions job operations (require authentication)
-				repos.GET("/:owner/:repo/actions/jobs/:job_id/logs", actionsHandlers.GetJobLogs)
-
-				// Actions artifact operations (require authentication)
-				repos.GET("/:owner/:repo/actions/runs/:run_id/artifacts", actionsHandlers.ListArtifacts)
-				repos.POST("/:owner/:repo/actions/runs/:run_id/artifacts", actionsHandlers.UploadArtifact)
-				repos.GET("/:owner/:repo/actions/runs/:run_id/artifacts/:artifact_id", actionsHandlers.DownloadArtifact)
-				repos.GET("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.GetArtifact)
-				repos.DELETE("/:owner/:repo/actions/artifacts/:artifact_id", actionsHandlers.DeleteArtifact)
-
-				// Build log search operations (require authentication)
-				repos.GET("/:owner/:repo/actions/logs/search", adminStorageHandlers.SearchBuildLogs)
 
 				// Repository analytics endpoints (require authentication)
 				repos.GET("/:owner/:repo/analytics", analyticsHandlers.GetRepositoryAnalytics)

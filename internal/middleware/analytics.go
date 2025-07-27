@@ -18,7 +18,7 @@ func AnalyticsMiddleware(analyticsService services.AnalyticsService, logger *log
 	return func(c *gin.Context) {
 		// Start timing the request
 		startTime := time.Now()
-		
+
 		// Generate request ID if not present
 		requestID := c.GetHeader("X-Request-ID")
 		if requestID == "" {
@@ -40,7 +40,7 @@ func AnalyticsMiddleware(analyticsService services.AnalyticsService, logger *log
 // collectAnalyticsData collects and records analytics data for the request
 func collectAnalyticsData(c *gin.Context, analyticsService services.AnalyticsService, logger *logrus.Logger, requestID string, duration time.Duration) {
 	ctx := context.Background()
-	
+
 	// Extract request information
 	method := c.Request.Method
 	path := c.Request.URL.Path
@@ -48,7 +48,7 @@ func collectAnalyticsData(c *gin.Context, analyticsService services.AnalyticsSer
 	responseSize := int64(c.Writer.Size())
 	userAgent := c.GetHeader("User-Agent")
 	ipAddress := getClientIP(c)
-	
+
 	// Get user information if authenticated
 	var actorID *uuid.UUID
 	var sessionID string
@@ -118,7 +118,7 @@ func collectAnalyticsData(c *gin.Context, analyticsService services.AnalyticsSer
 func createAnalyticsEvent(c *gin.Context, requestID string, actorID, repositoryID, organizationID *uuid.UUID, ipAddress, userAgent, sessionID string, statusCode int) *models.AnalyticsEvent {
 	method := c.Request.Method
 	path := c.Request.URL.Path
-	
+
 	var eventType models.EventType
 	var targetType string
 	var targetID *uuid.UUID
@@ -131,78 +131,72 @@ func createAnalyticsEvent(c *gin.Context, requestID string, actorID, repositoryI
 		eventType = models.EventUserLogin
 		targetType = "user"
 		targetID = actorID
-		
+
 	case strings.HasPrefix(path, "/api/v1/auth/logout") && method == "POST":
 		eventType = models.EventUserLogout
 		targetType = "user"
 		targetID = actorID
-		
+
 	case strings.HasPrefix(path, "/api/v1/auth/register") && method == "POST":
 		eventType = models.EventUserRegistration
 		targetType = "user"
 		targetID = actorID
-		
+
 	// Repository events
 	case strings.Contains(path, "/repositories/") && strings.HasSuffix(path, ".git/git-receive-pack") && method == "POST":
 		eventType = models.EventRepositoryPush
 		targetType = "repository"
 		targetID = repositoryID
-		
+
 	case strings.Contains(path, "/repositories/") && strings.HasSuffix(path, ".git/git-upload-pack") && method == "POST":
 		eventType = models.EventRepositoryClone
 		targetType = "repository"
 		targetID = repositoryID
-		
+
 	case strings.HasPrefix(path, "/api/v1/repositories") && method == "POST":
 		eventType = models.EventRepositoryCreated
 		targetType = "repository"
 		targetID = repositoryID
-		
+
 	case strings.Contains(path, "/repositories/") && method == "DELETE":
 		eventType = models.EventRepositoryDeleted
 		targetType = "repository"
 		targetID = repositoryID
-		
+
 	case strings.Contains(path, "/pulls") && method == "POST":
 		eventType = models.EventRepositoryPullRequest
 		targetType = "repository"
 		targetID = repositoryID
 		metadata = map[string]interface{}{"action": "created"}
-		
-	case strings.Contains(path, "/issues") && method == "POST":
-		eventType = models.EventRepositoryIssue
-		targetType = "repository"
-		targetID = repositoryID
-		metadata = map[string]interface{}{"action": "created"}
-		
+
 	// Organization events
 	case strings.HasPrefix(path, "/api/v1/organizations") && method == "POST":
 		eventType = models.EventOrgCreated
 		targetType = "organization"
 		targetID = organizationID
-		
+
 	case strings.Contains(path, "/organizations/") && strings.Contains(path, "/members/") && method == "PUT":
 		eventType = models.EventOrgMemberAdded
 		targetType = "organization"
 		targetID = organizationID
-		
+
 	case strings.Contains(path, "/organizations/") && strings.Contains(path, "/members/") && method == "DELETE":
 		eventType = models.EventOrgMemberRemoved
 		targetType = "organization"
 		targetID = organizationID
-		
+
 	// API calls for analytics
 	case strings.HasPrefix(path, "/api/v1/") && method == "GET":
 		eventType = models.EventAPICall
 		targetType = "api"
 		metadata = map[string]interface{}{"endpoint": path, "method": method}
-		
+
 	// Page views (for non-API requests)
 	case !strings.HasPrefix(path, "/api/") && method == "GET":
 		eventType = models.EventPageView
 		targetType = "page"
 		metadata = map[string]interface{}{"page": path}
-		
+
 	default:
 		// Don't create event for untracked requests
 		return nil
@@ -249,7 +243,7 @@ func createAnalyticsEvent(c *gin.Context, requestID string, actorID, repositoryI
 // recordAPIMetrics records metrics for API usage
 func recordAPIMetrics(ctx context.Context, analyticsService services.AnalyticsService, method, path string, statusCode int, duration time.Duration, repositoryID, organizationID, userID *uuid.UUID) {
 	timestamp := time.Now()
-	
+
 	// Record response time metric
 	responseTimeMetric := &models.AnalyticsMetric{
 		Name:           "api_response_time",
@@ -262,7 +256,7 @@ func recordAPIMetrics(ctx context.Context, analyticsService services.AnalyticsSe
 		Period:         "hourly",
 		Tags:           `{"method":"` + method + `","path":"` + path + `","status":"` + string(rune(statusCode)) + `"}`,
 	}
-	
+
 	// Record request count metric
 	requestCountMetric := &models.AnalyticsMetric{
 		Name:           "api_request_count",
@@ -289,7 +283,7 @@ func recordAPIMetrics(ctx context.Context, analyticsService services.AnalyticsSe
 			Period:         "hourly",
 			Tags:           `{"method":"` + method + `","path":"` + path + `","status":"` + string(rune(statusCode)) + `"}`,
 		}
-		
+
 		go analyticsService.RecordMetric(ctx, errorRateMetric)
 	}
 
@@ -310,17 +304,17 @@ func getClientIP(c *gin.Context) string {
 		}
 		return strings.TrimSpace(clientIP)
 	}
-	
+
 	clientIP = c.GetHeader("X-Real-IP")
 	if clientIP != "" {
 		return clientIP
 	}
-	
+
 	clientIP = c.GetHeader("X-Client-IP")
 	if clientIP != "" {
 		return clientIP
 	}
-	
+
 	return c.ClientIP()
 }
 
@@ -338,10 +332,10 @@ func parseUserID(userID interface{}) (uuid.UUID, bool) {
 
 func extractRepositoryContext(path string) (*uuid.UUID, *uuid.UUID) {
 	// This is a simplified version - in a real implementation,
-	// you would need to parse the owner/repo from the path and 
+	// you would need to parse the owner/repo from the path and
 	// look up the actual repository and organization IDs from the database
-	
-	// For now, return nil - this would need to be implemented 
+
+	// For now, return nil - this would need to be implemented
 	// with proper path parsing and database lookups
 	return nil, nil
 }

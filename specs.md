@@ -13,7 +13,7 @@ Hub is a comprehensive, self-hosted git hosting service designed to provide ente
 - Complete data control and sovereignty through self-hosting
 - Cost efficiency without per-user licensing fees
 - Enhanced security with custom organizational policies
-- Unlimited customization for specific workflows
+- Unlimited customization for specific processes
 - Azure-native architecture with Terraform integration
 
 ---
@@ -28,7 +28,7 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 - **API Gateway**: Centralized request routing and authentication (Go + Gin)
 - **Authentication Service**: User authentication and authorization (OAuth2, SAML, LDAP)
 - **Repository Service**: Git repository management and operations (go-git integration)
-- **CI/CD Service**: Build and deployment pipeline management
+
 - **Notification Service**: Email, webhook, and push notification handling
 - **Search Service**: Code and repository search capabilities (Elasticsearch)
 - **Analytics Service**: Usage metrics and reporting
@@ -75,13 +75,13 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 #### Branch and Version Control
 - Branch protection rules with required reviews and status checks
 - Default branch configuration and merge strategies
-- Tag management with automated release generation
+- Tag management
 - Commit signing verification and status integration
 - Web-based file editing and directory management
 
 ### 2. Collaboration Features
 
-#### Pull Request Workflows
+#### Pull Requests
 **Core Capabilities**:
 - Pull request creation with templates and conflict detection
 - Inline code review with comments and suggestions
@@ -91,33 +91,16 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 - Integration with CI/CD systems for status checks
 
 **Advanced Features**:
-- Review scheduling and load balancing
-- AI-powered reviewer recommendations
 - Cross-repository pull requests
 - Pull request analytics and metrics
 
-#### Issue Tracking and Project Management
-- Issue creation with templates, labels, and assignments
-- Issue lifecycle management with customizable states
-- Project boards with Kanban-style management
-- Milestone tracking and progress reporting
-- Cross-repository issue linking and dependencies
 
-### 3. CI/CD and Automation
 
-#### Pipeline System
-**Architecture**:
-- YAML-based workflow configuration (GitHub Actions compatible)
-- Kubernetes-based job execution with ephemeral containers
-- Multi-architecture runner support (AMD64, ARM64)
-- Self-hosted and cloud runners with resource management
 
-**Features**:
-- Multiple trigger types (push, PR, schedule, manual, webhook)
-- Matrix builds across platforms and configurations
-- Artifact management with retention policies
-- Secret management with encryption and access controls
-- Build log storage with search and analytics
+
+
+
+
 
 #### Integration Capabilities
 - Status check integration with external systems
@@ -138,7 +121,7 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 **Access Control**:
 - Role-based access control with granular permissions
 - Team-based repository access management
-- Branch protection with approval workflows
+- Branch protection with approval requirements
 - Organization-wide policy enforcement
 - API token management with scoping and expiration
 
@@ -272,7 +255,7 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 
 #### Event Coverage
 - **Git Events**: Push, branch, tag creation/deletion
-- **Collaboration Events**: Pull requests, issues, reviews, comments
+- **Collaboration Events**: Pull requests, reviews, comments
 - **CI/CD Events**: Build start/completion, deployment status
 - **Security Events**: Authentication, permission changes
 - **Administrative Events**: User/organization management
@@ -321,7 +304,7 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 
 #### GitHub Migration Tools
 - **Repository Import**: Complete history and metadata preservation
-- **Issue Migration**: Issues, labels, milestones, comments
+
 - **Pull Request Migration**: PR history, reviews, discussions
 - **Team Structure**: Organization and team membership
 - **Integration Migration**: Webhooks and third-party configurations
@@ -329,7 +312,7 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 #### Data Preservation Standards
 - **Commit History**: Complete Git history with author attribution
 - **Branch Structure**: All branches, tags, and references
-- **Release Data**: Release notes, assets, and versioning
+
 - **Wiki Content**: Documentation and collaborative content
 - **User Relationships**: Followers, stars, and social connections
 
@@ -383,18 +366,16 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 - User authentication and basic access controls
 - Simple web interface for repository management
 - REST API with core functionality
-- Basic CI/CD pipeline for the platform itself
+
 
 ### Phase 2: Core Features (Months 7-12)  
 **Collaboration Platform**:
-- Complete pull request workflow with reviews
-- Issue tracking and project management
+- Complete pull request system with reviews
 - Team and organization management
 - Search functionality with Elasticsearch
 - Webhook system and external integrations
 
 **Key Deliverables**:
-- Full collaboration workflows
 - Advanced permission management
 - Code search and repository discovery
 - Integration with popular development tools
@@ -402,33 +383,27 @@ Hub employs a **microservices-based architecture** optimized for scalability, ma
 
 ### Phase 3: Enterprise Features (Months 13-18)
 **CI/CD and Advanced Features**:
-- Native CI/CD system with Kubernetes runners
+
 - Plugin architecture and marketplace
 - Advanced security features (SSO, compliance, audit)
 - Repository and organization analytics
-- Advanced customization and branding
 
 **Key Deliverables**:
 - Complete CI/CD platform
 - Enterprise authentication and compliance
 - Plugin marketplace and ecosystem
 - Advanced analytics dashboard
-- White-label customization capabilities
 
 ### Phase 4: Scale and Optimization (Months 19-24)
 **Platform Maturation**:
 - Multi-region deployment capabilities
 - Advanced enterprise integrations
-- AI-powered features and automation
 - Performance optimization and scaling
 - Community building and ecosystem growth
 
 **Key Deliverables**:
 - Global, highly available deployments
-- AI integration for code assistance
 - Advanced enterprise features
-- Community marketplace and ecosystem
-- Industry certifications and compliance
 
 ---
 

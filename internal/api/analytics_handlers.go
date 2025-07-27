@@ -306,14 +306,7 @@ func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 		Period:    period,
 	}
 
-	issueStats, err := h.analyticsService.GetRepositoryIssueStats(c.Request.Context(), repoID, filters)
-	if err != nil {
-		h.logger.WithError(err).Error("Failed to get repository issue stats")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get issue analytics"})
-		return
-	}
-
-	c.JSON(http.StatusOK, issueStats)
+	c.JSON(http.StatusOK, gin.H{"error": "Issue analytics not available"})
 }
 
 // GetRepositoryPulls handles GET /api/v1/repositories/:owner/:repo/analytics/pulls
@@ -1321,10 +1314,6 @@ func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uui
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commit stats: %w", err)
 	}
-
-	// Get user's issues count
-	var issueCount int64
-	h.db.WithContext(ctx).Model(&models.Issue{}).Where("user_id = ?", userID).Count(&issueCount)
 
 	// Get user's pull requests count
 	var prCount int64

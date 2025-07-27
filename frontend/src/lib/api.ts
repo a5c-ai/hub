@@ -389,71 +389,7 @@ export const searchApi = {
   },
 };
 
-// Issue API methods
-export const issueApi = {
-  // List issues
-  getIssues: (owner: string, repo: string, params?: {
-    state?: 'open' | 'closed';
-    sort?: 'created' | 'updated' | 'comments';
-    direction?: 'asc' | 'desc';
-    page?: number;
-    per_page?: number;
-    assignee?: string;
-    creator?: string;
-    milestone?: string;
-    labels?: string;
-    since?: string;
-  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/issues`, params),
 
-  // Search issues
-  searchIssues: (owner: string, repo: string, query: string, params?: {
-    state?: 'open' | 'closed';
-    sort?: 'created' | 'updated' | 'comments';
-    direction?: 'asc' | 'desc';
-    page?: number;
-    per_page?: number;
-  }) => apiClient.getPaginated(`/repositories/${owner}/${repo}/issues/search`, { q: query, ...params }),
-
-  // Get specific issue
-  getIssue: (owner: string, repo: string, number: number) =>
-    apiClient.get(`/repositories/${owner}/${repo}/issues/${number}`),
-
-  // Create issue
-  createIssue: (owner: string, repo: string, data: {
-    title: string;
-    body?: string;
-    assignee_id?: string;
-    milestone_id?: string;
-    label_ids?: string[];
-  }) => apiClient.post(`/repositories/${owner}/${repo}/issues`, data),
-
-  // Update issue
-  updateIssue: (owner: string, repo: string, number: number, data: {
-    title?: string;
-    body?: string;
-    state?: 'open' | 'closed';
-    state_reason?: string;
-    assignee_id?: string;
-    milestone_id?: string;
-    label_ids?: string[];
-  }) => apiClient.patch(`/repositories/${owner}/${repo}/issues/${number}`, data),
-
-  // Close issue
-  closeIssue: (owner: string, repo: string, number: number, reason?: string) =>
-    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/close`, { reason: reason || '' }),
-
-  // Reopen issue
-  reopenIssue: (owner: string, repo: string, number: number) =>
-    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/reopen`),
-
-  // Lock issue
-  lockIssue: (owner: string, repo: string, number: number, reason?: string) =>
-    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/lock`, { reason: reason || '' }),
-
-  // Unlock issue
-  unlockIssue: (owner: string, repo: string, number: number) =>
-    apiClient.post(`/repositories/${owner}/${repo}/issues/${number}/unlock`),
-};
 
 // Comment API methods
 export const commentApi = {

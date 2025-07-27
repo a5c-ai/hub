@@ -36,8 +36,6 @@ type User struct {
 	TeamMembers             []TeamMember             `json:"team_members,omitempty" gorm:"foreignKey:UserID"`
 	RepositoryCollaborators []RepositoryCollaborator `json:"repository_collaborators,omitempty" gorm:"foreignKey:UserID"`
 	Stars                   []Star                   `json:"stars,omitempty" gorm:"foreignKey:UserID"`
-	Issues                  []Issue                  `json:"issues,omitempty" gorm:"foreignKey:UserID"`
-	Comments                []Comment                `json:"comments,omitempty" gorm:"foreignKey:UserID"`
 }
 
 func (u *User) TableName() string {

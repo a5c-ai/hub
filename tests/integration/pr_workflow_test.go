@@ -14,9 +14,9 @@ import (
 	"time"
 )
 
-// TestIssuePRWorkflow verifies that issue creation, PR workflows,
+// TestPRWorkflow verifies that PR workflows
 // and related CI/CD triggers succeed end-to-end.
-func TestIssuePRWorkflow(t *testing.T) {
+func TestPRWorkflow(t *testing.T) {
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
@@ -65,48 +65,6 @@ func TestIssuePRWorkflow(t *testing.T) {
 		t.Fatalf("repo creation failed: %v", err)
 	}
 	resp.Body.Close()
-
-	// Create an issue
-	issueTitle := "Test Issue"
-	issueBody := "This is a test issue"
-	issueReq := map[string]string{"title": issueTitle, "body": issueBody}
-	data, _ = json.Marshal(issueReq)
-	issueURL := fmt.Sprintf("%s/api/v1/repositories/%s/%s/issues", baseURL, username, repoName)
-	req, _ = http.NewRequest("POST", issueURL, bytes.NewReader(data))
-	req.Header.Set("Authorization", "Bearer "+auth.AccessToken)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err = client.Do(req)
-	if err != nil {
-		t.Fatalf("issue creation failed: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("expected issue status 201, got %d: %s", resp.StatusCode, string(body))
-	}
-
-	// List issues
-	listURL := issueURL
-	resp, err = client.Get(listURL)
-	if err != nil {
-		t.Fatalf("list issues failed: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected list issues status: %d", resp.StatusCode)
-	}
-	var listResp struct {
-		Issues []struct {
-			Title string `json:"title"`
-		} `json:"issues"`
-		Total int `json:"total"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
-		t.Fatalf("failed to decode list issues response: %v", err)
-	}
-	if listResp.Total < 1 || listResp.Issues[0].Title != issueTitle {
-		t.Fatalf("issue list did not include created issue, got %+v", listResp)
-	}
 
 	// Create a pull request
 	prTitle := "Test Pull Request"

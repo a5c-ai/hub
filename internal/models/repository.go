@@ -39,18 +39,17 @@ type Repository struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	OwnerID             uuid.UUID  `json:"owner_id" gorm:"type:uuid;not null;index"`
-	OwnerType           OwnerType  `json:"owner_type" gorm:"type:varchar(50);not null;check:owner_type IN ('user','organization')"`
-	Name                string     `json:"name" gorm:"not null;size:255"`
-	Description         string     `json:"description" gorm:"type:text"`
-	DefaultBranch       string     `json:"default_branch" gorm:"default:'main';size:255"`
-	Visibility          Visibility `json:"visibility" gorm:"type:varchar(50);not null;check:visibility IN ('public','private','internal')"`
-	IsFork              bool       `json:"is_fork" gorm:"default:false"`
-	ParentID            *uuid.UUID `json:"parent_id" gorm:"type:uuid;index"`
-	IsTemplate          bool       `json:"is_template" gorm:"default:false"`
-	IsArchived          bool       `json:"is_archived" gorm:"default:false"`
-	HasIssues           bool       `json:"has_issues" gorm:"default:true"`
-	HasProjects         bool       `json:"has_projects" gorm:"default:true"`
+	OwnerID       uuid.UUID  `json:"owner_id" gorm:"type:uuid;not null;index"`
+	OwnerType     OwnerType  `json:"owner_type" gorm:"type:varchar(50);not null;check:owner_type IN ('user','organization')"`
+	Name          string     `json:"name" gorm:"not null;size:255"`
+	Description   string     `json:"description" gorm:"type:text"`
+	DefaultBranch string     `json:"default_branch" gorm:"default:'main';size:255"`
+	Visibility    Visibility `json:"visibility" gorm:"type:varchar(50);not null;check:visibility IN ('public','private','internal')"`
+	IsFork        bool       `json:"is_fork" gorm:"default:false"`
+	ParentID      *uuid.UUID `json:"parent_id" gorm:"type:uuid;index"`
+	IsTemplate    bool       `json:"is_template" gorm:"default:false"`
+	IsArchived    bool       `json:"is_archived" gorm:"default:false"`
+
 	HasWiki             bool       `json:"has_wiki" gorm:"default:true"`
 	HasDownloads        bool       `json:"has_downloads" gorm:"default:true"`
 	AllowMergeCommit    bool       `json:"allow_merge_commit" gorm:"default:true"`
@@ -73,8 +72,7 @@ type Repository struct {
 	Branches              []Branch                 `json:"branches,omitempty" gorm:"foreignKey:RepositoryID"`
 	BranchProtectionRules []BranchProtectionRule   `json:"branch_protection_rules,omitempty" gorm:"foreignKey:RepositoryID"`
 	Stars                 []Star                   `json:"stars,omitempty" gorm:"foreignKey:RepositoryID"`
-	Releases              []Release                `json:"releases,omitempty" gorm:"foreignKey:RepositoryID"`
-	Issues                []Issue                  `json:"issues,omitempty" gorm:"foreignKey:RepositoryID"`
+
 }
 
 func (r *Repository) TableName() string {
@@ -170,27 +168,4 @@ func (bpr *BranchProtectionRule) TableName() string {
 	return "branch_protection_rules"
 }
 
-type Release struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:(gen_random_uuid())"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
-	RepositoryID    uuid.UUID  `json:"repository_id" gorm:"type:uuid;not null;index"`
-	UserID          *uuid.UUID `json:"user_id" gorm:"type:uuid;index"`
-	TagName         string     `json:"tag_name" gorm:"not null;size:255"`
-	TargetCommitish string     `json:"target_commitish" gorm:"not null;size:255"`
-	Name            string     `json:"name" gorm:"size:255"`
-	Body            string     `json:"body" gorm:"type:text"`
-	Draft           bool       `json:"draft" gorm:"default:false"`
-	Prerelease      bool       `json:"prerelease" gorm:"default:false"`
-	PublishedAt     *time.Time `json:"published_at"`
-
-	// Relationships
-	Repository Repository `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
-	User       *User      `json:"user,omitempty" gorm:"foreignKey:UserID"`
-}
-
-func (r *Release) TableName() string {
-	return "releases"
-}

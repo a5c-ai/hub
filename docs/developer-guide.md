@@ -476,7 +476,7 @@ CREATE TABLE issues (
     state VARCHAR(50) DEFAULT 'open',
     author_id INTEGER REFERENCES users(id),
     assignee_id INTEGER REFERENCES users(id),
-    milestone_id INTEGER REFERENCES milestones(id),
+    
     comments_count INTEGER DEFAULT 0,
     locked BOOLEAN DEFAULT FALSE,
     closed_at TIMESTAMP,

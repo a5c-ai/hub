@@ -129,11 +129,10 @@ func SeedDatabase(db *gorm.DB) error {
 		Description:   "A sample project repository for testing",
 		DefaultBranch: "main",
 		Visibility:    models.VisibilityPublic,
-		HasIssues:     true,
-		HasProjects:   true,
-		HasWiki:       true,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+
+		HasWiki:   true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	if err := db.FirstOrCreate(testRepo, models.Repository{
@@ -181,83 +180,6 @@ func SeedDatabase(db *gorm.DB) error {
 		Pattern:      "main",
 	}).Error; err != nil {
 		return fmt.Errorf("failed to create branch protection rule: %w", err)
-	}
-
-	// Create sample labels
-	labels := []models.Label{
-		{
-			ID:           uuid.New(),
-			RepositoryID: testRepo.ID,
-			Name:         "bug",
-			Color:        "#d73a49",
-			Description:  "Something isn't working",
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		},
-		{
-			ID:           uuid.New(),
-			RepositoryID: testRepo.ID,
-			Name:         "enhancement",
-			Color:        "#a2eeef",
-			Description:  "New feature or request",
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		},
-		{
-			ID:           uuid.New(),
-			RepositoryID: testRepo.ID,
-			Name:         "documentation",
-			Color:        "#0075ca",
-			Description:  "Improvements or additions to documentation",
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		},
-	}
-
-	for _, label := range labels {
-		if err := db.FirstOrCreate(&label, models.Label{
-			RepositoryID: testRepo.ID,
-			Name:         label.Name,
-		}).Error; err != nil {
-			return fmt.Errorf("failed to create label %s: %w", label.Name, err)
-		}
-	}
-
-	// Create sample issue
-	testIssue := &models.Issue{
-		ID:           uuid.New(),
-		RepositoryID: testRepo.ID,
-		Number:       1,
-		Title:        "Welcome to Hub!",
-		Body:         "This is a sample issue to demonstrate the issue tracking functionality.",
-		UserID:       &adminUser.ID,
-		State:        models.IssueStateOpen,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-
-	if err := db.FirstOrCreate(testIssue, models.Issue{
-		RepositoryID: testRepo.ID,
-		Number:       1,
-	}).Error; err != nil {
-		return fmt.Errorf("failed to create test issue: %w", err)
-	}
-
-	// Create sample comment
-	testComment := &models.Comment{
-		ID:        uuid.New(),
-		IssueID:   testIssue.ID,
-		UserID:    &testUser.ID,
-		Body:      "Thanks for creating Hub! This looks great.",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if err := db.FirstOrCreate(testComment, models.Comment{
-		IssueID: testIssue.ID,
-		UserID:  &testUser.ID,
-	}).Error; err != nil {
-		return fmt.Errorf("failed to create test comment: %w", err)
 	}
 
 	fmt.Println("Database seeding completed successfully!")

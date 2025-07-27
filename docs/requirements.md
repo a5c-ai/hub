@@ -99,23 +99,6 @@ This document defines comprehensive functional and non-functional requirements f
 - **Cross-repository PRs**: Support for changes spanning multiple repositories
 - **PR Analytics**: Review time metrics, approval rates, cycle time analysis
 
-#### 2.2 Issue Tracking and Project Management
-**Essential Features**:
-- **Issue Creation**: Create issues with templates, labels, and assignees
-- **Issue Lifecycle**: Open, in-progress, closed states with transitions
-- **Issue Linking**: Link issues to commits, PRs, and other issues
-- **Issue Search**: Full-text search with filters and sorting
-- **Issue Templates**: Standardized issue creation forms
-- **Milestone Management**: Group issues into milestones with deadlines
-
-**Advanced Features**:
-- **Issue Dependencies**: Define blocking and dependent relationships
-- **Custom Issue Fields**: Organization-specific metadata fields
-- **Issue Automation**: Auto-close issues, assign based on labels
-- **Issue Analytics**: Velocity tracking, burndown charts, cycle time
-- **External Issue Linking**: Integration with Jira, Azure DevOps, ServiceNow
-- **Issue Boards**: Kanban-style project management interface
-
 #### 2.3 Team and Organization Management
 **Essential Features**:
 - **Organization Structure**: Multi-level organization hierarchy
@@ -739,13 +722,7 @@ This document defines comprehensive functional and non-functional requirements f
 - **CircleCI**: Build service integration
 - **TeamCity**: JetBrains CI server integration
 
-#### 1.3 Project Management Tools
-**Issue Tracking Systems**:
-- **Jira**: Atlassian issue tracking and project management
-- **Azure Boards**: Microsoft project management integration
-- **Asana**: Task and project management integration
-- **Trello**: Kanban-style project management
-- **Linear**: Modern issue tracking and project management
+
 - **Monday.com**: Work management platform integration
 
 **Communication Platforms**:
@@ -818,7 +795,7 @@ This document defines comprehensive functional and non-functional requirements f
 #### 1.1 GitHub Migration
 **Migration Tools**:
 - **Repository Import**: Complete repository history and metadata
-- **Issue Migration**: Issues, labels, milestones, and comments
+
 - **Pull Request Migration**: PR history, reviews, and discussions
 - **Team Migration**: Organization structure and team memberships
 - **Webhook Migration**: Existing webhook configurations
@@ -830,7 +807,7 @@ This document defines comprehensive functional and non-functional requirements f
 - **Branch Structure**: All branches and tags preservation
 - **Release Data**: Release notes, assets, and versioning
 - **Wiki Content**: Repository wiki and documentation
-- **Project Boards**: Kanban boards and project data
+
 
 #### 1.2 GitLab Migration
 **Migration Capabilities**:
@@ -844,7 +821,7 @@ This document defines comprehensive functional and non-functional requirements f
 **Feature Mapping**:
 - **Permission Mapping**: GitLab roles to Hub permission system
 - **Label Migration**: Issue and merge request labels
-- **Milestone Migration**: Project milestones and deadlines
+
 - **Integration Migration**: Third-party service configurations
 - **Variable Migration**: CI/CD variables and secrets
 - **Runner Migration**: GitLab runners to Hub action runners
