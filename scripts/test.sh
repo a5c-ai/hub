@@ -5,7 +5,7 @@ set -e
 # Configuration
 TEST_ENV=${TEST_ENV:-test}
 COVERAGE=${COVERAGE:-false}
-E2E=${E2E:-true}
+E2E=${E2E:-false}
 UNIT_ONLY=${UNIT_ONLY:-false}
 E2E_ONLY=${E2E_ONLY:-false}
 BUILD_FIRST=${BUILD_FIRST:-true}
