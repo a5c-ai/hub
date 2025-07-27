@@ -119,11 +119,16 @@ export function Header() {
           
           <Dropdown
             trigger={
-              <div className={cn(
-                'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-                buttonVariants.variant.ghost,
-                buttonVariants.size.icon
-              )}>
+              <div 
+                className={cn(
+                  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                  buttonVariants.variant.ghost,
+                  buttonVariants.size.icon
+                )}
+                tabIndex={0}
+                role="button"
+                aria-label="Create new"
+              >
                 <PlusIcon className="h-5 w-5" />
               </div>
             }
@@ -148,6 +153,9 @@ export function Header() {
                   size="sm"
                   data-testid="user-avatar"
                 />
+                <span className="hidden sm:inline-block text-sm font-medium">
+                  {user?.name || user?.username}
+                </span>
               </div>
             }
             items={userMenuItems.map(item => ({ ...item, ...(item.label === 'Sign out' ? { 'data-testid': 'logout-button' } : {}) }))}
