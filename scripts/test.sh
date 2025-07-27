@@ -199,7 +199,7 @@ run_go_tests() {
     
     # Set up test database if needed
     export DB_HOST="${TEST_DB_HOST:-localhost}"
-export DB_PORT="${TEST_DB_PORT:-5433}"
+    # Use DB_PORT from initial test setup (propagate non-default TEST_DB_PORT if set)
     export DB_NAME="${TEST_DB_NAME:-hub_test}"
     export DB_USER="${TEST_DB_USER:-hub}"
     export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
@@ -297,7 +297,7 @@ run_e2e_tests() {
         export PORT="8081"
         export DB_NAME="hub_test"
         export DB_HOST="${TEST_DB_HOST:-localhost}"
-        export DB_PORT="${TEST_DB_PORT:-5433}"
+        # Use DB_PORT from initial test setup (propagate non-default TEST_DB_PORT if set)
         export DB_USER="${TEST_DB_USER:-hub}"
         export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
         cd ..
