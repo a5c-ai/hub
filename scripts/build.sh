@@ -90,7 +90,8 @@ if [[ -d "frontend" && -f "frontend/package.json" ]]; then
     if [[ ! -d "node_modules" ]]; then
         log "Installing frontend dependencies..."
         # Use npm ci with optimizations for CI and adequate timeout
-        timeout 30m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false
+        timeout 30m npm ci --production=false --prefer-offline --no-audit --no-fund --progress=false \
+            --legacy-peer-deps
     fi
     
     # Set environment variables for build with optimized memory settings
