@@ -11,7 +11,7 @@ on:
     branches:
       - main
 env:
-    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5433/postgres
     NEXTAUTH_URL: http://localhost:4002
     NEXTAUTH_SECRET: secret
     NEXTAUTH_SESSION_STRATEGY: database
