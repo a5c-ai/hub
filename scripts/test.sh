@@ -157,7 +157,7 @@ setup_test_db() {
 }
 cleanup_test_db() {
     test_log "Stopping PostgreSQL test container..."
-    docker stop hub-test-db
+    docker stop hub-test-db || true
     docker rm -f hub-test-db || true
 }
 trap cleanup_test_db EXIT
