@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -51,6 +52,16 @@ type RepositoryService interface {
 	CreateTemplate(ctx context.Context, repoID uuid.UUID, req CreateTemplateRequest) (*models.RepositoryTemplate, error)
 	GetTemplates(ctx context.Context, filters TemplateFilters) ([]*models.RepositoryTemplate, error)
 	UseTemplate(ctx context.Context, templateID uuid.UUID, req CreateRepositoryRequest) (*models.Repository, error)
+
+	// Repository settings (stored in a detached 'settings' branch)
+	GetSettings(ctx context.Context, repoID uuid.UUID) (map[string]interface{}, error)
+	UpdateSettings(ctx context.Context, repoID uuid.UUID, req UpdateRepositorySettingsRequest) (map[string]interface{}, error)
+}
+
+// UpdateRepositorySettingsRequest represents repository settings payload for update
+type UpdateRepositorySettingsRequest struct {
+	// Settings to store in .settings/config.json
+	Settings map[string]interface{} `json:"settings" binding:"required"`
 }
 
 // CreateRepositoryRequest represents a request to create a repository
@@ -238,6 +249,37 @@ func (s *repositoryService) Create(ctx context.Context, req CreateRepositoryRequ
 	if req.AutoInit {
 		if err := s.createInitialCommit(ctx, repo); err != nil {
 			s.logger.WithError(err).Warn("Failed to create initial commit")
+		}
+		// Initialize settings branch and initial settings file
+		repoPath, err := s.GetRepositoryPath(ctx, repo.ID)
+		if err != nil {
+			s.logger.WithError(err).Warn("Failed to get repository path for settings initialization")
+		} else {
+			// Create settings branch from default branch
+			if err := s.gitService.CreateBranch(ctx, repoPath, "settings", repo.DefaultBranch); err != nil {
+				s.logger.WithError(err).Warn("Failed to create settings branch")
+			} else {
+				initialSettings := map[string]interface{}{
+					"description":            repo.Description,
+					"visibility":             string(repo.Visibility),
+					"default_branch":         repo.DefaultBranch,
+					"allow_merge_commit":     repo.AllowMergeCommit,
+					"allow_squash_merge":     repo.AllowSquashMerge,
+					"allow_rebase_merge":     repo.AllowRebaseMerge,
+					"delete_branch_on_merge": repo.DeleteBranchOnMerge,
+				}
+				content, _ := json.MarshalIndent(initialSettings, "", "  ")
+				createReq := git.CreateFileRequest{
+					Path:    ".settings/config.json",
+					Content: string(content),
+					Message: "Initial settings commit",
+					Branch:  "settings",
+					Author:  git.CommitAuthor{Name: "System", Email: "noreply@hub.local", Date: time.Now()},
+				}
+				if _, err := s.gitService.CreateFile(ctx, repoPath, createReq); err != nil {
+					s.logger.WithError(err).Warn("Failed to write initial settings file")
+				}
+			}
 		}
 	}
 
@@ -747,6 +789,52 @@ func (s *repositoryService) createInitialCommit(ctx context.Context, repo *model
 
 	_, err = s.gitService.CreateFile(ctx, repoPath, createReq)
 	return err
+}
+
+// GetSettings reads repository settings from the 'settings' branch (.settings/config.json).
+func (s *repositoryService) GetSettings(ctx context.Context, repoID uuid.UUID) (map[string]interface{}, error) {
+	repoPath, err := s.GetRepositoryPath(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	file, err := s.gitService.GetFile(ctx, repoPath, "settings", ".settings/config.json")
+	if err != nil {
+		return nil, err
+	}
+	var settings map[string]interface{}
+	if err := json.Unmarshal([]byte(file.Content), &settings); err != nil {
+		return nil, err
+	}
+	return settings, nil
+}
+
+// UpdateSettings updates repository settings in the 'settings' branch (.settings/config.json).
+func (s *repositoryService) UpdateSettings(ctx context.Context, repoID uuid.UUID, req UpdateRepositorySettingsRequest) (map[string]interface{}, error) {
+	repoPath, err := s.GetRepositoryPath(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	// Read existing file to get current SHA for conflict detection
+	existing, err := s.gitService.GetFile(ctx, repoPath, "settings", ".settings/config.json")
+	if err != nil {
+		return nil, err
+	}
+	content, err := json.MarshalIndent(req.Settings, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	updateReq := git.UpdateFileRequest{
+		Path:    ".settings/config.json",
+		Content: string(content),
+		Message: "Update settings",
+		Branch:  "settings",
+		SHA:     existing.SHA,
+		Author:  git.CommitAuthor{Name: "System", Email: "noreply@hub.local", Date: time.Now()},
+	}
+	if _, err := s.gitService.UpdateFile(ctx, repoPath, updateReq); err != nil {
+		return nil, err
+	}
+	return req.Settings, nil
 }
 
 // Placeholder implementations for methods that need more complex logic

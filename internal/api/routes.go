@@ -293,6 +293,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				repos.GET("/:owner/:repo/stats", repoHandlers.GetRepositoryStats)
 				repos.GET("/:owner/:repo/languages", repoHandlers.GetRepositoryLanguages)
 				repos.GET("/:owner/:repo/tags", repoHandlers.GetRepositoryTags)
+				// Repository settings (stored in a detached 'settings' branch)
+				repos.GET("/:owner/:repo/settings", repoHandlers.GetRepositorySettings)
+				repos.PATCH("/:owner/:repo/settings", repoHandlers.UpdateRepositorySettings)
 				repos.GET("/:owner/:repo/contributors", activityHandlers.GetRepositoryContributors)
 				repos.GET("/:owner/:repo/activity", activityHandlers.GetRepositoryActivity)
 

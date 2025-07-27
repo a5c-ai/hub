@@ -2,13 +2,11 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/a5c-ai/hub/internal/git"
-	"github.com/a5c-ai/hub/internal/models"
 	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -1077,6 +1075,75 @@ func (h *RepositoryHandlers) GetRepositoryTags(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tags)
+}
+
+// GetRepositorySettings handles GET /api/v1/repositories/{owner}/{repo}/settings
+func (h *RepositoryHandlers) GetRepositorySettings(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		if err.Error() == "repository not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Repository not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository"})
+		}
+		return
+	}
+	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository path"})
+		return
+	}
+	file, err := h.gitService.GetFile(c.Request.Context(), repoPath, "settings", ".settings/config.json")
+	if err != nil {
+		if err == git.ErrBranchNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Settings branch not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read settings", "details": err.Error()})
+		}
+		return
+	}
+	var settings map[string]interface{}
+	if err := json.Unmarshal([]byte(file.Content), &settings); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse settings", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, settings)
+}
+
+// UpdateRepositorySettings handles PATCH /api/v1/repositories/{owner}/{repo}/settings
+func (h *RepositoryHandlers) UpdateRepositorySettings(c *gin.Context) {
+	owner := c.Param("owner")
+	repoName := c.Param("repo")
+	if owner == "" || repoName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Owner and repository name are required"})
+		return
+	}
+	var req services.UpdateRepositorySettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+	repo, err := h.repositoryService.Get(c.Request.Context(), owner, repoName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get repository", "details": err.Error()})
+		return
+	}
+	settings, err := h.repositoryService.UpdateSettings(c.Request.Context(), repo.ID, req)
+	if err != nil {
+		if err == gorm.ErrInvalidTransaction {
+			c.JSON(http.StatusConflict, gin.H{"error": "Settings update conflict", "details": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update settings", "details": err.Error()})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, settings)
 }
 
 // CompareBranches handles GET /api/v1/repositories/{owner}/{repo}/compare/{base}...{head}
