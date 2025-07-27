@@ -37,6 +37,8 @@ env:
     JACKSON_API_KEY: secret
     DEBUG: pw:webserver
     CI: true
+    # Database port for PostgreSQL service container on GitHub Actions
+    TEST_DB_PORT: 5432
     # vercel credentials
     VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
     VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || '' }}

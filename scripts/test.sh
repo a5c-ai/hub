@@ -122,15 +122,19 @@ export GO_ENV="test"
 
 # Configure test database parameters
 export DB_HOST="${TEST_DB_HOST:-localhost}"
-# Use non-default port to avoid conflicts with local PostgreSQL instances
-export DB_PORT="${TEST_DB_PORT:-5433}"
+# Use non-default port for local development; use default PostgreSQL port on GitHub Actions service container
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    export DB_PORT="${TEST_DB_PORT:-5432}"
+else
+    export DB_PORT="${TEST_DB_PORT:-5433}"
+fi
 export DB_NAME="${TEST_DB_NAME:-hub_test}"
 export DB_USER="${TEST_DB_USER:-hub}"
 export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
 
 # Setup and teardown for PostgreSQL test container
 setup_test_db() {
-    if [[ "$CI" == "true" ]]; then
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
         test_log "Using PostgreSQL service container"
     else
         test_log "Starting PostgreSQL test container..."
