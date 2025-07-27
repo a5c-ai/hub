@@ -93,7 +93,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     timeout-minutes: 30  # Reduced timeout with optimized scripts
     strategy:
       matrix:
@@ -106,10 +106,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: true
-          cache-dependency-path: |
-            go.sum
-            go.mod
           check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with better caching
@@ -184,21 +180,7 @@ jobs:
           if-no-files-found: error
           
   test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: hub
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: hub_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U hub"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    runs-on: runner8core
     timeout-minutes: 30  # Increased timeout for test phase
     needs: build
     steps:
@@ -248,7 +230,7 @@ jobs:
           ./scripts/test.sh
         
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     timeout-minutes: 25  # Increased timeout for deploy phase
     needs: test
     # Only deploy on main branch
