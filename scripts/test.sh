@@ -135,29 +135,48 @@ export DB_PASSWORD="${TEST_DB_PASSWORD:-password}"
 # Setup and teardown for PostgreSQL test container
 setup_test_db() {
     test_log "Starting PostgreSQL test container..."
-    docker run -d --name hub-test-db \
-        -e POSTGRES_PASSWORD=$DB_PASSWORD \
-        -e POSTGRES_USER=$DB_USER \
-        -e POSTGRES_DB=$DB_NAME \
-        -p $DB_PORT:5432 postgres:16
-    # Provide password for psql to connect without interactive prompt
-    export PGPASSWORD="$DB_PASSWORD"
+    if [[ "$CI" == "true" ]]; then
+        # In CI, run container and use its psql for readiness checks
+        docker run -d --name hub-test-db \
+            -e POSTGRES_PASSWORD=$DB_PASSWORD \
+            -e POSTGRES_USER=$DB_USER \
+            -e POSTGRES_DB=$DB_NAME \
+            postgres:16
+    else
+        docker run -d --name hub-test-db \
+            -e POSTGRES_PASSWORD=$DB_PASSWORD \
+            -e POSTGRES_USER=$DB_USER \
+            -e POSTGRES_DB=$DB_NAME \
+            -p $DB_PORT:5432 postgres:16
+        # Provide password for host psql client
+        export PGPASSWORD="$DB_PASSWORD"
+    fi
     test_log "Waiting for PostgreSQL to be ready..."
     local retries=0
     local max_retries=60
-    until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
-        sleep 1
-        retries=$((retries+1))
-        if (( retries >= max_retries )); then
-            test_log "PostgreSQL did not become ready after $max_retries seconds"
-            if [[ "$CI" != "true" ]]; then
+    if [[ "$CI" == "true" ]]; then
+        until docker exec -e PGPASSWORD="$DB_PASSWORD" hub-test-db \
+                   psql -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
+            sleep 1
+            retries=$((retries+1))
+            if (( retries >= max_retries )); then
+                test_log "PostgreSQL did not become ready after $max_retries seconds"
+                exit 1
+            fi
+        done
+    else
+        until psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c '\\l' &>/dev/null; do
+            sleep 1
+            retries=$((retries+1))
+            if (( retries >= max_retries )); then
+                test_log "PostgreSQL did not become ready after $max_retries seconds"
                 test_log "Container logs:"
                 docker logs hub-test-db || true
                 docker rm -f hub-test-db || true
+                exit 1
             fi
-            exit 1
-        fi
-    done
+        done
+    fi
     test_log "PostgreSQL is ready."
 }
 cleanup_test_db() {
