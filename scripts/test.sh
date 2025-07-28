@@ -142,7 +142,7 @@ setup_test_db() {
     local retries=0
     # Increase timeout to allow PostgreSQL service container sufficient startup time in CI
     local max_retries=120
-    until docker exec hub-test-db psql -U "$DB_USER" -d "$DB_NAME" -c '\\l' &>/dev/null; do
+    until docker exec hub-test-db psql -h localhost -U "$DB_USER" -d "$DB_NAME" -c '\\l' &>/dev/null; do
         sleep 1
         retries=$((retries+1))
         if (( retries >= max_retries )); then
