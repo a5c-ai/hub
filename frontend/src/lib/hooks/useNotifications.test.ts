@@ -21,6 +21,7 @@ describe('useNotifications', () => {
     ;(global as any).WebSocket = class extends MockWebSocket {
       constructor(url: string) {
         super()
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         wsInstance = this
       }
     } as any
