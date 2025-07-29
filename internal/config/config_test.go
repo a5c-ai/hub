@@ -6,6 +6,15 @@ import (
 )
 
 func TestLoadDefault(t *testing.T) {
+	// Clear environment to ensure defaults are used
+	oldPort := os.Getenv("PORT")
+	oldEnv := os.Getenv("ENVIRONMENT")
+	defer func() {
+		os.Setenv("PORT", oldPort)
+		os.Setenv("ENVIRONMENT", oldEnv)
+	}()
+	os.Unsetenv("PORT")
+	os.Unsetenv("ENVIRONMENT")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Failed to load default config: %v", err)
