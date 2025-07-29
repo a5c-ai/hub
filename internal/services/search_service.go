@@ -114,8 +114,8 @@ func (s *SearchService) searchUsers(filter SearchFilter, offset int) ([]models.U
 	if filter.Query != "" {
 		q := "%" + strings.ToLower(filter.Query) + "%"
 		query = query.Where(
-			"lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(email) LIKE ?",
-			q, q, q,
+			"lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(email) LIKE ? OR lower(bio) LIKE ? OR lower(company) LIKE ?",
+			q, q, q, q, q,
 		)
 	}
 
@@ -169,7 +169,7 @@ func (s *SearchService) searchRepositories(filter SearchFilter, offset int) ([]m
 	}
 
 	query = query.Offset(offset).Limit(filter.PerPage)
-	return repos, query.Preload("Owner").Find(&repos).Error
+	return repos, query.Find(&repos).Error
 }
 
 func (s *SearchService) searchOrganizations(filter SearchFilter, offset int) ([]models.Organization, error) {
