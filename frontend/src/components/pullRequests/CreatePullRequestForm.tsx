@@ -157,6 +157,7 @@ export function CreatePullRequestForm({
           </p>
         </Card>
         {/* Branch Selection */}
+        <Card className="p-6">
           <h3 className="text-lg font-medium mb-4">Comparing changes</h3>
           
           <div className="flex items-center space-x-4">
