@@ -79,8 +79,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
 
 	// Initialize import/export handlers
-	importHandlers := NewImportHandlers()
-	exportHandlers := NewExportHandlers()
+	importHandlers := NewImportHandlers(database)
+	exportHandlers := NewExportHandlers(database)
 
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
