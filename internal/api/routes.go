@@ -57,13 +57,16 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize analytics service
 	analyticsService := services.NewAnalyticsService(database.DB, logger)
 
+	// Initialize notification service for real-time push
+	notificationService := services.NewNotificationService()
+
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
 	gitHandlers := NewGitHandlers(repositoryService, logger)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	searchHandlers := NewSearchHandlers(searchService, logger)
 
-	userHandlers := NewUserHandlers(authService, database.DB, cfg, logger)
+	userHandlers := NewUserHandlers(authService, database.DB, cfg, logger, notificationService)
 	adminEmailHandlers := NewAdminEmailHandlers(database.DB, cfg, logger)
 	activityHandlers := NewActivityHandlers(repositoryService, activityService, database.DB, logger)
 	// Initialize webhook and deploy key services for hooks handlers
@@ -192,6 +195,8 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.GET("/user/activity", userHandlers.GetUserActivity)
 			protected.GET("/notifications", userHandlers.GetNotifications)
 			protected.PATCH("/notifications", userHandlers.MarkNotificationsAsRead)
+			// Real-time notifications via WebSocket
+			protected.GET("/notifications/subscribe", userHandlers.SubscribeNotifications)
 
 			// User email endpoints
 			emailGroup := protected.Group("/user/email")

@@ -5,27 +5,43 @@ import (
 
 	"github.com/a5c-ai/hub/internal/auth"
 	"github.com/a5c-ai/hub/internal/config"
+	"github.com/a5c-ai/hub/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+// UserHandlers contains handlers for user-related endpoints
 // UserHandlers contains handlers for user-related endpoints
 type UserHandlers struct {
-	authService auth.AuthService
-	db          *gorm.DB
-	config      *config.Config
-	logger      *logrus.Logger
+	authService         auth.AuthService
+	db                  *gorm.DB
+	config              *config.Config
+	logger              *logrus.Logger
+	notificationService services.NotificationService
 }
 
 // NewUserHandlers creates a new user handlers instance
-func NewUserHandlers(authService auth.AuthService, db *gorm.DB, cfg *config.Config, logger *logrus.Logger) *UserHandlers {
+// NewUserHandlers creates a new user handlers instance
+func NewUserHandlers(
+	authService auth.AuthService,
+	db *gorm.DB,
+	cfg *config.Config,
+	logger *logrus.Logger,
+	notificationService services.NotificationService,
+) *UserHandlers {
 	return &UserHandlers{
-		authService: authService,
-		db:          db,
-		config:      cfg,
-		logger:      logger,
+		authService:         authService,
+		db:                  db,
+		config:              cfg,
+		logger:              logger,
+		notificationService: notificationService,
 	}
 }
 
@@ -285,6 +301,33 @@ func (h *UserHandlers) MarkNotificationsAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Notifications marked as read",
 	})
+}
+
+// SubscribeNotifications upgrades connection to WebSocket and streams real-time notifications
+func (h *UserHandlers) SubscribeNotifications(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userID := userIDVal.(uuid.UUID)
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		h.logger.WithError(err).Error("WebSocket upgrade failed")
+		return
+	}
+	defer conn.Close()
+
+	ch, cancel := h.notificationService.Subscribe(userID)
+	defer cancel()
+
+	for notif := range ch {
+		if err := conn.WriteJSON(notif); err != nil {
+			h.logger.WithError(err).Error("Failed to write notification to WebSocket")
+			break
+		}
+	}
 }
 
 // GetEmailVerificationStatus handles GET /api/v1/user/email/verification-status

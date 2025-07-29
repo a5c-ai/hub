@@ -60,6 +60,25 @@ export default function NotificationsPage() {
     fetchNotifications(filter);
   }, [filter]);
 
+  // Real-time subscription for incoming notifications
+  useEffect(() => {
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const ws = new WebSocket(
+      `${wsScheme}://${window.location.host}/api/v1/notifications/subscribe`
+    )
+    ws.onmessage = (event) => {
+      try {
+        const newNotif = JSON.parse(event.data) as Notification
+        setNotifications((prev) => [newNotif, ...prev])
+      } catch {
+        // ignore invalid messages
+      }
+    }
+    return () => {
+      ws.close()
+    }
+  }, [])
+
   const markAsRead = async (notificationId?: string) => {
     try {
       if (notificationId) {
