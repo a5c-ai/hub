@@ -159,7 +159,6 @@ resource "azurerm_private_endpoint" "storage" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "storage" {
-  count                      = var.log_analytics_workspace_id != null ? 1 : 0
   name                       = "${var.storage_account_name}-diagnostics"
   target_resource_id         = "${azurerm_storage_account.main.id}/blobServices/default"
   log_analytics_workspace_id = var.log_analytics_workspace_id
