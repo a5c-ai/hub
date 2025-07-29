@@ -42,6 +42,10 @@ jobs:
     - name: Terraform Init
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        ARM_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
         # Generate backend configuration to avoid interactive prompts
@@ -56,6 +60,10 @@ EOF
     - name: Terraform Validate
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        ARM_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
         terraform validate
@@ -63,6 +71,10 @@ EOF
     - name: Terraform Plan
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        ARM_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: |
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
         terraform plan -out=tfplan
@@ -70,6 +82,10 @@ EOF
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
       env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
       run: |
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
