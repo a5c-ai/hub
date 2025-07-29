@@ -11,7 +11,7 @@ on:
     branches:
       - main
 env:
-    DATABASE_URL: postgresql://postgres:postgres@localhost:5433/postgres
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     NEXTAUTH_URL: http://localhost:4002
     NEXTAUTH_SECRET: secret
     NEXTAUTH_SESSION_STRATEGY: database
@@ -93,7 +93,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     timeout-minutes: 30  # Reduced timeout with optimized scripts
     strategy:
       matrix:
@@ -106,12 +106,28 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: true
-          cache-dependency-path: |
-            go.sum
-            go.mod
-          clean: true  # Ensure prior Go installation is removed before extraction
           check-latest: false  # Disable version checking to speed up builds
+
+      - name: Download Go modules
+        timeout-minutes: 10  # Ensure modules are available for tests
+        run: |
+          export GOPROXY=https://proxy.golang.org,direct
+          export GOSUMDB=sum.golang.org
+          export GOTIMEOUT=8m
+          for i in {1..2}; do
+            echo "Attempt $i: Downloading Go modules..."
+            if go mod download && go mod verify; then
+              echo "✅ Go modules downloaded successfully"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              if [ $i -eq 2 ]; then
+                echo "🚨 All attempts failed"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
           
       - name: Setup Node.js with better caching
         uses: actions/setup-node@v4
@@ -185,21 +201,7 @@ jobs:
           if-no-files-found: error
           
   test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: hub
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: hub_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U hub"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    runs-on: runner8core
     timeout-minutes: 30  # Increased timeout for test phase
     needs: build
     steps:
@@ -220,7 +222,6 @@ jobs:
           cache-dependency-path: |
             go.sum
             go.mod
-          clean: true  # Ensure prior Go installation is removed before extraction
           check-latest: false  # Disable version checking to speed up builds
           
       - name: Setup Node.js with caching
@@ -250,7 +251,7 @@ jobs:
           ./scripts/test.sh
         
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: runner8core
     timeout-minutes: 25  # Increased timeout for deploy phase
     needs: test
     # Only deploy on main branch
@@ -270,7 +271,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: true
-          clean: true  # Ensure prior Go installation is removed before extraction
           cache-dependency-path: |
             go.sum
             go.mod
