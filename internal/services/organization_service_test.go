@@ -49,11 +49,13 @@ func setupOrgTestDB(t *testing.T) *gorm.DB {
 			company TEXT,
 			email_verified BOOLEAN DEFAULT FALSE,
 			two_factor_enabled BOOLEAN DEFAULT FALSE,
+			two_factor_secret TEXT,
+			phone_number TEXT,
 			is_active BOOLEAN DEFAULT TRUE,
 			is_admin BOOLEAN DEFAULT FALSE,
 			last_login_at DATETIME
 		);
-		
+
 		CREATE TABLE organizations (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -68,7 +70,7 @@ func setupOrgTestDB(t *testing.T) *gorm.DB {
 			email TEXT,
 			billing_email TEXT
 		);
-		
+
 		CREATE TABLE organization_members (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -195,9 +197,9 @@ func TestOrganizationService_List(t *testing.T) {
 
 	// Create test organizations
 	orgs := []*models.Organization{
-		{Name: "org1", DisplayName: "Organization 1"},
-		{Name: "org2", DisplayName: "Organization 2"},
-		{Name: "org3", DisplayName: "Organization 3"},
+		{ID: uuid.New(), Name: "org1", DisplayName: "Organization 1"},
+		{ID: uuid.New(), Name: "org2", DisplayName: "Organization 2"},
+		{ID: uuid.New(), Name: "org3", DisplayName: "Organization 3"},
 	}
 
 	for _, org := range orgs {
@@ -226,21 +228,21 @@ func TestOrganizationService_GetUserOrganizations(t *testing.T) {
 	db.Create(user)
 
 	// Create test organizations
-	org1 := &models.Organization{Name: "org1", DisplayName: "Organization 1"}
-	org2 := &models.Organization{Name: "org2", DisplayName: "Organization 2"}
-	org3 := &models.Organization{Name: "org3", DisplayName: "Organization 3"}
+	org1 := &models.Organization{ID: uuid.New(), Name: "org1", DisplayName: "Organization 1"}
+	org2 := &models.Organization{ID: uuid.New(), Name: "org2", DisplayName: "Organization 2"}
+	org3 := &models.Organization{ID: uuid.New(), Name: "org3", DisplayName: "Organization 3"}
 
 	db.Create(org1)
 	db.Create(org2)
 	db.Create(org3)
 
 	// Create memberships for user in org1 and org2
-	member1 := &models.OrganizationMember{
+	member1 := &models.OrganizationMember{ID: uuid.New(),
 		OrganizationID: org1.ID,
 		UserID:         userID,
 		Role:           models.OrgRoleMember,
 	}
-	member2 := &models.OrganizationMember{
+	member2 := &models.OrganizationMember{ID: uuid.New(),
 		OrganizationID: org2.ID,
 		UserID:         userID,
 		Role:           models.OrgRoleAdmin,

@@ -114,8 +114,8 @@ func (s *SearchService) searchUsers(filter SearchFilter, offset int) ([]models.U
 	if filter.Query != "" {
 		q := "%" + strings.ToLower(filter.Query) + "%"
 		query = query.Where(
-			"lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(email) LIKE ?",
-			q, q, q,
+			"lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(email) LIKE ? OR lower(bio) LIKE ? OR lower(company) LIKE ?",
+			q, q, q, q, q,
 		)
 	}
 
@@ -168,8 +168,25 @@ func (s *SearchService) searchRepositories(filter SearchFilter, offset int) ([]m
 		query = query.Order("name ASC")
 	}
 
-	query = query.Offset(offset).Limit(filter.PerPage)
-	return repos, query.Preload("Owner").Find(&repos).Error
+ 	query = query.Offset(offset).Limit(filter.PerPage)
+	// Retrieve repositories
+	if err := query.Find(&repos).Error; err != nil {
+		return nil, err
+	}
+	// Populate OwnerEntity for each repository
+	for i := range repos {
+		r := &repos[i]
+		r.Owner = &models.OwnerEntity{
+			ID:        r.OwnerID,
+			Type:      r.OwnerType,
+			Username:  "",
+			Name:      "",
+			AvatarURL: "",
+			CreatedAt: r.CreatedAt,
+			UpdatedAt: r.UpdatedAt,
+		}
+	}
+	return repos, nil
 }
 
 func (s *SearchService) searchOrganizations(filter SearchFilter, offset int) ([]models.Organization, error) {

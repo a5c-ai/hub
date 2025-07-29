@@ -288,6 +288,7 @@ func TestSearchService_SearchRepositories(t *testing.T) {
 		{
 			name:          "search by description",
 			query:         "API",
+			userID:        &user.ID,
 			expectedCount: 1,
 		},
 		{
