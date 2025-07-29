@@ -21,6 +21,14 @@ The Hub application consists of:
 
 ### Azure-specific Requirements
 - Azure CLI logged in (for Azure Container Registry)
+- Environment variables for service principal and AKS context:
+  - `AZURE_APPLICATION_CLIENT_ID`
+  - `AZURE_APPLICATION_CLIENT_SECRET`
+  - `AZURE_TENANT_ID`
+  - `AZURE_RESOURCE_GROUP_NAME`
+  - `AZURE_AKS_CLUSTER_NAME`
+  
+  The build and deploy scripts will automatically perform ACR login and fetch AKS credentials when these variables are set.
 - AKS cluster with:
   - Ingress controller (nginx-ingress)
   - Cert-manager for TLS certificates
