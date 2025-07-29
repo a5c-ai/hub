@@ -61,6 +61,16 @@ usage() {
     echo "  VERSION                  Version tag"
     echo "  BUILD_IMAGES             Build images before deploy (true/false)"
     echo "  RUN_TESTS                Run tests before deploy (true/false)"
+    echo "  AZURE_APPLICATION_CLIENT_ID     Service principal client ID for Azure login"
+    echo "  AZURE_APPLICATION_CLIENT_SECRET Service principal client secret for Azure login"
+    echo "  AZURE_TENANT_ID                Azure AD tenant ID for Azure login"
+    echo "  AZURE_RESOURCE_GROUP_NAME      Azure resource group for AKS credentials"
+    echo "  AZURE_AKS_CLUSTER_NAME         AKS cluster name for kubectl context"
+    echo "  AZURE_APPLICATION_CLIENT_ID     Service principal client ID for Azure login"
+    echo "  AZURE_APPLICATION_CLIENT_SECRET Service principal client secret for Azure login"
+    echo "  AZURE_TENANT_ID               Azure AD tenant ID for Azure login"
+    echo "  AZURE_RESOURCE_GROUP_NAME     Azure resource group for AKS credentials"
+    echo "  AZURE_AKS_CLUSTER_NAME        AKS cluster name for kubectl context"
     echo ""
     echo "Examples:"
     echo "  $0 staging               # Deploy to staging"
@@ -156,6 +166,20 @@ deploy_log "Deployment type: $DEPLOYMENT_TYPE"
 deploy_log "Version: $VERSION"
 deploy_log "Registry: ${REGISTRY:-"local"}"
 deploy_log "Dry run: $DRY_RUN"
+
+# Azure CLI login and AKS credentials for Kubernetes deployments
+if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; then
+    if [[ -n "$AZURE_APPLICATION_CLIENT_ID" ]]; then
+        deploy_log "Logging into Azure CLI..."
+        az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+    fi
+    if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
+        deploy_log "Fetching AKS credentials for cluster $AZURE_AKS_CLUSTER_NAME..."
+        az aks get-credentials --resource-group "$AZURE_RESOURCE_GROUP_NAME" --name "$AZURE_AKS_CLUSTER_NAME" --overwrite-existing
+    else
+        warn "AZURE_RESOURCE_GROUP_NAME or AZURE_AKS_CLUSTER_NAME not set; skipping AKS credential fetch"
+    fi
+fi
 
 # Safety check for production
 if [[ "$ENVIRONMENT" == "production" && "$DRY_RUN" == "false" ]]; then

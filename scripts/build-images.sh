@@ -66,13 +66,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate inputs
+# Validate inputs and login to Azure ACR if needed
 if [[ -z "$REGISTRY" ]]; then
     warn "No registry specified. Images will be built locally only."
     PUSH_IMAGES=false
 else
     log "Using registry: $REGISTRY"
     PUSH_IMAGES=true
+    # If using Azure Container Registry, perform Azure CLI and ACR login
+    if [[ "$REGISTRY" == *".azurecr.io" ]]; then
+        if command -v az >/dev/null 2>&1; then
+            log "Logging into Azure CLI..."
+            az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+            log "Logging into Azure Container Registry..."
+            ACR_NAME=${REGISTRY%%.*}
+            az acr login --name "$ACR_NAME"
+        else
+            warn "Azure CLI not found; skipping ACR login"
+        fi
+    fi
 fi
 
 log "Building Hub Docker images..."
