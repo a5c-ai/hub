@@ -1012,6 +1012,14 @@ func (s *analyticsService) getRepositoryAnalyticsData(ctx context.Context, repoI
 	return analytics, nil
 }
 
+func parseLanguageStats(raw string) (map[string]int64, error) {
+	var result map[string]int64
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (s *analyticsService) getRepositoryCodeStats(ctx context.Context, repoID uuid.UUID) (*CodeStatistics, error) {
 	// Get latest repository analytics for code stats
 	var latest models.RepositoryAnalytics
@@ -1043,11 +1051,13 @@ func (s *analyticsService) getRepositoryCodeStats(ctx context.Context, repoID uu
 	// Parse language stats if available
 	languageBreakdown := make(map[string]int64)
 	if latest.LanguageStats != "" {
-		// TODO: Parse JSON language stats
-		// For now, provide default values
-		languageBreakdown["Go"] = 70
-		languageBreakdown["JavaScript"] = 20
-		languageBreakdown["TypeScript"] = 10
+		// Parse JSON language stats
+		parsed, err := parseLanguageStats(latest.LanguageStats)
+		if err != nil {
+			s.logger.WithError(err).Warn("Failed to parse language stats JSON")
+		} else {
+			languageBreakdown = parsed
+		}
 	}
 
 	return &CodeStatistics{
