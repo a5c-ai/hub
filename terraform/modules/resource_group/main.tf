@@ -4,7 +4,10 @@ resource "azurerm_resource_group" "main" {
 
   tags = var.tags
 
-  lifecycle {
-    prevent_destroy = var.prevent_destroy
+  dynamic "lifecycle" {
+    for_each = var.prevent_destroy ? [1] : []
+    content {
+      prevent_destroy = true
+    }
   }
 }
