@@ -129,7 +129,7 @@ terraform plan -var-file="azure.tfvars"
 terraform apply
 ```
 
-You can also automate infrastructure deployment via the GitHub Actions workflow defined in `.github_workflows/infrastructure.yml`. Pushing changes under `terraform/**` on the main branch or manually dispatching this workflow will run `terraform init`, `plan`, and `apply` for the selected environment.
+You can also automate infrastructure deployment via the GitHub Actions workflow defined in `.github/workflows/infrastructure.yml`. Pushing changes under `terraform/**` on the main branch or manually dispatching this workflow will run `terraform init`, `plan`, and `apply` for the selected environment.
 
 ## 📖 Documentation
 
