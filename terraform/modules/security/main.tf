@@ -185,12 +185,7 @@ resource "azurerm_application_gateway" "main" {
     }
   }
 
-  dynamic "firewall_policy_id" {
-    for_each = var.enable_waf ? [azurerm_web_application_firewall_policy.main[0].id] : []
-    content {
-      firewall_policy_id = firewall_policy_id.value
-    }
-  }
+  firewall_policy_id = var.enable_waf ? azurerm_web_application_firewall_policy.main[0].id : null
 
   tags = var.tags
 }
