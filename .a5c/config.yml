@@ -42,7 +42,7 @@ remote_agents:
         alias: "developer-agent"
       - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/validator-agent.agent.md"
         alias: "validator-agent"
-      - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/team-installer.agent.md"
+      - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/team-installer-agent.agent.md"
         alias: "team-installer-agent"        
       - uri: "https://raw.githubusercontent.com/a5c-ai/registry/main/agents/development/build-fixer-agent.agent.md"
         alias: "build-fixer-agent"
