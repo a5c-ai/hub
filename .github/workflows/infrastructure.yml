@@ -17,8 +17,19 @@ on:
         - staging
         - production
 
-jobs:
+jobs:  
   terraform:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+      discussions: write
+      packages: write
+      pages: write
+      repository-projects: write
+      security-events: write
+      statuses: write
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
 
