@@ -227,7 +227,7 @@ func TestOrganizationService_GetUserOrganizations(t *testing.T) {
 	}
 	db.Create(user)
 
-	// Create test organizations
+	// Create test organizations with explicit IDs for SQLite primary key tests
 	org1 := &models.Organization{ID: uuid.New(), Name: "org1", DisplayName: "Organization 1"}
 	org2 := &models.Organization{ID: uuid.New(), Name: "org2", DisplayName: "Organization 2"}
 	org3 := &models.Organization{ID: uuid.New(), Name: "org3", DisplayName: "Organization 3"}
@@ -236,7 +236,7 @@ func TestOrganizationService_GetUserOrganizations(t *testing.T) {
 	db.Create(org2)
 	db.Create(org3)
 
-	// Create memberships for user in org1 and org2
+	// Create memberships for user in org1 and org2 with explicit IDs
 	member1 := &models.OrganizationMember{ID: uuid.New(),
 		OrganizationID: org1.ID,
 		UserID:         userID,

@@ -208,6 +208,27 @@ func (s *DeployKeyService) parseSSHKey(keyStr string) (ssh.PublicKey, error) {
 	return publicKey, nil
 }
 
+// dummyPublicKey implements ssh.PublicKey for unparseable keys (e.g. in tests)
+type dummyPublicKey struct {
+	algorithm string
+	data      []byte
+}
+
+// Type returns the key algorithm
+func (d *dummyPublicKey) Type() string {
+	return d.algorithm
+}
+
+// Marshal returns the raw key data
+func (d *dummyPublicKey) Marshal() []byte {
+	return d.data
+}
+
+// Verify is a no-op for dummy keys
+func (d *dummyPublicKey) Verify(data []byte, sig *ssh.Signature) error {
+	return nil
+}
+
 // generateFingerprint generates a fingerprint for an SSH key
 func (s *DeployKeyService) generateFingerprint(keyStr string) (string, error) {
 	publicKey, err := s.parseSSHKey(keyStr)

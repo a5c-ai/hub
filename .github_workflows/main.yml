@@ -107,6 +107,7 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
+          clean: true  # Ensure previous Go installation is removed before extracting
 
       - name: Download Go modules
         timeout-minutes: 10  # Ensure modules are available for tests
@@ -223,6 +224,7 @@ jobs:
             go.sum
             go.mod
           check-latest: false  # Disable version checking to speed up builds
+          clean: true  # Ensure previous Go installation is removed before extracting
           
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4

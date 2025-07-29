@@ -168,7 +168,7 @@ func (s *SearchService) searchRepositories(filter SearchFilter, offset int) ([]m
 		query = query.Order("name ASC")
 	}
 
- 	query = query.Offset(offset).Limit(filter.PerPage)
+	query = query.Offset(offset).Limit(filter.PerPage)
 	// Retrieve repositories
 	if err := query.Find(&repos).Error; err != nil {
 		return nil, err
