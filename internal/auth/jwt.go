@@ -14,6 +14,8 @@ type Claims struct {
 	UserID   uuid.UUID `json:"user_id"`
 	Username string    `json:"username"`
 	Email    string    `json:"email"`
+	// Roles granted to the user from external identity or group mapping
+	Roles    []string  `json:"roles,omitempty"`
 	IsAdmin  bool      `json:"is_admin"`
 	jwt.RegisteredClaims
 }
@@ -35,6 +37,7 @@ func (j *JWTManager) GenerateToken(user *models.User) (string, error) {
 		UserID:   user.ID,
 		Username: user.Username,
 		Email:    user.Email,
+		Roles:    user.Roles,
 		IsAdmin:  user.IsAdmin,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
