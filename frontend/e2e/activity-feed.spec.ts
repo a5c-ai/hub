@@ -1,28 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { loginUser, testUser, waitForLoadingToComplete } from './helpers/test-utils';
+import { setupAuthentication, testUser, waitForLoadingToComplete } from './helpers/test-utils';
 
 test.describe('Activity Feed & Timeline', () => {
   test.beforeEach(async ({ page }) => {
     await page.context().clearCookies();
     await page.context().clearPermissions();
     
-    // Mock authentication
-    await page.route('**/api/v1/auth/me', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            id: '1',
-            name: testUser.name,
-            username: testUser.username,
-            email: testUser.email,
-            avatar_url: 'https://example.com/avatar.jpg'
-          }
-        })
-      });
-    });
+    // Setup standardized authentication
+    await setupAuthentication(page);
   });
 
   test.describe('Activity Feed Display', () => {
@@ -139,7 +124,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -242,7 +226,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -275,7 +258,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -313,7 +295,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -357,7 +338,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -402,7 +382,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -451,7 +430,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 
@@ -501,7 +479,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       
       // Switch to personal activity
@@ -551,7 +528,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       
       // Switch to following activity
@@ -574,7 +550,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       
       // Switch to following activity
@@ -598,7 +573,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
 
       await expect(page.locator('text=Error:')).toBeVisible();
@@ -650,7 +624,6 @@ test.describe('Activity Feed & Timeline', () => {
         });
       });
 
-      await loginUser(page);
       await page.goto('/activity');
       await waitForLoadingToComplete(page);
 

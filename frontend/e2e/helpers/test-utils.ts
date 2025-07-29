@@ -15,6 +15,141 @@ export const testUser = {
 };
 
 /**
+ * Setup authentication for tests - mocks all necessary auth endpoints and sets localStorage
+ * @param page - Playwright page object
+ * @param userData - Optional user data to use for authentication
+ */
+export async function setupAuthentication(page: Page, userData = testUser) {
+  // Mock authentication endpoints
+  await page.route('**/api/v1/profile', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          id: '1',
+          name: userData.name,
+          username: userData.username,
+          email: userData.email
+        }
+      })
+    });
+  });
+
+  // Mock repositories endpoint
+  await page.route('**/api/v1/repositories**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          repositories: [
+            {
+              id: '1',
+              name: 'awesome-project',
+              full_name: `${userData.username}/awesome-project`,
+              description: 'An awesome test project',
+              private: false,
+              owner: {
+                id: '1',
+                username: userData.username,
+                avatar_url: 'https://example.com/avatar.jpg'
+              },
+              default_branch: 'main',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              language: 'TypeScript',
+              stars_count: 42,
+              forks_count: 5,
+              watchers_count: 10
+            }
+          ],
+          pagination: {
+            page: 1,
+            per_page: 30,
+            total: 1,
+            total_pages: 1
+          }
+        }
+      })
+    });
+  });
+
+  // Mock activity endpoint
+  await page.route('**/api/v1/activity**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          activities: [
+            {
+              id: '1',
+              type: 'push',
+              actor: {
+                id: '1',
+                username: userData.username,
+                avatar_url: 'https://example.com/avatar.jpg'
+              },
+              repository: {
+                id: '1',
+                name: 'awesome-project',
+                full_name: `${userData.username}/awesome-project`
+              },
+              payload: {
+                ref: 'refs/heads/main',
+                commits: [
+                  {
+                    sha: 'abc123',
+                    message: 'Update README',
+                    author: {
+                      name: userData.name,
+                      email: userData.email
+                    }
+                  }
+                ]
+              },
+              public: true,
+              created_at: new Date().toISOString()
+            }
+          ],
+          pagination: {
+            page: 1,
+            per_page: 30,
+            total: 1,
+            total_pages: 1
+          }
+        }
+      })
+    });
+  });
+
+  // Set authentication state in localStorage
+  await page.addInitScript((userData) => {
+    // Set authentication token
+    window.localStorage.setItem('auth_token', 'mock-jwt-token');
+    
+    // Set auth store state for zustand persist
+    window.localStorage.setItem('auth-storage', JSON.stringify({
+      state: {
+        user: {
+          id: '1',
+          name: userData.name,
+          username: userData.username,
+          email: userData.email
+        },
+        token: 'mock-jwt-token',
+        isAuthenticated: true
+      },
+      version: 0
+    }));
+  }, userData);
+}
+
+/**
  * Login helper - logs in a user with credentials
  * @param page - Playwright page object
  * @param email - User email

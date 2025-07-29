@@ -46,7 +46,7 @@ test.describe('Authentication Flow', () => {
     });
 
     // Mock checkAuth API call for dashboard
-    await page.route('**/api/v1/auth/me', async route => {
+    await page.route('**/api/v1/profile', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

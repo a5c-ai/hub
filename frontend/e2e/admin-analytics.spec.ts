@@ -1,16 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { loginUser, waitForLoadingToComplete } from './helpers/test-utils';
+import { setupAuthentication, waitForLoadingToComplete } from './helpers/test-utils';
 
 test.describe('Admin System Analytics', () => {
   // Mock admin credentials
   const adminUser = {
+    username: 'admin',
     email: 'admin@example.com',
-    password: 'AdminPassword123!'
+    password: 'AdminPassword123!',
+    name: 'Admin User'
   };
 
   test.beforeEach(async ({ page }) => {
-    // Login as admin user
-    await loginUser(page, adminUser.email, adminUser.password);
+    // Setup authentication for admin user
+    await setupAuthentication(page, adminUser);
     
     // Mock API responses for analytics endpoints
     await page.route('**/api/v1/admin/analytics/platform*', route => {

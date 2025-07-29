@@ -41,15 +41,13 @@ jobs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: ~1.5
-
+    - name: prepare azure credentials json
+      run: |
+        echo "{\"clientId\": \"${{ vars.AZURE_APPLICATION_CLIENT_ID }}\", \"clientSecret\": \"${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}\", \"tenantId\": \"${{ vars.AZURE_TENANT_ID }}\", \"subscriptionId\": \"${{ vars.AZURE_SUBSCRIPTION_ID }}\"}" > azure-credentials.json
     - name: Azure CLI login
       uses: azure/login@v1
       with:
-        client-id: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
-        client-secret: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
-        tenant-id: ${{ vars.AZURE_TENANT_ID }}
-        subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
+        creds: azure-credentials.json
     - name: Terraform Init
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
