@@ -1,5 +1,8 @@
 name: Infrastructure Deployment
-
+env:
+  AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID  || '' }}
+  AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET  || '' }}
+  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID || '' }}
 on:
   push:
     branches: [ main ]
