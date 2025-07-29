@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { pullRequestApi } from '../../lib/pullRequestApi'
-import { CreatePullRequestRequest } from '../../types'
+import { CreatePullRequestRequest, Repository } from '../../types'
+import { apiClient, searchApi } from '../../lib/api'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Card } from '../ui/Card'
@@ -25,20 +26,55 @@ export function CreatePullRequestForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [branches, setBranches] = useState<string[]>([])
+  const [repos, setRepos] = useState<Repository[]>([])
+  const [headRepoName, setHeadRepoName] = useState<string>(repositoryName)
   
   const [formData, setFormData] = useState<CreatePullRequestRequest>({
     title: '',
     body: '',
     head: defaultHead,
     base: defaultBase,
+    head_repository_id: undefined,
     draft: false,
     maintainer_can_modify: true
   })
 
+  // load repositories in this owner/org for head repo selection
   useEffect(() => {
-    // In a real implementation, we would fetch available branches
-    setBranches(['main', 'develop', 'feature/example', 'hotfix/urgent'])
-  }, [repositoryOwner, repositoryName])
+    (async () => {
+      try {
+        const resp = await searchApi.searchRepositories('', { user: repositoryOwner, per_page: 100 })
+        const items = (resp.data as any).items as Repository[]
+        setRepos(items)
+      } catch {
+        setRepos([])
+      }
+    })()
+  }, [repositoryOwner])
+
+  // update active head repo name when selection changes
+  useEffect(() => {
+    if (formData.head_repository_id) {
+      const sel = repos.find(r => r.id === formData.head_repository_id)
+      setHeadRepoName(sel ? sel.name : repositoryName)
+    } else {
+      setHeadRepoName(repositoryName)
+    }
+  }, [formData.head_repository_id, repos, repositoryName])
+
+  // fetch branches for selected head repository
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const resp = await apiClient.get<string[]>(`/repositories/${repositoryOwner}/${headRepoName}/branches`)
+        if (mounted) setBranches(resp.data)
+      } catch {
+        if (mounted) setBranches([])
+      }
+    })()
+    return () => { mounted = false }
+  }, [repositoryOwner, headRepoName])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,8 +135,28 @@ export function CreatePullRequestForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Branch Selection */}
+        {/* Repository Selection */}
         <Card className="p-6">
+          <label htmlFor="head_repository_id" className="block text-sm font-medium text-foreground mb-2">
+            Compare repository
+          </label>
+          <select
+            id="head_repository_id"
+            value={formData.head_repository_id ?? repositoryName}
+            onChange={(e) => handleInputChange('head_repository_id', e.target.value)}
+            disabled={loading}
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
+          >
+            <option value={repositoryName}>{repositoryName}</option>
+            {repos.map(repo => (
+              <option key={repo.id} value={repo.id}>{repo.name}</option>
+            ))}
+          </select>
+          <p className="text-sm text-muted-foreground mt-2">
+            Select the repository containing your changes
+          </p>
+        </Card>
+        {/* Branch Selection */}
           <h3 className="text-lg font-medium mb-4">Comparing changes</h3>
           
           <div className="flex items-center space-x-4">
