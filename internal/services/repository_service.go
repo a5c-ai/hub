@@ -1375,7 +1375,12 @@ func (s *repositoryService) installGitHook(ctx context.Context, repoID uuid.UUID
 	}
 
 	hooksDir := filepath.Join(repoPath, "hooks")
-	hookPath := filepath.Join(hooksDir, hook.HookType)
+	// Install hook script into hooks/<type>.d/<order>_<id>.sh
+	hookDir := filepath.Join(hooksDir, hook.HookType+".d")
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
+		return fmt.Errorf("failed to create hook directory: %w", err)
+	}
+	hookPath := filepath.Join(hookDir, fmt.Sprintf("%03d_%s.sh", hook.Order, hook.ID.String()))
 
 	// Create hooks directory if it doesn't exist
 	if err := os.MkdirAll(hooksDir, 0755); err != nil {
@@ -1403,9 +1408,13 @@ func (s *repositoryService) uninstallGitHook(ctx context.Context, repoID uuid.UU
 		return err
 	}
 
-	hookPath := filepath.Join(repoPath, "hooks", hook.HookType)
-	if err := os.Remove(hookPath); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove hook script: %w", err)
+	// Remove any installed hook scripts in hooks/<type>.d
+	hookPattern := filepath.Join(repoPath, "hooks", hook.HookType+".d", fmt.Sprintf("*_%s.sh", hook.ID.String()))
+	matches, _ := filepath.Glob(hookPattern)
+	for _, m := range matches {
+		if err := os.Remove(m); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove hook script: %w", err)
+		}
 	}
 
 	return nil
@@ -1585,11 +1594,33 @@ func (s *repositoryService) setupRepositoryHooks(ctx context.Context, repoPath s
 		return fmt.Errorf("failed to create hooks directory: %w", err)
 	}
 
-	// TODO: Add pre-receive and post-receive hooks for:
-	// - Authentication/authorization checks
-	// - Commit validation
-	// - Webhook notifications
-	// - Database synchronization
+	// Create wrapper scripts for pre-receive and post-receive hooks to execute registered hooks
+	preReceiveDir := filepath.Join(hooksDir, "pre-receive.d")
+	postReceiveDir := filepath.Join(hooksDir, "post-receive.d")
+	if err := os.MkdirAll(preReceiveDir, 0755); err != nil {
+		return fmt.Errorf("failed to create pre-receive hooks directory: %w", err)
+	}
+	if err := os.MkdirAll(postReceiveDir, 0755); err != nil {
+		return fmt.Errorf("failed to create post-receive hooks directory: %w", err)
+	}
+
+	preReceiveScript := "#!/bin/sh\n" +
+		"for hook in " + preReceiveDir + "/*.sh; do\n" +
+		"  [ -x \"$hook\" ] && \"$hook\" \"$@\"\n" +
+		"done\n"
+	if err := os.WriteFile(filepath.Join(hooksDir, "pre-receive"), []byte(preReceiveScript), 0755); err != nil {
+		return fmt.Errorf("failed to write pre-receive wrapper: %w", err)
+	}
+
+	postReceiveScript := "#!/bin/sh\n" +
+		"while read oldrev newrev ref; do\n" +
+		"  for hook in " + postReceiveDir + "/*.sh; do\n" +
+		"    [ -x \"$hook\" ] && \"$hook\" \"$oldrev\" \"$newrev\" \"$ref\"\n" +
+		"  done\n" +
+		"done\n"
+	if err := os.WriteFile(filepath.Join(hooksDir, "post-receive"), []byte(postReceiveScript), 0755); err != nil {
+		return fmt.Errorf("failed to write post-receive wrapper: %w", err)
+	}
 
 	s.logger.WithField("hooks_dir", hooksDir).Debug("Repository hooks directory created")
 	return nil

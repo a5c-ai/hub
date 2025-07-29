@@ -415,9 +415,9 @@ jobs:
 ### Advanced Git Features
 
 #### Git Hooks
-- Pre-receive hooks for validation
-- Post-receive hooks for notifications
-- Custom hook scripts and policies
+- **Pre-receive hooks**: Executed before any refs are updated, used for validation and access control.
+- **Post-receive hooks**: Executed after refs update, used for notifications, webhooks, and repository synchronization.
+- **Custom hook scripts**: Register scripts via API or CLI; scripts are placed in `hooks/<type>.d/` and executed in order.
 
 #### Repository Mirroring
 - Mirror repositories from external sources
