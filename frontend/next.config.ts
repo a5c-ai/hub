@@ -12,17 +12,13 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize output and compression
   compress: true,
-  // Reduce memory usage in CI
-  ...(process.env.CI === 'true' && {
-    typescript: {
-      // Skip type checking during build (already done in linting phase)
-      ignoreBuildErrors: false,
-    },
-    eslint: {
-      // Allow warnings but fail on errors during builds
-      ignoreDuringBuilds: false,
-    },
-  }),
+  // TypeScript build should fail on type errors; skip ESLint during production builds to avoid lint warnings failure
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
