@@ -2,14 +2,24 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	config2 "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	smithy "github.com/aws/smithy-go"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // S3Backend implements the Backend interface using S3-compatible storage
 type S3Backend struct {
-	config S3Config
+	config    S3Config
+	client    *s3.Client
+	presigner *s3.PresignClient
 }
 
 // NewS3Backend creates a new S3-compatible storage backend
@@ -24,58 +34,145 @@ func NewS3Backend(config S3Config) (*S3Backend, error) {
 		return nil, fmt.Errorf("s3 secret access key is required")
 	}
 
-	// TODO: Initialize S3 client
-	// This requires adding AWS SDK dependencies
+	// Initialize AWS SDK v2 configuration
+	awsCfg, err := config2.LoadDefaultConfig(context.Background(),
+		config2.WithRegion(config.Region),
+		config2.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(config.AccessKeyID, config.SecretAccessKey, ""),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	// Configure S3 client with optional custom endpoint and path-style addressing
+	clientOpts := []func(*s3.Options){
+		func(o *s3.Options) {
+			if config.EndpointURL != "" {
+				o.EndpointResolver = s3.EndpointResolverFromURL(config.EndpointURL)
+				o.UsePathStyle = true
+			}
+		},
+	}
+	client := s3.NewFromConfig(awsCfg, clientOpts...)
+	presigner := s3.NewPresignClient(client)
 	return &S3Backend{
-		config: config,
+		config:    config,
+		client:    client,
+		presigner: presigner,
 	}, nil
 }
 
 // Upload uploads a file to S3-compatible storage
 func (s *S3Backend) Upload(ctx context.Context, path string, reader io.Reader, size int64) error {
-	// TODO: Implement S3 upload
-	// This will require the AWS SDK: github.com/aws/aws-sdk-go-v2
-	return fmt.Errorf("s3 storage upload not yet implemented - requires AWS SDK")
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+		Body:   reader,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload object %s: %w", path, err)
+	}
+	return nil
 }
 
 // Download downloads a file from S3-compatible storage
 func (s *S3Backend) Download(ctx context.Context, path string) (io.ReadCloser, error) {
-	// TODO: Implement S3 download
-	return nil, fmt.Errorf("s3 storage download not yet implemented - requires AWS SDK")
+	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to download object %s: %w", path, err)
+	}
+	return resp.Body, nil
 }
 
 // Delete deletes a file from S3-compatible storage
 func (s *S3Backend) Delete(ctx context.Context, path string) error {
-	// TODO: Implement S3 delete
-	return fmt.Errorf("s3 storage delete not yet implemented - requires AWS SDK")
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete object %s: %w", path, err)
+	}
+	return nil
 }
 
 // Exists checks if a file exists in S3-compatible storage
 func (s *S3Backend) Exists(ctx context.Context, path string) (bool, error) {
-	// TODO: Implement S3 exists check
-	return false, fmt.Errorf("s3 storage exists check not yet implemented - requires AWS SDK")
+	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotFound" {
+			return false, nil
+		}
+		var respErr *smithyhttp.ResponseError
+		if errors.As(err, &respErr) && respErr.Response.StatusCode == 404 {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check existence of object %s: %w", path, err)
+	}
+	return true, nil
 }
 
 // GetSize returns the size of a file in bytes
 func (s *S3Backend) GetSize(ctx context.Context, path string) (int64, error) {
-	// TODO: Implement S3 size check
-	return 0, fmt.Errorf("s3 storage size check not yet implemented - requires AWS SDK")
+	resp, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get size of object %s: %w", path, err)
+	}
+	return *resp.ContentLength, nil
 }
 
 // GetLastModified returns the last modified time of a file
 func (s *S3Backend) GetLastModified(ctx context.Context, path string) (time.Time, error) {
-	// TODO: Implement S3 last modified check
-	return time.Time{}, fmt.Errorf("s3 storage last modified check not yet implemented - requires AWS SDK")
+	resp, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	})
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to get last modified of object %s: %w", path, err)
+	}
+	return *resp.LastModified, nil
 }
 
 // List lists files with the given prefix
 func (s *S3Backend) List(ctx context.Context, prefix string) ([]string, error) {
-	// TODO: Implement S3 list
-	return nil, fmt.Errorf("s3 storage list not yet implemented - requires AWS SDK")
+	paginator := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.config.Bucket),
+		Prefix: aws.String(prefix),
+	})
+	var keys []string
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list objects with prefix %s: %w", prefix, err)
+		}
+		for _, obj := range page.Contents {
+			if obj.Key != nil {
+				keys = append(keys, *obj.Key)
+			}
+		}
+	}
+	return keys, nil
 }
 
 // GetURL returns a presigned URL for downloading
 func (s *S3Backend) GetURL(ctx context.Context, path string, expiry time.Duration) (string, error) {
-	// TODO: Implement S3 presigned URL
-	return "", fmt.Errorf("s3 storage presigned URL not yet implemented - requires AWS SDK")
+	presignResult, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(path),
+	}, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", fmt.Errorf("failed to presign GetObject request for %s: %w", path, err)
+	}
+	return presignResult.URL, nil
 }
