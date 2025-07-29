@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -22,7 +23,6 @@ func setupSearchTestDB(t *testing.T) *gorm.DB {
 		&models.User{},
 		&models.Organization{},
 		&models.Repository{},
-		&models.Issue{},
 		&models.Commit{},
 	)
 	require.NoError(t, err)
@@ -62,17 +62,6 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 	}
 	require.NoError(t, db.Create(&repo).Error)
 
-	issue := models.Issue{
-		ID:           uuid.New(),
-		Number:       1,
-		Title:        "Test issue",
-		Body:         "Test issue body",
-		RepositoryID: repo.ID,
-		UserID:       &user.ID,
-		State:        "open",
-	}
-	require.NoError(t, db.Create(&issue).Error)
-
 	commit := models.Commit{
 		ID:           uuid.New(),
 		SHA:          "abcd1234567890abcd1234567890abcd12345678",
@@ -88,7 +77,6 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 		filter        SearchFilter
 		expectUsers   bool
 		expectRepos   bool
-		expectIssues  bool
 		expectOrgs    bool
 		expectCommits bool
 	}{
@@ -101,7 +89,6 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 			},
 			expectUsers:   true,
 			expectRepos:   true,
-			expectIssues:  true,
 			expectOrgs:    true,
 			expectCommits: true,
 		},
@@ -124,16 +111,6 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 				PerPage: 30,
 			},
 			expectRepos: true,
-		},
-		{
-			name: "search issues only",
-			filter: SearchFilter{
-				Query:   "test",
-				Type:    "issue",
-				Page:    1,
-				PerPage: 30,
-			},
-			expectIssues: true,
 		},
 		{
 			name: "search organizations only",
@@ -159,7 +136,7 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := service.GlobalSearch(tt.filter)
+			results, err := service.GlobalSearch(context.Background(), tt.filter)
 			require.NoError(t, err)
 			require.NotNil(t, results)
 
@@ -173,12 +150,6 @@ func TestSearchService_GlobalSearch(t *testing.T) {
 				assert.Greater(t, len(results.Repositories), 0, "Expected to find repositories")
 			} else {
 				assert.Equal(t, 0, len(results.Repositories), "Expected no repositories")
-			}
-
-			if tt.expectIssues {
-				assert.Greater(t, len(results.Issues), 0, "Expected to find issues")
-			} else {
-				assert.Equal(t, 0, len(results.Issues), "Expected no issues")
 			}
 
 			if tt.expectOrgs {
@@ -334,13 +305,11 @@ func TestSearchService_SearchRepositories(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repos, err := service.searchRepositories(RepositorySearchFilter{
-				SearchFilter: SearchFilter{
-					Query:   tt.query,
-					Page:    1,
-					PerPage: 30,
-					UserID:  tt.userID,
-				},
+			repos, err := service.searchRepositories(SearchFilter{
+				Query:   tt.query,
+				Page:    1,
+				PerPage: 30,
+				UserID:  tt.userID,
 			}, 0)
 			require.NoError(t, err)
 			assert.Len(t, repos, tt.expectedCount)
@@ -352,7 +321,7 @@ func TestSearchService_EmptyQuery(t *testing.T) {
 	db := setupSearchTestDB(t)
 	service := NewSearchService(db, nil, logrus.New())
 
-	results, err := service.GlobalSearch(SearchFilter{
+	results, err := service.GlobalSearch(context.Background(), SearchFilter{
 		Query:   "",
 		Page:    1,
 		PerPage: 30,
@@ -379,7 +348,7 @@ func TestSearchService_Pagination(t *testing.T) {
 	}
 
 	// Test first page
-	results1, err := service.GlobalSearch(SearchFilter{
+	results1, err := service.GlobalSearch(context.Background(), SearchFilter{
 		Query:   "test",
 		Type:    "user",
 		Page:    1,
@@ -389,7 +358,7 @@ func TestSearchService_Pagination(t *testing.T) {
 	assert.Len(t, results1.Users, 30)
 
 	// Test second page
-	results2, err := service.GlobalSearch(SearchFilter{
+	results2, err := service.GlobalSearch(context.Background(), SearchFilter{
 		Query:   "test",
 		Type:    "user",
 		Page:    2,
