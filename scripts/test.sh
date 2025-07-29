@@ -162,7 +162,12 @@ cleanup_test_db() {
 }
 trap cleanup_test_db EXIT
 
-setup_test_db
+# Only start PostgreSQL test container for E2E tests (unit tests use in-memory DB)
+if [[ "$E2E" == "true" ]]; then
+    setup_test_db
+else
+    test_log "Skipping PostgreSQL test container setup (E2E disabled)"
+fi
 
 # Build before testing if requested
 if [[ "$BUILD_FIRST" == "true" && "$E2E_ONLY" == "false" ]]; then
