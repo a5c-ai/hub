@@ -183,10 +183,12 @@ func (s *OIDCService) HandleCallback(ctx context.Context, providerName, code, st
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	refreshToken, err := s.jwtManager.GenerateToken(user) // TODO: implement proper refresh token logic
+	// Create a session to generate a secure refresh token
+	session, err := s.authSvc.(*authService).sessionService.CreateSession(user.ID, "", "", false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+		return nil, fmt.Errorf("failed to create session for refresh token: %w", err)
 	}
+	refreshToken := session.RefreshToken
 
 	// Update last login
 	now := time.Now()
