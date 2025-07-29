@@ -143,7 +143,7 @@ func TestExportJobQueue(t *testing.T) {
 		"delete_branch_on_merge": false,
 		"auto_init":              true,
 	}
-	data, _ = json.Marshal(createReq)
+	data, _ := json.Marshal(createReq)
 	req, _ := http.NewRequest("POST", baseURL+"/api/v1/repositories", bytes.NewReader(data))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
@@ -158,7 +158,7 @@ func TestExportJobQueue(t *testing.T) {
 	}
 	// initiate export
 	reqBody := map[string]string{"remote_url": "https://github.com/example/remote.git", "token": "token123"}
-	data, _ = json.Marshal(reqBody)
+	data, _ := json.Marshal(reqBody)
 	exportURL := fmt.Sprintf("%s/api/v1/repositories/%s/%s/export", baseURL, username, repoName)
 	req, _ = http.NewRequest("POST", exportURL, bytes.NewReader(data))
 	req.Header.Set("Authorization", "Bearer "+token)
