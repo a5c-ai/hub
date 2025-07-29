@@ -34,17 +34,23 @@ func (h *AdminEmailHandlers) GetEmailConfig(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if user is admin
+	// Check if user is admin
+	isAdmin, ok := c.Get("is_admin")
+	if !ok || !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
 	h.logger.WithField("user_id", userID).Info("Admin accessing email config")
 
 	// Return current SMTP configuration (without sensitive data)
 	c.JSON(http.StatusOK, gin.H{
 		"smtp": gin.H{
-			"host":     h.config.SMTP.Host,
-			"port":     h.config.SMTP.Port,
-			"username": h.config.SMTP.Username,
-			"from":     h.config.SMTP.From,
-			"use_tls":  h.config.SMTP.UseTLS,
+			"host":       h.config.SMTP.Host,
+			"port":       h.config.SMTP.Port,
+			"username":   h.config.SMTP.Username,
+			"from":       h.config.SMTP.From,
+			"use_tls":    h.config.SMTP.UseTLS,
 			"configured": h.config.SMTP.Host != "",
 		},
 		"application": gin.H{
@@ -62,7 +68,12 @@ func (h *AdminEmailHandlers) UpdateEmailConfig(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if user is admin
+	// Check if user is admin
+	isAdmin, ok := c.Get("is_admin")
+	if !ok || !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
 	h.logger.WithField("user_id", userID).Info("Admin updating email config")
 
 	var req struct {
@@ -104,7 +115,12 @@ func (h *AdminEmailHandlers) TestEmailConfig(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if user is admin
+	// Check if user is admin
+	isAdmin, ok := c.Get("is_admin")
+	if !ok || !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
 	h.logger.WithField("user_id", userID).Info("Admin testing email config")
 
 	var req struct {
@@ -128,7 +144,7 @@ func (h *AdminEmailHandlers) TestEmailConfig(c *gin.Context) {
 
 	// Initialize email service and send test email
 	emailService := auth.NewSMTPEmailService(h.config)
-	
+
 	// Create a simple test email (we'll modify the email service to support custom emails later)
 	err := emailService.SendPasswordResetEmail(req.To, "test-token-not-real")
 	if err != nil {
@@ -154,7 +170,12 @@ func (h *AdminEmailHandlers) GetEmailLogs(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if user is admin
+	// Check if user is admin
+	isAdmin, ok := c.Get("is_admin")
+	if !ok || !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
 	h.logger.WithField("user_id", userID).Info("Admin accessing email logs")
 
 	// Parse query parameters
@@ -167,30 +188,30 @@ func (h *AdminEmailHandlers) GetEmailLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"logs": []gin.H{
 			{
-				"id":         "1",
-				"to":         "user@example.com",
-				"subject":    "Email Verification",
-				"type":       "verification",
-				"status":     "sent",
-				"sent_at":    "2025-07-26T04:00:00Z",
-				"delivered":  true,
-				"error":      nil,
+				"id":        "1",
+				"to":        "user@example.com",
+				"subject":   "Email Verification",
+				"type":      "verification",
+				"status":    "sent",
+				"sent_at":   "2025-07-26T04:00:00Z",
+				"delivered": true,
+				"error":     nil,
 			},
 			{
-				"id":         "2",
-				"to":         "admin@example.com",
-				"subject":    "Password Reset Request",
-				"type":       "password_reset",
-				"status":     "sent",
-				"sent_at":    "2025-07-26T03:30:00Z",
-				"delivered":  true,
-				"error":      nil,
+				"id":        "2",
+				"to":        "admin@example.com",
+				"subject":   "Password Reset Request",
+				"type":      "password_reset",
+				"status":    "sent",
+				"sent_at":   "2025-07-26T03:30:00Z",
+				"delivered": true,
+				"error":     nil,
 			},
 		},
 		"pagination": gin.H{
-			"page":       page,
-			"per_page":   perPage,
-			"total":      2,
+			"page":        page,
+			"per_page":    perPage,
+			"total":       2,
 			"total_pages": 1,
 		},
 		"filters": gin.H{
@@ -207,12 +228,17 @@ func (h *AdminEmailHandlers) GetEmailHealth(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if user is admin
+	// Check if user is admin
+	isAdmin, ok := c.Get("is_admin")
+	if !ok || !isAdmin.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
 	h.logger.WithField("user_id", userID).Info("Admin checking email health")
 
 	// Check if SMTP is configured
 	configured := h.config.SMTP.Host != ""
-	
+
 	status := "healthy"
 	if !configured {
 		status = "not_configured"
@@ -227,10 +253,10 @@ func (h *AdminEmailHandlers) GetEmailHealth(c *gin.Context) {
 			"from_configured": h.config.SMTP.From != "",
 		},
 		"stats": gin.H{
-			"emails_sent_today":    0,  // TODO: implement actual stats
+			"emails_sent_today":     0, // TODO: implement actual stats
 			"emails_sent_this_week": 0,
 			"failed_emails_today":   0,
-			"success_rate":         100.0,
+			"success_rate":          100.0,
 		},
 		"last_check": "2025-07-26T05:00:00Z",
 	})
