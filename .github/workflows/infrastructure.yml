@@ -42,12 +42,20 @@ jobs:
       with:
         terraform_version: ~1.5
     - name: prepare azure credentials json
+      id: prepare-azure-credentials
+      env:
+        AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       run: |
-        echo "{\"clientId\": \"${{ vars.AZURE_APPLICATION_CLIENT_ID }}\", \"clientSecret\": \"${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}\", \"tenantId\": \"${{ vars.AZURE_TENANT_ID }}\", \"subscriptionId\": \"${{ vars.AZURE_SUBSCRIPTION_ID }}\"}" > azure-credentials.json
+        echo "{\"clientId\": \"${{ env.AZURE_APPLICATION_CLIENT_ID }}\", \"clientSecret\": \"${{ env.AZURE_APPLICATION_CLIENT_SECRET }}\", \"tenantId\": \"${{ env.AZURE_TENANT_ID }}\", \"subscriptionId\": \"${{ env.AZURE_SUBSCRIPTION_ID }}\"}" | jq -r tostring > azure-credentials.json
+        # output the file to the job output
+        echo "::set-output name=azure-credentials::$(cat azure-credentials.json)"
     - name: Azure CLI login
       uses: azure/login@v1
       with:
-        creds: azure-credentials.json
+        creds: ${{ steps.prepare-azure-credentials.outputs.azure-credentials }}
     - name: Terraform Init
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}

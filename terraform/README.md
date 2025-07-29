@@ -17,6 +17,7 @@ The Hub infrastructure is designed as a microservices-based architecture optimiz
 - **Azure Monitor & Log Analytics**: Comprehensive monitoring and logging
 
 ### Security Features
+
 - Private endpoints for all PaaS services
 - Network security groups with least-privilege access
 - Web Application Firewall with OWASP rules
