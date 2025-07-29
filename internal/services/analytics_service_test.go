@@ -16,8 +16,31 @@ import (
 
 func TestAnalyticsService_RecordAndGetEvents(t *testing.T) {
 	db := testutil.NewTestDB(t)
-	// migrate AnalyticsEvent schema
-	require.NoError(t, db.AutoMigrate(&models.AnalyticsEvent{}))
+	// create analytics_events table without default uuid function for SQLite
+	require.NoError(t, db.Exec(`
+		CREATE TABLE analytics_events (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			event_type VARCHAR(100) NOT NULL,
+			actor_id TEXT,
+			actor_type VARCHAR(50),
+			target_type VARCHAR(50),
+			target_id TEXT,
+			repository_id TEXT,
+			organization_id TEXT,
+			user_agent TEXT,
+			ip_address VARCHAR(45),
+			session_id VARCHAR(255),
+			request_id VARCHAR(255),
+			metadata JSON,
+			duration INTEGER,
+			size INTEGER,
+			status VARCHAR(50),
+			error_message TEXT
+		);
+	`).Error)
 
 	logger := logrus.New()
 	svc := services.NewAnalyticsService(db, logger)
