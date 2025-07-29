@@ -213,7 +213,11 @@ az account set --subscription "your-subscription-id"
 
 # Deploy with Terraform
 cd terraform/environments/production
-terraform init -backend-config="resource_group_name=hub-terraform-state"
+terraform init \
+  -backend-config="resource_group_name=hub-terraform-state" \
+  -backend-config="storage_account_name=tfstateXXXXX" \
+  -backend-config="container_name=tfstate" \
+  -backend-config="key=production.terraform.tfstate"
 terraform apply -var-file="azure.tfvars"
 ```
 
