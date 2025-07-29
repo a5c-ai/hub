@@ -1,12 +1,13 @@
 package auth
 
 import (
-	"testing"
-	"time"
+   "reflect"
+   "testing"
+   "time"
 
-	"github.com/google/uuid"
-	"github.com/a5c-ai/hub/internal/config"
-	"github.com/a5c-ai/hub/internal/models"
+   "github.com/google/uuid"
+   "github.com/a5c-ai/hub/internal/config"
+   "github.com/a5c-ai/hub/internal/models"
 )
 
 func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
@@ -193,5 +194,34 @@ func TestJWTManager_GenerateTokenWithAdminUser(t *testing.T) {
 
 	if !claims.IsAdmin {
 		t.Error("Expected admin user to have admin privileges")
+	}
+}
+
+// Test that roles assigned to the user are propagated in JWT claims
+func TestJWTManager_RolesInToken(t *testing.T) {
+	cfg := config.JWT{Secret: "test-secret", ExpirationHour: 1}
+	jwtManager := NewJWTManager(cfg)
+
+	testUserID := uuid.New()
+	user := &models.User{
+		ID:    testUserID,
+		Username: "testuser",
+		Email:    "test@example.com",
+		Roles:    []string{"roleA", "roleB"},
+		IsAdmin:  false,
+	}
+
+	token, err := jwtManager.GenerateToken(user)
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	claims, err := jwtManager.ValidateToken(token)
+	if err != nil {
+		t.Fatalf("Failed to validate token: %v", err)
+	}
+
+	if !reflect.DeepEqual(claims.Roles, user.Roles) {
+		t.Errorf("Expected roles %v, got %v", user.Roles, claims.Roles)
 	}
 }

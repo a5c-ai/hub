@@ -171,10 +171,10 @@ func (s *OIDCService) HandleCallback(ctx context.Context, providerName, code, st
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	// Find or create user
-	user, err := s.findOrCreateOIDCUser(claims)
+	// Find or create user and assign roles per JIT provisioning rules
+	user, err := s.ProvisionUser(claims, &JITProvisioningConfig{Enabled: true})
 	if err != nil {
-		return nil, fmt.Errorf("failed to find or create user: %w", err)
+		return nil, fmt.Errorf("failed to provision user: %w", err)
 	}
 
 	// Generate our own tokens
@@ -345,12 +345,13 @@ func (s *OIDCService) ensureUniqueUsername(baseUsername string) string {
 }
 
 // Just-in-Time (JIT) user provisioning
+// JITProvisioningConfig holds just-in-time provisioning settings for OIDC users
 type JITProvisioningConfig struct {
-	Enabled             bool              `json:"enabled"`
-	DefaultRole         string            `json:"default_role"`
-	AttributeMapping    map[string]string `json:"attribute_mapping"`
-	GroupMapping        map[string]string `json:"group_mapping"`
-	CreateOrganizations bool              `json:"create_organizations"`
+	Enabled             bool              `json:"enabled" mapstructure:"enabled"`
+	DefaultRole         string            `json:"default_role" mapstructure:"default_role"`
+	AttributeMapping    map[string]string `json:"attribute_mapping" mapstructure:"attribute_mapping"`
+	GroupMapping        map[string]string `json:"group_mapping" mapstructure:"group_mapping"`
+	CreateOrganizations bool              `json:"create_organizations" mapstructure:"create_organizations"`
 }
 
 func (s *OIDCService) ProvisionUser(claims *OIDCClaims, config *JITProvisioningConfig) (*models.User, error) {
@@ -358,33 +359,45 @@ func (s *OIDCService) ProvisionUser(claims *OIDCClaims, config *JITProvisioningC
 		return s.findOrCreateOIDCUser(claims)
 	}
 
-	// Enhanced user provisioning with group/role mapping
-	user, err := s.findOrCreateOIDCUser(claims)
-	if err != nil {
-		return nil, err
-	}
+   // Enhanced user provisioning with group/role mapping and role assignment
+   user, err := s.findOrCreateOIDCUser(claims)
+   if err != nil {
+       return nil, err
+   }
 
-	// Map groups to roles if configured
-	if len(config.GroupMapping) > 0 {
-		for _, group := range claims.Groups {
-			if role, exists := config.GroupMapping[group]; exists {
-				// Apply role to user (this would need role management implementation)
-				_ = role // TODO: implement role assignment
-			}
-		}
-	}
+   // Collect roles from token claims and group mappings
+   var userRoles []string
+   if len(claims.Roles) > 0 {
+       userRoles = append(userRoles, claims.Roles...)
+   }
+   for _, group := range claims.Groups {
+       if role, exists := config.GroupMapping[group]; exists {
+           userRoles = append(userRoles, role)
+       }
+   }
+   // Fallback to default role if none assigned
+   if len(userRoles) == 0 && config.DefaultRole != "" {
+       userRoles = append(userRoles, config.DefaultRole)
+   }
+   // Deduplicate roles and assign to user for JWT/session
+   seen := make(map[string]struct{}, len(userRoles))
+   for _, r := range userRoles {
+       if _, ok := seen[r]; !ok {
+           seen[r] = struct{}{}
+           user.Roles = append(user.Roles, r)
+       }
+   }
 
-	// Create organizations if configured
-	if config.CreateOrganizations {
-		for _, group := range claims.Groups {
-			if err := s.createOrAssignOrganization(user.ID, group); err != nil {
-				// Log error but don't fail the process
-				fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
-			}
-		}
-	}
+   if config.CreateOrganizations {
+       for _, group := range claims.Groups {
+           if err := s.createOrAssignOrganization(user.ID, group); err != nil {
+               // Log error but don't fail the process
+               fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
+           }
+       }
+   }
 
-	return user, nil
+   return user, nil
 }
 
 // createOrAssignOrganization creates an organization if it doesn't exist and assigns the user
