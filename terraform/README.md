@@ -52,6 +52,7 @@ terraform/
 ## Prerequisites
 
 ### Required Tools
+
 - [Terraform](https://terraform.io/) 1.5 or later
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) 2.50 or later
 - [jq](https://stedolan.github.io/jq/) (for JSON processing in scripts)
