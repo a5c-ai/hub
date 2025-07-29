@@ -70,6 +70,7 @@ jobs:
         resource_group_name  = "${{ secrets.TFSTATE_RESOURCE_GROUP_NAME }}"
         storage_account_name = "${{ secrets.TFSTATE_STORAGE_ACCOUNT_NAME }}"
         container_name       = "${{ secrets.TFSTATE_CONTAINER_NAME }}"
+        use_azuread          = true
         key                  = "${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
         EOF
         terraform init -backend-config=backend.conf
