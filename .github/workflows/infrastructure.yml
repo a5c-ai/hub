@@ -34,13 +34,10 @@ jobs:
     - name: Azure CLI login
       uses: azure/login@v1
       with:
-        creds: |
-          {
-            "clientId": "${{ secrets.AZURE_APPLICATION_CLIENT_ID }}",
-            "clientSecret": "${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}",
-            "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
-            "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-          }
+        client-id: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        client-secret: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        tenant-id: ${{ vars.AZURE_TENANT_ID }}
+        subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     - name: Terraform Init
       env:
