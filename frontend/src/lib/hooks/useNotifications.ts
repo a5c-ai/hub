@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react'
  */
 export function useNotifications<T = any>(): T[] {
   const [notifications, setNotifications] = useState<T[]>([])
-  const wsRef = useRef<WebSocket>()
+  const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
