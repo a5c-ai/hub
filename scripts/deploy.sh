@@ -342,15 +342,15 @@ if [[ "$DRY_RUN" == "false" && "$ROLLBACK" == "false" ]]; then
     # Basic health check (customize based on your application)
     case $DEPLOYMENT_TYPE in
         kubernetes)
-            if command -v kubectl &> /dev/null; then
+            if command -v kubectl &> /dev/null && kubectl cluster-info >/dev/null 2>&1; then
                 # Check pod status
                 kubectl get pods -n "hub-${ENVIRONMENT}" -l app=hub
-                
+
                 # Try to get service URL
                 SERVICE_URL=$(kubectl get ingress hub-ingress -n "hub-${ENVIRONMENT}" -o jsonpath='{.spec.rules[0].host}' 2>/dev/null || echo "")
                 if [[ -n "$SERVICE_URL" ]]; then
                     deploy_log "Application URL: https://$SERVICE_URL"
-                    
+
                     # Basic health check
                     if curl -f -s "https://$SERVICE_URL/health" >/dev/null; then
                         deploy_log "Health check passed ✅"
@@ -358,6 +358,8 @@ if [[ "$DRY_RUN" == "false" && "$ROLLBACK" == "false" ]]; then
                         warn "Health check failed ⚠️"
                     fi
                 fi
+            else
+                warn "kubectl cannot connect to cluster, skipping post-deployment verification"
             fi
             ;;
         docker)
