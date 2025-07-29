@@ -1,31 +1,35 @@
 package api
 
 import (
-	"compress/gzip"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+   "compress/gzip"
+   "fmt"
+   "io"
+   "net/http"
+   "os"
+   "os/exec"
+   "path/filepath"
+   "strings"
 
-	"github.com/a5c-ai/hub/internal/services"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+   "github.com/a5c-ai/hub/internal/auth"
+   "github.com/a5c-ai/hub/internal/models"
+   "github.com/a5c-ai/hub/internal/services"
+   "github.com/gin-gonic/gin"
+   "github.com/sirupsen/logrus"
 )
 
 // GitHandlers contains handlers for Git HTTP protocol endpoints
 type GitHandlers struct {
 	repositoryService services.RepositoryService
 	logger            *logrus.Logger
+	jwtManager        *auth.JWTManager
 }
 
 // NewGitHandlers creates a new Git handlers instance
-func NewGitHandlers(repositoryService services.RepositoryService, logger *logrus.Logger) *GitHandlers {
+func NewGitHandlers(repositoryService services.RepositoryService, logger *logrus.Logger, jwtManager *auth.JWTManager) *GitHandlers {
 	return &GitHandlers{
 		repositoryService: repositoryService,
 		logger:            logger,
+		jwtManager:        jwtManager,
 	}
 }
 
@@ -141,8 +145,23 @@ func (h *GitHandlers) UploadPack(c *gin.Context) {
 		return
 	}
 
-	// Check repository visibility for authentication
-	// TODO: Add authentication check for private repositories
+   // Enforce authentication for private repositories
+   if repo.Visibility == models.VisibilityPrivate {
+       authHeader := c.GetHeader("Authorization")
+       if authHeader == "" {
+           c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+           return
+       }
+       parts := strings.SplitN(authHeader, " ", 2)
+       if len(parts) != 2 || parts[0] != "Bearer" {
+           c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
+           return
+       }
+       if _, err := h.jwtManager.ValidateToken(parts[1]); err != nil {
+           c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+           return
+       }
+   }
 
 	// Get repository path
 	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
@@ -187,8 +206,23 @@ func (h *GitHandlers) ReceivePack(c *gin.Context) {
 		return
 	}
 
-	// TODO: Add authentication check for push operations
-	// Push operations should require authentication
+	// Enforce authentication for push operations
+	{
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			return
+		}
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
+			return
+		}
+		if _, err := h.jwtManager.ValidateToken(parts[1]); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+	}
 
 	// Get repository path
 	repoPath, err := h.repositoryService.GetRepositoryPath(c.Request.Context(), repo.ID)
