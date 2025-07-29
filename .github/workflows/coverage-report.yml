@@ -32,11 +32,10 @@ jobs:
           E2E: false
         run: |
           ./scripts/test.sh --no-e2e
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage as artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          path: |
             coverage.out
             frontend/coverage/lcov.info
-          flags: unittests
-          fail_ci_if_error: true
+          retention-days: 1
