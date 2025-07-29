@@ -148,9 +148,9 @@ export function CreatePullRequestForm({
             className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
           >
             <option value={repositoryName}>{repositoryName}</option>
-            {repos.map(repo => (
-              <option key={repo.id} value={repo.id}>{repo.name}</option>
-            ))}
+            {repos.map(repo => {
+              return <option key={repo.id} value={repo.id}>{repo.name}</option>
+            })}
           </select>
           <p className="text-sm text-muted-foreground mt-2">
             Select the repository containing your changes
@@ -171,9 +171,9 @@ export function CreatePullRequestForm({
                 className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 disabled={loading}
               >
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
-                ))}
+                {branches.map(branch => {
+                  return <option key={branch} value={branch}>{branch}</option>
+                })}
               </select>
             </div>
             
@@ -195,9 +195,9 @@ export function CreatePullRequestForm({
                 disabled={loading}
               >
                 <option value="">Select a branch</option>
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
-                ))}
+                {branches.map(branch => {
+                  return <option key={branch} value={branch}>{branch}</option>
+                })}
               </select>
             </div>
           </div>
