@@ -98,7 +98,6 @@ resource "azurerm_postgresql_flexible_server_configuration" "max_connections" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "postgresql" {
-  count                      = var.log_analytics_workspace_id != null ? 1 : 0
   name                       = "${var.server_name}-diagnostics"
   target_resource_id         = azurerm_postgresql_flexible_server.main.id
   log_analytics_workspace_id = var.log_analytics_workspace_id

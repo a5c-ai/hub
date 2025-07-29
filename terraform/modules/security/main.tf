@@ -235,7 +235,6 @@ resource "azurerm_network_security_group" "appgw" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "appgw" {
-  count                      = var.log_analytics_workspace_id != null ? 1 : 0
   name                       = "${var.application_gateway_name}-diagnostics"
   target_resource_id         = azurerm_application_gateway.main.id
   log_analytics_workspace_id = var.log_analytics_workspace_id

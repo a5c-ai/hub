@@ -144,7 +144,6 @@ resource "azurerm_private_endpoint" "keyvault" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "keyvault" {
-  count                      = var.log_analytics_workspace_id != null ? 1 : 0
   name                       = "${var.key_vault_name}-diagnostics"
   target_resource_id         = azurerm_key_vault.main.id
   log_analytics_workspace_id = var.log_analytics_workspace_id
