@@ -25,7 +25,7 @@ WORKDIR /app
 
 # Install only production dependencies (skip prepare scripts)
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
