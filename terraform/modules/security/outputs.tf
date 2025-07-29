@@ -20,7 +20,7 @@ output "public_ip_fqdn" {
 
 output "backend_address_pool_id" {
   description = "The ID of the backend address pool"
-  value       = azurerm_application_gateway.main.backend_address_pool[0].id
+  value       = [for bap in azurerm_application_gateway.main.backend_address_pool : bap.id][0]
 }
 
 output "waf_policy_id" {
