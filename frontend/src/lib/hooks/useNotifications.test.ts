@@ -33,10 +33,14 @@ describe('useNotifications', () => {
 
   it('receives notifications via WebSocket', () => {
     const { result } = renderHook(() => useNotifications<any>())
+    // flush effect to establish WebSocket instance
+    act(() => {})
+
     // send test notification
     act(() => {
       wsInstance.send(JSON.stringify({ id: '1', message: 'hi' }))
     })
+
     expect(result.current).toEqual([{ id: '1', message: 'hi' }])
   })
 })
