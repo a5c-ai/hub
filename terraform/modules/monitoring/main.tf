@@ -196,6 +196,7 @@ resource "azurerm_dashboard_grafana" "main" {
   api_key_enabled                   = var.grafana_api_key_enabled
   deterministic_outbound_ip_enabled = var.grafana_deterministic_outbound_ip_enabled
   public_network_access_enabled     = var.grafana_public_network_access_enabled
+  grafana_major_version             = "10"
 
   identity {
     type = "SystemAssigned"
@@ -236,11 +237,13 @@ resource "azurerm_monitor_data_collection_rule" "main" {
       facility_names = ["*"]
       log_levels     = ["*"]
       name           = "datasource-syslog"
+      streams        = ["Microsoft-Syslog"]
     }
 
     performance_counter {
       name                          = "datasource-perfcounter"
       sampling_frequency_in_seconds = 60
+      streams                       = ["Microsoft-Perf"]
       counter_specifiers            = [
         "\\Processor Information(_Total)\\% Processor Time",
         "\\Processor Information(_Total)\\% Privileged Time",
