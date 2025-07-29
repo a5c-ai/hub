@@ -19,6 +19,17 @@ on:
 
 jobs:
   terraform:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+      discussions: write
+      packages: write
+      pages: write
+      repository-projects: write
+      security-events: write
+      statuses: write
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'development' }}
 
@@ -34,23 +45,19 @@ jobs:
     - name: Azure CLI login
       uses: azure/login@v1
       with:
-        client-id: ${{ secrets.AZURE_APPLICATION_CLIENT_ID }}
-        client-secret: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Terraform Init
       env:
         TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
       run: |
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
-        # Generate backend configuration to avoid interactive prompts
         cat > backend.conf <<EOF
-resource_group_name  = "${{ secrets.TFSTATE_RESOURCE_GROUP_NAME }}"
-storage_account_name = "${{ secrets.TFSTATE_STORAGE_ACCOUNT_NAME }}"
-container_name       = "${{ secrets.TFSTATE_CONTAINER_NAME }}"
-key                  = "${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
-EOF
+        resource_group_name  = "${{ secrets.TFSTATE_RESOURCE_GROUP_NAME }}"
+        storage_account_name = "${{ secrets.TFSTATE_STORAGE_ACCOUNT_NAME }}"
+        container_name       = "${{ secrets.TFSTATE_CONTAINER_NAME }}"
+        key                  = "${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+        EOF
         terraform init -backend-config=backend.conf
 
     - name: Terraform Validate
