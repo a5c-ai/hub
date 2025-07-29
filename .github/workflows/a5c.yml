@@ -32,9 +32,9 @@ env:
   # gcloud credentials
   GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '' }}
   # azure credentials
-  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || '' }}
-  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET || '' }}
-  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || '' }}
+  AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID  || '' }}
+  AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET  || '' }}
+  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID || '' }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || '' }}
   # auth credentials
   GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || '' }}
