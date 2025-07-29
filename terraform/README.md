@@ -2,7 +2,6 @@
 
 This directory contains Terraform infrastructure as code (IaC) for deploying the Hub git hosting service to Azure. The infrastructure follows Azure best practices with a focus on security, scalability, and cost optimization.
 
-
 ## Architecture Overview
 
 The Hub infrastructure is designed as a microservices-based architecture optimized for Azure deployment:

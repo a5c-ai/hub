@@ -67,10 +67,10 @@ jobs:
         cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
         # Generate backend configuration to avoid interactive prompts
         cat > backend.conf <<EOF
-        resource_group_name  = "a5c-hub-rg-${{ github.event.inputs.environment || 'development' }}"
-        storage_account_name = "a5c-hub-storage-${{ github.event.inputs.environment || 'development' }}"
-        container_name       = "tfstate-${{ github.event.inputs.environment || 'development' }}"
-        key                  = "${{ github.event.inputs.environment || 'development' }}.terraform.tfstate"
+        resource_group_name  = "a5c-hub-main-rg"
+        storage_account_name = "a5c-hub-main-str"
+        container_name       = "tf-main"
+        key                  = "main.terraform.tfstate"
         EOF
         terraform init -backend-config=backend.conf
 
