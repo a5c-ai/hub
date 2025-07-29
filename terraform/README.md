@@ -6,6 +6,7 @@ This directory contains Terraform infrastructure as code (IaC) for deploying the
 
 The Hub infrastructure is designed as a microservices-based architecture optimized for Azure deployment:
 
+
 ### Core Services
 
 - **Azure Kubernetes Service (AKS)**: Container orchestration platform
