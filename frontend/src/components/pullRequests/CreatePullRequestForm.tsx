@@ -119,8 +119,7 @@ export function CreatePullRequestForm({
     if (error) setError(null)
   }
 
-  return (
-    <div className="max-w-4xl mx-auto">
+  return <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Create a new pull request</h1>
         <p className="text-muted-foreground mt-2">
@@ -157,6 +156,7 @@ export function CreatePullRequestForm({
           </p>
         </Card>
         {/* Branch Selection */}
+        <Card className="p-6">
           <h3 className="text-lg font-medium mb-4">Comparing changes</h3>
           
           <div className="flex items-center space-x-4">
@@ -171,9 +171,7 @@ export function CreatePullRequestForm({
                 className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground"
                 disabled={loading}
               >
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
-                ))}
+                {branches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
               </select>
             </div>
             
@@ -195,9 +193,7 @@ export function CreatePullRequestForm({
                 disabled={loading}
               >
                 <option value="">Select a branch</option>
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
-                ))}
+                {branches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
               </select>
             </div>
           </div>
@@ -302,6 +298,5 @@ export function CreatePullRequestForm({
           </Button>
         </div>
       </form>
-    </div>
-  )
+    </div>;
 }
