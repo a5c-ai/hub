@@ -106,11 +106,28 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: true
-          cache-dependency-path: |
-            go.sum
-            go.mod
           check-latest: false  # Disable version checking to speed up builds
+
+      - name: Download Go modules
+        timeout-minutes: 10  # Ensure modules are available for tests
+        run: |
+          export GOPROXY=https://proxy.golang.org,direct
+          export GOSUMDB=sum.golang.org
+          export GOTIMEOUT=8m
+          for i in {1..2}; do
+            echo "Attempt $i: Downloading Go modules..."
+            if go mod download && go mod verify; then
+              echo "✅ Go modules downloaded successfully"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              if [ $i -eq 2 ]; then
+                echo "🚨 All attempts failed"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
           
       - name: Setup Node.js with better caching
         uses: actions/setup-node@v4
