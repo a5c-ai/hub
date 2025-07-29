@@ -75,6 +75,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
 
+	// Initialize import/export handlers
+	importHandlers := NewImportHandlers()
+	exportHandlers := NewExportHandlers()
+
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
 
@@ -272,6 +276,12 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			}
 
 			// Protected repository endpoints
+			// Repository import/export endpoints
+			protected.POST("/repositories/import", importHandlers.InitiateImport)
+			protected.GET("/repositories/import/:job_id", importHandlers.GetImportStatus)
+			protected.POST("/repositories/:owner/:repo/export", exportHandlers.InitiateExport)
+			protected.GET("/repositories/:owner/:repo/export/:job_id", exportHandlers.GetExportStatus)
+
 			// Repository creation endpoint (without group to avoid trailing slash issues)
 			protected.POST("/repositories", repoHandlers.CreateRepository)
 
