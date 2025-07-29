@@ -62,7 +62,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 
 	// Initialize handlers
 	repoHandlers := NewRepositoryHandlers(repositoryService, branchService, gitService, logger, database.DB)
-	gitHandlers := NewGitHandlers(repositoryService, logger)
+	gitHandlers := NewGitHandlers(repositoryService, logger, jwtManager)
 	prHandlers := NewPullRequestHandlers(pullRequestService, logger)
 	searchHandlers := NewSearchHandlers(searchService, logger)
 
