@@ -250,6 +250,7 @@ resource "azurerm_monitor_data_collection_rule" "main" {
         "\\Process(_Total)\\Working Set",
         "\\Process(_Total)\\Working Set - Private"
       ]
+      streams                       = ["Microsoft-ContainerLog", "Microsoft-ContainerLogV2"]
     }
   }
 

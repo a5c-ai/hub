@@ -35,7 +35,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     name                = "default"
     node_count          = var.node_count
     vm_size             = var.vm_size
-    availability_zones  = var.availability_zones
+    zones                = var.availability_zones
     enable_auto_scaling = var.enable_auto_scaling
     min_count          = var.enable_auto_scaling ? var.min_node_count : null
     max_count          = var.enable_auto_scaling ? var.max_node_count : null

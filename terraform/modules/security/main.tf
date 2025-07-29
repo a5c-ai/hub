@@ -54,7 +54,7 @@ resource "azurerm_web_application_firewall_policy" "main" {
     }
 
     action = "Block"
-    rate_limit_duration_in_minutes = 1
+    rate_limit_duration = 1
     rate_limit_threshold = var.waf_rate_limit_threshold
   }
 
