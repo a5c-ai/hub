@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/a5c-ai/hub/internal/models"
 	"github.com/google/uuid"
@@ -43,6 +45,9 @@ func NewSearchService(db *gorm.DB, elasticsearch interface{}, logger *logrus.Log
 
 // GlobalSearch performs a global search across all content types
 func (s *SearchService) GlobalSearch(ctx context.Context, filter SearchFilter) (*SearchResults, error) {
+	if filter.Query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
 	results := &SearchResults{}
 
 	// Simple database search
@@ -107,8 +112,11 @@ func (s *SearchService) searchUsers(filter SearchFilter, offset int) ([]models.U
 	query := s.db.Model(&models.User{})
 
 	if filter.Query != "" {
-		query = query.Where("username ILIKE ? OR full_name ILIKE ? OR email ILIKE ?",
-			"%"+filter.Query+"%", "%"+filter.Query+"%", "%"+filter.Query+"%")
+		q := "%" + strings.ToLower(filter.Query) + "%"
+		query = query.Where(
+			"lower(username) LIKE ? OR lower(full_name) LIKE ? OR lower(email) LIKE ?",
+			q, q, q,
+		)
 	}
 
 	switch filter.Sort {
@@ -138,8 +146,11 @@ func (s *SearchService) searchRepositories(filter SearchFilter, offset int) ([]m
 	}
 
 	if filter.Query != "" {
-		query = query.Where("name ILIKE ? OR description ILIKE ?",
-			"%"+filter.Query+"%", "%"+filter.Query+"%")
+		q := "%" + strings.ToLower(filter.Query) + "%"
+		query = query.Where(
+			"lower(name) LIKE ? OR lower(description) LIKE ?",
+			q, q,
+		)
 	}
 
 	switch filter.Sort {
@@ -166,8 +177,11 @@ func (s *SearchService) searchOrganizations(filter SearchFilter, offset int) ([]
 	query := s.db.Model(&models.Organization{})
 
 	if filter.Query != "" {
-		query = query.Where("name ILIKE ? OR description ILIKE ?",
-			"%"+filter.Query+"%", "%"+filter.Query+"%")
+		q := "%" + strings.ToLower(filter.Query) + "%"
+		query = query.Where(
+			"lower(name) LIKE ? OR lower(description) LIKE ?",
+			q, q,
+		)
 	}
 
 	query = query.Order("name ASC")
@@ -180,8 +194,11 @@ func (s *SearchService) searchCommits(filter SearchFilter, offset int) ([]models
 	query := s.db.Model(&models.Commit{})
 
 	if filter.Query != "" {
-		query = query.Where("message ILIKE ? OR author_name ILIKE ?",
-			"%"+filter.Query+"%", "%"+filter.Query+"%")
+		q := "%" + strings.ToLower(filter.Query) + "%"
+		query = query.Where(
+			"lower(message) LIKE ? OR lower(author_name) LIKE ?",
+			q, q,
+		)
 	}
 
 	query = query.Order("created_at DESC")

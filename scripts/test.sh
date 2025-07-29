@@ -116,9 +116,8 @@ log "Build first: $BUILD_FIRST"
 
 # Set test environment variables
 # Set test environment variables
-export ENVIRONMENT="$TEST_ENV"
 export NODE_ENV="test"
-export GO_ENV="test"
+export GO_ENV="$TEST_ENV"
 
 # Configure test database parameters
 export DB_HOST="${TEST_DB_HOST:-localhost}"
@@ -238,7 +237,7 @@ run_frontend_tests() {
     # Ensure dependencies are installed
     if [[ ! -d "node_modules" ]]; then
         test_log "Installing frontend dependencies..."
-        npm ci
+        npm ci --legacy-peer-deps
     fi
     
     local npm_test_cmd="npm run test"

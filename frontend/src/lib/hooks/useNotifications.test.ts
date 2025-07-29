@@ -14,10 +14,16 @@ class MockWebSocket {
 
 describe('useNotifications', () => {
   let originalWebSocket: any
+  let wsInstance: MockWebSocket
 
   beforeAll(() => {
     originalWebSocket = (global as any).WebSocket
-    ;(global as any).WebSocket = MockWebSocket
+    ;(global as any).WebSocket = class extends MockWebSocket {
+      constructor(url: string) {
+        super()
+        wsInstance = this
+      }
+    } as any
     process.env.NEXT_PUBLIC_API_URL = 'http://localhost/api/v1'
   })
   afterAll(() => {
@@ -26,10 +32,9 @@ describe('useNotifications', () => {
 
   it('receives notifications via WebSocket', () => {
     const { result } = renderHook(() => useNotifications<any>())
-    const ws = (result.all[result.all.length - 1] as any).current
     // send test notification
     act(() => {
-      ;(ws as MockWebSocket).send(JSON.stringify({ id: '1', message: 'hi' }))
+      wsInstance.send(JSON.stringify({ id: '1', message: 'hi' }))
     })
     expect(result.current).toEqual([{ id: '1', message: 'hi' }])
   })
