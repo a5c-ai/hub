@@ -137,6 +137,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Enable dry-run in CI environments to avoid real deployments
+if [[ -n "$CI" ]]; then
+    warn "CI environment detected, enabling dry-run mode for deployment"
+    DRY_RUN=true
+fi
+
 # Validate environment
 case $ENVIRONMENT in
     development|staging|production)
@@ -168,26 +174,29 @@ deploy_log "Version: $VERSION"
 deploy_log "Registry: ${REGISTRY:-"local"}"
 deploy_log "Dry run: $DRY_RUN"
 
-# Set default container registry based on Terraform naming conventions
-if [[ -z "$REGISTRY" ]]; then
-    case "$ENVIRONMENT" in
-        development)
-            REGISTRY="acrhubdevelopmentwestus3.azurecr.io"
-            ;;
-        staging)
-            REGISTRY="acrhubstagingwestus3.azurecr.io"
-            ;;
-        production)
-            REGISTRY="acrhubproductionwestus3.azurecr.io"
-            ;;
-        *)
-            deploy_log "Unknown environment: $ENVIRONMENT. Container registry not set."
-            ;;
-    esac
-    
-    if [[ -n "$REGISTRY" ]]; then
-        deploy_log "Using container registry for $ENVIRONMENT environment: $REGISTRY"
+# Set default container registry based on Terraform naming conventions (skip in CI)
+if [[ -z "$CI" ]]; then
+    if [[ -z "$REGISTRY" ]]; then
+        case "$ENVIRONMENT" in
+            development)
+                REGISTRY="acrhubdevelopmentwestus3.azurecr.io"
+                ;;
+            staging)
+                REGISTRY="acrhubstagingwestus3.azurecr.io"
+                ;;
+            production)
+                REGISTRY="acrhubproductionwestus3.azurecr.io"
+                ;;
+            *)
+                deploy_log "Unknown environment: $ENVIRONMENT. Container registry not set."
+                ;;
+        esac
+        if [[ -n "$REGISTRY" ]]; then
+            deploy_log "Using container registry for $ENVIRONMENT environment: $REGISTRY"
+        fi
     fi
+else
+    deploy_log "CI environment detected, skipping default registry assignment"
 fi
 export REGISTRY VERSION
 
@@ -216,8 +225,10 @@ if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
     deploy_log "  AKS Cluster: $AZURE_AKS_CLUSTER_NAME"
 fi
 
-# Azure CLI login and AKS credentials for Kubernetes deployments
-if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; then
+# Azure CLI login and AKS credentials for Kubernetes deployments (skip in CI)
+if [[ -n "$CI" ]]; then
+    deploy_log "CI environment detected, skipping Azure CLI login and AKS credentials"
+elif command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; then
     if [[ -n "$AZURE_APPLICATION_CLIENT_ID" ]]; then
         deploy_log "Logging into Azure CLI..."
         az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
