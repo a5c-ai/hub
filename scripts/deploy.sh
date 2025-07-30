@@ -167,6 +167,20 @@ deploy_log "Version: $VERSION"
 deploy_log "Registry: ${REGISTRY:-"local"}"
 deploy_log "Dry run: $DRY_RUN"
 
+# Load Terraform outputs for AKS cluster if available
+if [[ -d "terraform/environments/$ENVIRONMENT" ]]; then
+    deploy_log "Loading Terraform outputs for $ENVIRONMENT environment cluster info..."
+    OUTPUT_DIR="terraform/environments/$ENVIRONMENT"
+    RG_NAME=$(terraform -chdir="$OUTPUT_DIR" output -raw resource_group_name 2>/dev/null || true)
+    CLUSTER_NAME=$(terraform -chdir="$OUTPUT_DIR" output -raw aks_cluster_name 2>/dev/null || true)
+    if [[ -n "$RG_NAME" && -n "$CLUSTER_NAME" ]]; then
+        export AZURE_RESOURCE_GROUP_NAME=${AZURE_RESOURCE_GROUP_NAME:-$RG_NAME}
+        export AZURE_AKS_CLUSTER_NAME=${AZURE_AKS_CLUSTER_NAME:-$CLUSTER_NAME}
+    else
+        warn "Terraform outputs for AKS cluster not found; ensure Terraform applied in $OUTPUT_DIR"
+    fi
+fi
+
 # Azure CLI login and AKS credentials for Kubernetes deployments
 if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; then
     if [[ -n "$AZURE_APPLICATION_CLIENT_ID" ]]; then

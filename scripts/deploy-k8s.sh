@@ -101,8 +101,8 @@ log "Namespace: $NAMESPACE"
 # Validate kubectl connection
 log "Checking Kubernetes connection..."
 if ! kubectl cluster-info >/dev/null 2>&1; then
-    warn "Cannot connect to Kubernetes cluster, skipping Kubernetes deployment"
-    exit 0
+    error "Cannot connect to Kubernetes cluster"
+    exit 1
 fi
 
 debug "Connected to cluster: $(kubectl config current-context)"
