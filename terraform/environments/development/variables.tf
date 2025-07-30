@@ -95,7 +95,7 @@ variable "postgresql_backup_retention_days" {
 variable "kubernetes_version" {
   description = "The version of Kubernetes to use"
   type        = string
-  default     = "1.28"
+  default     = "1.29"
 }
 
 variable "aks_node_count" {
