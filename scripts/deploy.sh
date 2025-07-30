@@ -61,6 +61,7 @@ usage() {
     echo "  VERSION                  Version tag"
     echo "  BUILD_IMAGES             Build images before deploy (true/false)"
     echo "  RUN_TESTS                Run tests before deploy (true/false)"
+    echo "  DEPLOY_TIMEOUT           Timeout for rollout and Helm wait commands (e.g., 300s, 10m)"
     echo "  AZURE_APPLICATION_CLIENT_ID     Service principal client ID for Azure login"
     echo "  AZURE_APPLICATION_CLIENT_SECRET Service principal client secret for Azure login"
     echo "  AZURE_TENANT_ID                Azure AD tenant ID for Azure login"
