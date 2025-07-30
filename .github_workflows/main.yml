@@ -283,6 +283,10 @@ jobs:
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
           
+      # Setup Terraform for deployment scripts
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
       # Deploy with increased timeout and better error handling
       - name: Deploy application
         timeout-minutes: 15  # Increased from 10 to 15 minutes
