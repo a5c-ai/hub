@@ -167,18 +167,29 @@ deploy_log "Version: $VERSION"
 deploy_log "Registry: ${REGISTRY:-"local"}"
 deploy_log "Dry run: $DRY_RUN"
 
-# Load Terraform outputs for AKS cluster if available
-if [[ -d "terraform/environments/$ENVIRONMENT" ]]; then
-    deploy_log "Loading Terraform outputs for $ENVIRONMENT environment cluster info..."
-    OUTPUT_DIR="terraform/environments/$ENVIRONMENT"
-    RG_NAME=$(terraform -chdir="$OUTPUT_DIR" output -raw resource_group_name 2>/dev/null || true)
-    CLUSTER_NAME=$(terraform -chdir="$OUTPUT_DIR" output -raw aks_cluster_name 2>/dev/null || true)
-    if [[ -n "$RG_NAME" && -n "$CLUSTER_NAME" ]]; then
-        export AZURE_RESOURCE_GROUP_NAME=${AZURE_RESOURCE_GROUP_NAME:-$RG_NAME}
-        export AZURE_AKS_CLUSTER_NAME=${AZURE_AKS_CLUSTER_NAME:-$CLUSTER_NAME}
-    else
-        warn "Terraform outputs for AKS cluster not found; ensure Terraform applied in $OUTPUT_DIR"
-    fi
+# Set default Azure resource names based on Terraform naming conventions
+case "$ENVIRONMENT" in
+    development)
+        export AZURE_RESOURCE_GROUP_NAME=${AZURE_RESOURCE_GROUP_NAME:-"rg-hub-development-westus3"}
+        export AZURE_AKS_CLUSTER_NAME=${AZURE_AKS_CLUSTER_NAME:-"aks-hub-development-westus3-v2"}
+        ;;
+    staging)
+        export AZURE_RESOURCE_GROUP_NAME=${AZURE_RESOURCE_GROUP_NAME:-"rg-hub-staging-westus3"}
+        export AZURE_AKS_CLUSTER_NAME=${AZURE_AKS_CLUSTER_NAME:-"aks-hub-staging-westus3"}
+        ;;
+    production)
+        export AZURE_RESOURCE_GROUP_NAME=${AZURE_RESOURCE_GROUP_NAME:-"rg-hub-production-westus3"}
+        export AZURE_AKS_CLUSTER_NAME=${AZURE_AKS_CLUSTER_NAME:-"aks-hub-production-westus3"}
+        ;;
+    *)
+        warn "Unknown environment: $ENVIRONMENT. Azure resource names not set."
+        ;;
+esac
+
+if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
+    deploy_log "Azure resource names for $ENVIRONMENT environment:"
+    deploy_log "  Resource Group: $AZURE_RESOURCE_GROUP_NAME"
+    deploy_log "  AKS Cluster: $AZURE_AKS_CLUSTER_NAME"
 fi
 
 # Azure CLI login and AKS credentials for Kubernetes deployments
