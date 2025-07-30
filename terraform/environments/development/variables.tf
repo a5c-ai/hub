@@ -119,3 +119,40 @@ variable "alert_email_receivers" {
   }))
   default = []
 }
+
+# GitHub Runner Variables
+variable "github_token" {
+  description = "GitHub token for self-hosted runner registration"
+  type        = string
+  default     = ""
+}
+
+variable "github_owner" {
+  description = "GitHub organization or user"
+  type        = string
+  default     = ""
+}
+
+variable "github_repository" {
+  description = "GitHub repository name"
+  type        = string
+  default     = ""
+}
+
+variable "runner_deployment_name" {
+  description = "Name for the RunnerDeployment resource"
+  type        = string
+  default     = "runner"
+}
+
+variable "runner_replicas" {
+  description = "Number of runners to maintain"
+  type        = number
+  default     = 2
+}
+
+variable "runner_labels" {
+  description = "Labels to apply to runner pods"
+  type        = map(string)
+  default     = {}
+}
