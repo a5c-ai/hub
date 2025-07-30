@@ -126,7 +126,6 @@ apply_kubectl_manifests() {
     
     # Apply in specific order for dependencies
     manifests=(
-        "$CONFIG_DIR/namespace.yaml"
         "$CONFIG_DIR/configmap.yaml"
         "$CONFIG_DIR/secrets.yaml"
         "$CONFIG_DIR/storage.yaml"
@@ -151,7 +150,7 @@ apply_kubectl_manifests() {
     for manifest in "${manifests[@]}"; do
         if [[ -f "$manifest" ]]; then
             log "Applying $manifest..."
-            $apply_cmd "$manifest" -n "$NAMESPACE"
+            sed '/^[[:space:]]*namespace:/d' "$manifest" | $apply_cmd - -n "$NAMESPACE"
         else
             warn "Manifest not found: $manifest"
         fi
