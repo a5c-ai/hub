@@ -39,23 +39,8 @@ resource "azurerm_web_application_firewall_policy" "main" {
     }
   }
 
-  custom_rules {
-    name      = "RateLimitRule"
-    priority  = 1
-    rule_type = "RateLimitRule"
-
-    match_conditions {
-      match_variables {
-        variable_name = "RemoteAddr"
-      }
-      operator           = "IPMatch"
-      negation_condition = false
-      match_values       = ["0.0.0.0/0"]
-    }
-
-    action = "Block"
-    rate_limit_threshold = var.waf_rate_limit_threshold
-  }
+  # Rate limiting rules have been temporarily disabled due to configuration complexity
+  # TODO: Implement proper rate limiting with correct GroupBy user session clause
 
   tags = var.tags
 }

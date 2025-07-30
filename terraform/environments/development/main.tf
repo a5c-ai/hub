@@ -126,6 +126,9 @@ module "storage" {
   lifecycle_archive_after_days  = 30
   lifecycle_delete_after_days   = 90
   
+  # Development network settings - allow broader access for easier development
+  network_rules_default_action  = "Allow"
+  
   tags = local.common_tags
 }
 
@@ -190,7 +193,7 @@ module "aks" {
   vm_size                    = var.aks_vm_size
   min_node_count            = 1
   max_node_count            = 3
-  availability_zones        = ["1"]  # Single zone for cost savings
+  availability_zones        = []  # East US doesn't support availability zones
   enable_auto_scaling       = true
   
   # Development environment
@@ -211,7 +214,7 @@ module "security" {
   
   # Development security settings
   application_gateway_capacity  = 1  # Minimum capacity for cost savings
-  availability_zones           = ["1"]  # Single zone
+  availability_zones           = []  # East US doesn't support availability zones
   enable_waf                   = true
   waf_mode                     = "Detection"  # Less restrictive for development
   log_analytics_workspace_id   = module.monitoring.log_analytics_workspace_id
