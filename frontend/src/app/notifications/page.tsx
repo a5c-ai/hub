@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { createErrorHandler } from '@/lib/utils';
+import { usePWAContext } from '@/components/providers/PWAProvider';
 
 interface Notification {
   id: string;
@@ -41,6 +42,8 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread' | 'participating'>('unread');
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
+  const { subscribeToPushNotifications, unsubscribeFromPushNotifications, isOnline } = usePWAContext();
+  const [pushSubscribed, setPushSubscribed] = useState(false);
 
   const fetchNotifications = async (currentFilter = filter) => {
     const handleError = createErrorHandler(setError, setLoading);
@@ -78,6 +81,15 @@ export default function NotificationsPage() {
       ws.close()
     }
   }, [])
+
+  // Check existing push subscription
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.ready.then(registration =>
+        registration.pushManager.getSubscription().then(sub => setPushSubscribed(!!sub))
+      );
+    }
+  }, []);
 
   const markAsRead = async (notificationId?: string) => {
     try {
@@ -250,6 +262,25 @@ export default function NotificationsPage() {
               <Button variant="outline" size="sm" onClick={() => markAsRead()} data-testid="mark-all-as-read">
                 Mark all as read
               </Button>
+            )}
+            {isOnline && (
+              pushSubscribed ? (
+                <Button size="sm" onClick={async () => {
+                  if (await unsubscribeFromPushNotifications()) {
+                    setPushSubscribed(false);
+                  }
+                }}>
+                  Disable Notifications
+                </Button>
+              ) : (
+                <Button size="sm" onClick={async () => {
+                  if (await subscribeToPushNotifications()) {
+                    setPushSubscribed(true);
+                  }
+                }}>
+                  Enable Notifications
+                </Button>
+              )
             )}
           </div>
         </div>
