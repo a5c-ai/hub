@@ -88,3 +88,8 @@ output "application_insights_connection_string" {
   value       = module.monitoring.application_insights_connection_string
   sensitive   = true
 }
+
+output "container_registry_login_server" {
+  description = "The login server for the Container Registry"
+  value       = module.container_registry.login_server
+}
