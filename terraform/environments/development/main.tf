@@ -54,9 +54,10 @@ locals {
 module "resource_group" {
   source = "../../modules/resource_group"
   
-  name     = "rg-${local.resource_prefix}"
-  location = local.location
-  tags     = local.common_tags
+  name            = "rg-${local.resource_prefix}"
+  location        = local.location
+  tags            = local.common_tags
+  prevent_destroy = false
 }
 
 # Networking

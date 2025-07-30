@@ -7,6 +7,6 @@ resource "azurerm_resource_group" "main" {
   # Note: lifecycle blocks cannot be dynamic in Terraform
   # Resource groups are foundational infrastructure and should be protected
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = var.prevent_destroy
   }
 }
