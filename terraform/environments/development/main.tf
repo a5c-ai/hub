@@ -134,6 +134,9 @@ module "storage" {
   public_network_access_enabled = true
   
   tags = local.common_tags
+
+  # Ensure networking resources (virtual network and subnets) are fully provisioned before storage account
+  depends_on = [module.networking]
 }
 
 # PostgreSQL
@@ -141,7 +144,8 @@ module "postgresql" {
   source = "../../modules/postgresql"
   
   server_name                   = "psql-${local.resource_prefix}"
-  location                     = "East US 2"
+  # Use environment location rather than fixed region to align with networking resources
+  location                     = local.location
   resource_group_name          = module.resource_group.name
   delegated_subnet_id          = module.networking.database_subnet_id
   vnet_id                      = module.networking.vnet_id
