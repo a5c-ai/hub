@@ -359,19 +359,6 @@ export const searchApi = {
     return apiClient.get(`/search/commits?${searchParams.toString()}`);
   },
 
-// Plugin API methods
-export const pluginApi = {
-  listMarketplace: () => apiClient.get<PluginManifest[]>('/plugins'),
-  installOrgPlugin: (org: string, name: string, settings: Record<string, unknown>) =>
-    apiClient.post(`/orgs/${org}/plugins/${name}/install`, { settings }),
-  uninstallOrgPlugin: (org: string, name: string) =>
-    apiClient.delete(`/orgs/${org}/plugins/${name}/uninstall`),
-  installRepoPlugin: (owner: string, repo: string, name: string, settings: Record<string, unknown>) =>
-    apiClient.post(`/repos/${owner}/${repo}/plugins/${name}/install`, { settings }),
-  uninstallRepoPlugin: (owner: string, repo: string, name: string) =>
-    apiClient.delete(`/repos/${owner}/${repo}/plugins/${name}/uninstall`),
-};
-
   // Search code
   searchCode: (query: string, params?: {
     repo?: string;
@@ -388,7 +375,7 @@ export const pluginApi = {
     if (params?.order) searchParams.append('order', params.order);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
-    
+
     return apiClient.get(`/search/code?${searchParams.toString()}`);
   },
 
@@ -406,12 +393,23 @@ export const pluginApi = {
     if (params?.order) searchParams.append('order', params.order);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
-    
+
     return apiClient.get(`/repositories/${owner}/${repo}/search?${searchParams.toString()}`);
   },
 };
 
-
+// Plugin API methods
+export const pluginApi = {
+  listMarketplace: () => apiClient.get<PluginManifest[]>('/plugins'),
+  installOrgPlugin: (org: string, name: string, settings: Record<string, unknown>) =>
+    apiClient.post(`/orgs/${org}/plugins/${name}/install`, { settings }),
+  uninstallOrgPlugin: (org: string, name: string) =>
+    apiClient.delete(`/orgs/${org}/plugins/${name}/uninstall`),
+  installRepoPlugin: (owner: string, repo: string, name: string, settings: Record<string, unknown>) =>
+    apiClient.post(`/repos/${owner}/${repo}/plugins/${name}/install`, { settings }),
+  uninstallRepoPlugin: (owner: string, repo: string, name: string) =>
+    apiClient.delete(`/repos/${owner}/${repo}/plugins/${name}/uninstall`),
+};
 
 // Comment API methods
 export const commentApi = {
