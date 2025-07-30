@@ -3,7 +3,7 @@
 set -e
 
 # Configuration
-ENVIRONMENT=${1:-staging}
+ENVIRONMENT=${1:-development}
 DEPLOYMENT_TYPE=${DEPLOYMENT_TYPE:-kubernetes}
 BUILD_IMAGES=${BUILD_IMAGES:-true}
 RUN_TESTS=${RUN_TESTS:-true}
