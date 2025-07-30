@@ -172,13 +172,13 @@ deploy_log "Dry run: $DRY_RUN"
 if [[ -z "$REGISTRY" ]]; then
     case "$ENVIRONMENT" in
         development)
-            REGISTRY="acrhubdevelopmentwestus3.azurecr.io"
+            REGISTRY="acr-hub-development-westus3.azurecr.io"
             ;;
         staging)
-            REGISTRY="acrhubstagingwestus3.azurecr.io"
+            REGISTRY="acr-hub-staging-westus3.azurecr.io"
             ;;
         production)
-            REGISTRY="acrhubproductionwestus3.azurecr.io"
+            REGISTRY="acr-hub-production-westus3.azurecr.io"
             ;;
         *)
             deploy_log "Unknown environment: $ENVIRONMENT. Container registry not set."
