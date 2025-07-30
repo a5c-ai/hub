@@ -10,6 +10,7 @@ import {
   CogIcon,
   ShieldCheckIcon,
   // ChartBarIcon,
+  PuzzlePieceIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -19,6 +20,7 @@ import {
   CogIcon as CogIconSolid,
   ShieldCheckIcon as ShieldCheckIconSolid,
   // ChartBarIcon as ChartBarIconSolid,
+  PuzzlePieceIcon as PuzzlePieceIconSolid,
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/app';
@@ -36,6 +38,12 @@ const navigation = [
     href: '/repositories',
     icon: FolderIcon,
     iconSolid: FolderIconSolid,
+  },
+  {
+    name: 'Plugins',
+    href: '/plugins',
+    icon: PuzzlePieceIcon,
+    iconSolid: PuzzlePieceIconSolid,
   },
 ];
 

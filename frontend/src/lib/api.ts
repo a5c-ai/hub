@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse, PaginatedResponse } from '@/types';
+import type { PluginManifest } from '@/types';
 
 // Create axios instance with default configuration
 const api: AxiosInstance = axios.create({
@@ -357,6 +358,19 @@ export const searchApi = {
     
     return apiClient.get(`/search/commits?${searchParams.toString()}`);
   },
+
+// Plugin API methods
+export const pluginApi = {
+  listMarketplace: () => apiClient.get<PluginManifest[]>('/plugins'),
+  installOrgPlugin: (org: string, name: string, settings: Record<string, unknown>) =>
+    apiClient.post(`/orgs/${org}/plugins/${name}/install`, { settings }),
+  uninstallOrgPlugin: (org: string, name: string) =>
+    apiClient.delete(`/orgs/${org}/plugins/${name}/uninstall`),
+  installRepoPlugin: (owner: string, repo: string, name: string, settings: Record<string, unknown>) =>
+    apiClient.post(`/repos/${owner}/${repo}/plugins/${name}/install`, { settings }),
+  uninstallRepoPlugin: (owner: string, repo: string, name: string) =>
+    apiClient.delete(`/repos/${owner}/${repo}/plugins/${name}/uninstall`),
+};
 
   // Search code
   searchCode: (query: string, params?: {

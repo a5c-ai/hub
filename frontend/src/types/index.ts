@@ -465,3 +465,35 @@ export interface ContributorStats {
   first_commit_date: string;
   last_commit_date: string;
 }
+
+/**
+ * Plugin manifest as defined by the backend plugin marketplace.
+ */
+export interface PluginManifest {
+  apiVersion: string;
+  kind: string;
+  metadata: {
+    name: string;
+    version: string;
+    description?: string;
+    author?: string;
+    website?: string;
+    license?: string;
+  };
+  spec: {
+    runtime?: string;
+    entry?: string;
+    permissions?: string[];
+    hooks?: Array<{ name: string; script: string }>;
+    webhooks?: Array<{ event: string; handler: string }>;
+    settings?: Array<{
+      name: string;
+      type: string;
+      required?: boolean;
+      secret?: boolean;
+      default?: any;
+      description?: string;
+    }>;
+    dependencies?: Array<{ name: string; version: string }>;
+  };
+}
