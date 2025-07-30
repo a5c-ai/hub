@@ -107,7 +107,7 @@ variable "postgresql_high_availability_mode" {
 variable "kubernetes_version" {
   description = "The version of Kubernetes to use"
   type        = string
-  default     = "1.28"
+  default     = "1.29"
 }
 
 variable "aks_node_count" {

@@ -143,7 +143,7 @@ variable "postgresql_standby_availability_zone" {
 variable "kubernetes_version" {
   description = "The version of Kubernetes to use"
   type        = string
-  default     = "1.28"
+  default     = "1.29"
 }
 
 variable "aks_node_count" {
