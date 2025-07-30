@@ -134,6 +134,10 @@ module "storage" {
   public_network_access_enabled = true
   
   tags = local.common_tags
+  
+  depends_on = [
+    module.networking
+  ]
 }
 
 # PostgreSQL
@@ -141,7 +145,7 @@ module "postgresql" {
   source = "../../modules/postgresql"
   
   server_name                   = "psql-${local.resource_prefix}"
-  location                     = "East US 2"
+  location                     = local.location
   resource_group_name          = module.resource_group.name
   delegated_subnet_id          = module.networking.database_subnet_id
   vnet_id                      = module.networking.vnet_id
@@ -155,6 +159,10 @@ module "postgresql" {
   additional_databases = ["hub_test"]
   
   tags = local.common_tags
+  
+  depends_on = [
+    module.networking
+  ]
 }
 
 # Monitoring
@@ -197,7 +205,7 @@ module "aks" {
   vm_size                    = var.aks_vm_size
   min_node_count            = 1
   max_node_count            = 3
-  availability_zones        = ["1"]  # Single zone for cost savings in West US 2
+  availability_zones        = ["2"]  # Zone 2 is the supported zone in West US 2
   enable_auto_scaling       = true
   
   # Development environment
@@ -218,7 +226,7 @@ module "security" {
   
   # Development security settings
   application_gateway_capacity  = 1  # Minimum capacity for cost savings
-  availability_zones           = ["1"]  # Single zone for cost savings in West US 2
+  availability_zones           = ["2"]  # Zone 2 is the supported zone in West US 2
   enable_waf                   = true
   waf_mode                     = "Detection"  # Less restrictive for development
   log_analytics_workspace_id   = module.monitoring.log_analytics_workspace_id
