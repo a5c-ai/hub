@@ -88,8 +88,6 @@ module "keyvault" {
   private_endpoint_subnet_id      = module.networking.private_endpoints_subnet_id
   keyvault_private_dns_zone_id    = module.networking.keyvault_private_dns_zone_id
   log_analytics_workspace_id      = module.monitoring.log_analytics_workspace_id
-  public_network_access_enabled   = true
-  
   # Development settings - enable public access for Terraform deployment
   public_network_access_enabled   = true
   network_acls_default_action     = "Allow"
