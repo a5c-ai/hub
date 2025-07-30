@@ -197,7 +197,7 @@ module "aks" {
   vm_size                    = var.aks_vm_size
   min_node_count            = 1
   max_node_count            = 3
-  availability_zones        = []  # Disabled temporarily until location change takes effect
+  availability_zones        = ["1"]  # Single zone for cost savings in West US 2
   enable_auto_scaling       = true
   
   # Development environment
@@ -218,7 +218,7 @@ module "security" {
   
   # Development security settings
   application_gateway_capacity  = 1  # Minimum capacity for cost savings
-  availability_zones           = []  # Disabled temporarily until location change takes effect
+  availability_zones           = ["1"]  # Single zone for cost savings in West US 2
   enable_waf                   = true
   waf_mode                     = "Detection"  # Less restrictive for development
   log_analytics_workspace_id   = module.monitoring.log_analytics_workspace_id
