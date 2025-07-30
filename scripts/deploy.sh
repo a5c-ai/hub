@@ -175,7 +175,19 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
     fi
     if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
         deploy_log "Fetching AKS credentials for cluster $AZURE_AKS_CLUSTER_NAME..."
-        az aks get-credentials --resource-group "$AZURE_RESOURCE_GROUP_NAME" --name "$AZURE_AKS_CLUSTER_NAME" --overwrite-existing
+        # If KUBECONFIG is set, write credentials there; otherwise merge into default config
+        if [[ -n "$KUBECONFIG" ]]; then
+            az aks get-credentials \
+                --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+                --name "$AZURE_AKS_CLUSTER_NAME" \
+                --overwrite-existing \
+                --file "$KUBECONFIG"
+        else
+            az aks get-credentials \
+                --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+                --name "$AZURE_AKS_CLUSTER_NAME" \
+                --overwrite-existing
+        fi
     else
         warn "AZURE_RESOURCE_GROUP_NAME or AZURE_AKS_CLUSTER_NAME not set; skipping AKS credential fetch"
     fi
@@ -234,6 +246,11 @@ deploy_kubernetes() {
     local k8s_args="$ENVIRONMENT"
     if [[ "$DRY_RUN" == "true" ]]; then
         k8s_args="$k8s_args --dry-run"
+    fi
+
+    # Skip Kubernetes dependency deployments (PostgreSQL, Redis) when using external managed resources
+    if [[ "$ENVIRONMENT" != "development" ]]; then
+        k8s_args="$k8s_args --skip-dependencies"
     fi
     
     # Use Helm if available and configured
