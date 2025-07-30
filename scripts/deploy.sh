@@ -49,7 +49,7 @@ usage() {
     echo "  --type TYPE              Deployment type (kubernetes, docker, terraform)"
     echo "  --no-build               Skip building Docker images"
     echo "  --no-tests               Skip running tests before deployment"
-    echo "  --registry REGISTRY      Container registry for images (auto-detected from Terraform output if not provided)"
+    echo "  --registry REGISTRY      Container registry for images (auto-detected based on environment if not provided)"
     echo "  --version VERSION        Version tag for deployment"
     echo "  --dry-run               Perform a dry run (preview changes)"
     echo "  --rollback              Rollback to previous version"
@@ -168,16 +168,26 @@ deploy_log "Version: $VERSION"
 deploy_log "Registry: ${REGISTRY:-"local"}"
 deploy_log "Dry run: $DRY_RUN"
 
-# Auto-detect container registry from Terraform output if not specified
-if [[ -z "$REGISTRY" && -d terraform ]]; then
-    deploy_log "Detecting container registry login server from Terraform output..."
-    cwd=$(pwd)
-    cd terraform
-    terraform init -input=false >/dev/null 2>&1 || true
-    terraform workspace select "$ENVIRONMENT" >/dev/null 2>&1 || true
-    REGISTRY=$(terraform output -raw login_server)
-    cd "$cwd"
-    deploy_log "Detected container registry: $REGISTRY"
+# Set default container registry based on Terraform naming conventions
+if [[ -z "$REGISTRY" ]]; then
+    case "$ENVIRONMENT" in
+        development)
+            REGISTRY="acrhubdevelopmentwestus3.azurecr.io"
+            ;;
+        staging)
+            REGISTRY="acrhubstagingwestus3.azurecr.io"
+            ;;
+        production)
+            REGISTRY="acrhubproductionwestus3.azurecr.io"
+            ;;
+        *)
+            deploy_log "Unknown environment: $ENVIRONMENT. Container registry not set."
+            ;;
+    esac
+    
+    if [[ -n "$REGISTRY" ]]; then
+        deploy_log "Using container registry for $ENVIRONMENT environment: $REGISTRY"
+    fi
 fi
 export REGISTRY VERSION
 
