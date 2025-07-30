@@ -8,12 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/auth';
-import api from '@/lib/api';
+import api, { authApi } from '@/lib/api';
 
 export default function ProfileEditPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,21 +29,33 @@ export default function ProfileEditPage() {
   });
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        username: user.username || '',
-        bio: '',
-        website: '',
-        location: '',
-        company: '',
-        avatar_url: user.avatar_url || '',
-        twitter: '',
-        linkedin: ''
-      });
-    }
-  }, [user]);
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await authApi.getProfile();
+        if (response.success && response.data) {
+          const profile = response.data;
+          setFormData({
+            name: profile.name || '',
+            email: profile.email || '',
+            username: profile.username || '',
+            bio: profile.bio || '',
+            website: profile.website || '',
+            location: profile.location || '',
+            company: profile.company || '',
+            avatar_url: profile.avatar_url || '',
+            twitter: profile.twitter || '',
+            linkedin: profile.linkedin || ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load profile', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -60,6 +73,15 @@ export default function ProfileEditPage() {
     router.push('/settings');
   };
 
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="h-screen flex items-center justify-center bg-background">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -97,7 +97,8 @@ export const authApi = {
   refreshToken: (refreshToken: string) => 
     apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
 
-  getProfile: () => apiClient.get('/profile'),
+  /** Get current authenticated user profile */
+  getProfile: () => apiClient.get('/auth/me'),
 
   // Password reset
   forgotPassword: (email: string) =>
