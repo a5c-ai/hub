@@ -80,7 +80,7 @@ module "networking" {
 module "keyvault" {
   source = "../../modules/keyvault"
   
-  key_vault_name                   = "kv-${replace(local.resource_prefix, "-", "")}"
+  key_vault_name                   = "kv-${replace(local.resource_prefix, "-", "")}v2"
   location                        = local.location
   resource_group_name             = module.resource_group.name
   allowed_subnet_ids              = [module.networking.aks_subnet_id, module.networking.private_endpoints_subnet_id]
@@ -113,7 +113,7 @@ module "keyvault" {
 module "storage" {
   source = "../../modules/storage"
   
-  storage_account_name           = "st${replace(local.resource_prefix, "-", "")}"
+  storage_account_name           = "st${replace(local.resource_prefix, "-", "")}v2"
   location                      = local.location
   resource_group_name           = module.resource_group.name
   account_tier                  = var.storage_account_tier
@@ -144,7 +144,7 @@ module "storage" {
 module "postgresql" {
   source = "../../modules/postgresql"
   
-  server_name                   = "psql-${local.resource_prefix}"
+  server_name                   = "psql-${local.resource_prefix}-v2"
   location                     = local.location
   resource_group_name          = module.resource_group.name
   delegated_subnet_id          = module.networking.database_subnet_id
@@ -169,11 +169,11 @@ module "postgresql" {
 module "monitoring" {
   source = "../../modules/monitoring"
   
-  log_analytics_workspace_name    = "log-${local.resource_prefix}"
-  application_insights_name       = "appi-${local.resource_prefix}"
+  log_analytics_workspace_name    = "log-${local.resource_prefix}-v2"
+  application_insights_name       = "appi-${local.resource_prefix}-v2"
   location                       = local.location
   resource_group_name            = module.resource_group.name
-  action_group_name              = "ag-${local.resource_prefix}"
+  action_group_name              = "ag-${local.resource_prefix}-v2"
   action_group_short_name        = "hub-dev"
   resource_prefix                = local.resource_prefix
   
@@ -192,7 +192,7 @@ module "monitoring" {
 module "aks" {
   source = "../../modules/aks"
   
-  cluster_name                = "aks-${local.resource_prefix}"
+  cluster_name                = "aks-${local.resource_prefix}-v2"
   location                   = local.location
   resource_group_name        = module.resource_group.name
   dns_prefix                 = "hub-dev"
@@ -219,7 +219,7 @@ module "aks" {
 module "security" {
   source = "../../modules/security"
   
-  application_gateway_name      = "appgw-${local.resource_prefix}"
+  application_gateway_name      = "appgw-${local.resource_prefix}-v2"
   location                     = local.location
   resource_group_name          = module.resource_group.name
   application_gateway_subnet_id = module.networking.application_gateway_subnet_id
