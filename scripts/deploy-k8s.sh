@@ -173,7 +173,9 @@ deploy_helm() {
     fi
     
     if [[ "$WAIT_FOR_READY" == "true" ]]; then
-        helm_cmd="$helm_cmd --wait --timeout=10m"
+        # Use DEPLOY_TIMEOUT for Helm wait timeout or default to 10m
+        helm_timeout=${DEPLOY_TIMEOUT:-10m}
+        helm_cmd="$helm_cmd --wait --timeout=$helm_timeout"
     fi
     
     debug "Executing: $helm_cmd"
@@ -196,16 +198,20 @@ fi
 # Wait for deployments if requested and not using Helm (which has its own wait)
 if [[ "$WAIT_FOR_READY" == "true" && "$USE_HELM" == "false" && "$DRY_RUN" == "false" ]]; then
     log "Waiting for deployments to be ready..."
-    
+
+    # Determine rollout timeout (fallback to 300s if not set)
+    TIMEOUT=${DEPLOY_TIMEOUT:-300s}
+    log "Using rollout timeout: $TIMEOUT"
+
     deployments=("hub-backend" "hub-frontend")
     if [[ "$SKIP_DEPENDENCIES" == "false" ]]; then
         deployments=("postgresql" "redis" "${deployments[@]}")
     fi
-    
+
     for deployment in "${deployments[@]}"; do
         log "Waiting for deployment: $deployment"
-        # Wait for deployment readiness with a bounded timeout to fit CI step limits
-        kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout=300s
+        # Wait for deployment readiness with configurable timeout
+        kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout="$TIMEOUT"
     done
 fi
 
