@@ -3,6 +3,11 @@ output "resource_group_name" {
   value       = module.resource_group.name
 }
 
+output "postgresql_server_name" {
+  description = "The name of the PostgreSQL server"
+  value       = module.postgresql.server_name
+}
+
 output "aks_cluster_name" {
   description = "The name of the AKS cluster"
   value       = module.aks.cluster_name
