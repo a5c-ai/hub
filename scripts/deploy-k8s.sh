@@ -204,7 +204,8 @@ if [[ "$WAIT_FOR_READY" == "true" && "$USE_HELM" == "false" && "$DRY_RUN" == "fa
     
     for deployment in "${deployments[@]}"; do
         log "Waiting for deployment: $deployment"
-        kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout=600s
+        # Wait for deployment readiness with a bounded timeout to fit CI step limits
+        kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout=300s
     done
 fi
 
