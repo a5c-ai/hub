@@ -68,6 +68,7 @@ test.describe('Navigation and Layout', () => {
       const navSection = sidebar.locator('nav');
       const dashboardNavLink = navSection.getByRole('link', { name: /dashboard/i });
       const repositoriesNavLink = navSection.getByRole('link', { name: /repositories/i });
+      const pluginsNavLink = navSection.getByRole('link', { name: /plugins/i });
       
       if (await dashboardNavLink.count() > 0) {
         await expect(dashboardNavLink).toBeVisible();
@@ -75,6 +76,9 @@ test.describe('Navigation and Layout', () => {
       
       if (await repositoriesNavLink.count() > 0) {
         await expect(repositoriesNavLink).toBeVisible();
+      }
+      if (await pluginsNavLink.count() > 0) {
+        await expect(pluginsNavLink).toBeVisible();
       }
     }
   });
@@ -102,6 +106,17 @@ test.describe('Navigation and Layout', () => {
       await expect(page).toHaveURL('/repositories');
     }
     
+    // Test navigation to plugins
+    await page.route('**/api/v1/plugins', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+    });
+    const pluginsLink = page.locator('a[href="/plugins"]').first();
+    if (await pluginsLink.count() > 0) {
+      await pluginsLink.click();
+      await page.waitForURL('/plugins', { timeout: 10000 });
+      await expect(page).toHaveURL('/plugins');
+    }
+
     // Navigate back to dashboard
     const dashboardLink = page.locator('a[href="/dashboard"]').first();
     if (await dashboardLink.count() > 0) {
