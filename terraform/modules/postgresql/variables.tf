@@ -146,6 +146,12 @@ variable "log_analytics_workspace_id" {
   default     = null
 }
 
+variable "public_network_access_enabled" {
+  description = "Enable public network access to the PostgreSQL server. When true, the server will not use virtual network delegation."
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "A mapping of tags to assign to the resources"
   type        = map(string)
