@@ -108,6 +108,7 @@ jobs:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
           cache: none  # Disable distribution cache to prevent absolute path extraction errors
+          clean-target-directory: true  # Ensure fresh installation of Go toolchain
 
       - name: Download Go modules
         timeout-minutes: 10  # Ensure modules are available for tests
@@ -217,6 +218,7 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: modules  # Only cache module files, disable distribution cache
+          clean-target-directory: true  # Ensure fresh installation of Go toolchain
           cache-dependency-path: |
             go.sum
             go.mod
@@ -269,6 +271,7 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           cache: modules  # Only cache module files, disable distribution cache
+          clean-target-directory: true  # Ensure fresh installation of Go toolchain
           cache-dependency-path: |
             go.sum
             go.mod
