@@ -37,5 +37,5 @@ output "connection_string" {
 
 output "private_dns_zone_id" {
   description = "The ID of the private DNS zone"
-  value       = azurerm_private_dns_zone.postgresql.id
+  value       = var.public_network_access_enabled ? null : azurerm_private_dns_zone.postgresql[0].id
 }
