@@ -376,7 +376,7 @@ export const searchApi = {
     if (params?.order) searchParams.append('order', params.order);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
-    
+
     return apiClient.get(`/search/code?${searchParams.toString()}`);
   },
 
@@ -394,7 +394,7 @@ export const searchApi = {
     if (params?.order) searchParams.append('order', params.order);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.per_page) searchParams.append('per_page', params.per_page.toString());
-    
+
     return apiClient.get(`/repositories/${owner}/${repo}/search?${searchParams.toString()}`);
   },
 };
