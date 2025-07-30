@@ -156,6 +156,16 @@ module "storage" {
   ]
 }
 
+# Container Registry
+module "container_registry" {
+  source              = "../../modules/container_registry"
+
+  registry_name       = "acr-${local.resource_prefix}"
+  resource_group_name = module.resource_group.name
+  location            = local.location
+  tags                = local.common_tags
+}
+
 # PostgreSQL
 module "postgresql" {
   source = "../../modules/postgresql"

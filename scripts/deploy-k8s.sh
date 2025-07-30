@@ -7,6 +7,8 @@ ENVIRONMENT=${1:-development}
 NAMESPACE="hub-${ENVIRONMENT}"
 CONFIG_DIR="k8s"
 HELM_RELEASE_NAME="hub"
+# Use registry and version from environment variables
+VERSION=${VERSION:-"latest"}
 
 # Colors for output
 RED='\033[0;31m'
@@ -150,7 +152,13 @@ apply_kubectl_manifests() {
     for manifest in "${manifests[@]}"; do
         if [[ -f "$manifest" ]]; then
             log "Applying $manifest..."
+        if [[ -n "$REGISTRY" ]]; then
+            sed '/^[[:space:]]*namespace:/d' "$manifest" | \
+            sed -E "s#^([[:space:]]*image:[[:space:]]*)(hub/[^:]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
+            $apply_cmd - -n "$NAMESPACE"
+        else
             sed '/^[[:space:]]*namespace:/d' "$manifest" | $apply_cmd - -n "$NAMESPACE"
+        fi
         else
             warn "Manifest not found: $manifest"
         fi
