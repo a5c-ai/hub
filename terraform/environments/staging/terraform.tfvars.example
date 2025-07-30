@@ -2,7 +2,7 @@
 # Copy this file to terraform.tfvars and customize the values
 
 # Basic Configuration
-location = "East US"
+location = "West US 3"
 owner    = "hub-staging-team"
 availability_zones = ["1", "2"]
 

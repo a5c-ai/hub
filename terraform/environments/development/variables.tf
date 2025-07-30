@@ -1,7 +1,7 @@
 variable "location" {
   description = "The Azure location where resources should be created"
   type        = string
-  default     = "West US 2"
+  default     = "West US 3"
 }
 
 variable "owner" {

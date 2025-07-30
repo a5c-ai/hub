@@ -1,13 +1,13 @@
 variable "location" {
   description = "The Azure location where resources should be created"
   type        = string
-  default     = "East US"
+  default     = "West US 3"
 }
 
 variable "backup_location" {
   description = "The Azure location for backup resources"
   type        = string
-  default     = "West US 2"
+  default     = "West US 3"
 }
 
 variable "owner" {
@@ -149,7 +149,7 @@ variable "kubernetes_version" {
 variable "aks_node_count" {
   description = "The number of nodes in the AKS cluster"
   type        = number
-  default     = 5
+  default     = 3
 }
 
 variable "aks_vm_size" {

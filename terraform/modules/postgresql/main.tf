@@ -27,7 +27,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   version               = var.postgresql_version
   delegated_subnet_id   = var.delegated_subnet_id
   private_dns_zone_id   = azurerm_private_dns_zone.postgresql.id
-  public_network_access_enabled = false
+  public_network_access_enabled = true
   administrator_login   = var.admin_username
   administrator_password = var.admin_password != null ? var.admin_password : random_password.admin_password[0].result
 

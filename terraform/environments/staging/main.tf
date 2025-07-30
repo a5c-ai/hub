@@ -135,7 +135,7 @@ module "postgresql" {
   source = "../../modules/postgresql"
   
   server_name                   = "psql-${local.resource_prefix}"
-  location                     = "East US 2"
+  location                     = "West US 3"
   resource_group_name          = module.resource_group.name
   delegated_subnet_id          = module.networking.database_subnet_id
   vnet_id                      = module.networking.vnet_id
