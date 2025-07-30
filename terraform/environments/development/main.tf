@@ -160,7 +160,7 @@ module "storage" {
 module "container_registry" {
   source              = "../../modules/container_registry"
 
-  registry_name       = "acr-${local.resource_prefix}"
+  registry_name       = "acr${local.base_name}"
   resource_group_name = module.resource_group.name
   location            = local.location
   tags                = local.common_tags
@@ -276,18 +276,18 @@ data "azurerm_kubernetes_cluster" "cluster" {
 }
 
 provider "kubernetes" {
-  host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].host
-  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_certificate)
-  client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_key)
-  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].cluster_ca_certificate)
+  host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config.host
+  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.client_certificate)
+  client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.client_key)
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.cluster_ca_certificate)
 }
 
 provider "helm" {
   kubernetes {
-    host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].host
-    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_certificate)
-    client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_key)
-    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].cluster_ca_certificate)
+    host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config.host
+    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.client_certificate)
+    client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.client_key)
+    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config.cluster_ca_certificate)
   }
 }
 
