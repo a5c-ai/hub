@@ -78,6 +78,10 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	sshKeyHandlers := NewSSHKeyHandlers(database.DB, logger)
 	adminHandlers := NewAdminHandlers(authService, database.DB, logger)
 
+	// Initialize plugin service and handlers
+	pluginService := services.NewPluginService()
+	pluginHandlers := NewPluginHandlers(pluginService)
+
 	// Initialize import/export handlers
 	importHandlers := NewImportHandlers(database)
 	exportHandlers := NewExportHandlers(database)
@@ -127,6 +131,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 		v1.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "pong"})
 		})
+
+		// Plugin marketplace listing (public)
+		v1.GET("/plugins", pluginHandlers.ListPlugins)
 
 		authGroup := v1.Group("/auth")
 		{
@@ -210,6 +217,14 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 				emailGroup.GET("/preferences", userHandlers.GetEmailPreferences)
 				emailGroup.PUT("/preferences", userHandlers.UpdateEmailPreferences)
 			}
+
+			// Organization plugin installation
+			protected.POST("/orgs/:org/plugins/:name/install", pluginHandlers.InstallOrgPlugin)
+			protected.DELETE("/orgs/:org/plugins/:name/uninstall", pluginHandlers.UninstallOrgPlugin)
+
+			// Repository plugin installation
+			protected.POST("/repos/:owner/:repo/plugins/:name/install", pluginHandlers.InstallRepoPlugin)
+			protected.DELETE("/repos/:owner/:repo/plugins/:name/uninstall", pluginHandlers.UninstallRepoPlugin)
 
 			// Legacy profile endpoint for backward compatibility
 			protected.GET("/profile", func(c *gin.Context) {
