@@ -1,15 +1,16 @@
-name: A5C
+name: a5c
 env:
   DISABLE_AUTOUPDATER: 1
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 1
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   AZURE_OPENAI_PROJECT_NAME: ${{ vars.AZURE_OPENAI_PROJECT_NAME || '' }}
   AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY || '' }}
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}  
   DEBUG: ${{ github.event.inputs.debug || 'false' }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
   DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID }}
+  A5C_CLI_TOOL: ${{ vars.A5C_CLI_TOOL }}
   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}         
   SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET || '' }}
   SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
@@ -32,9 +33,9 @@ env:
   # gcloud credentials
   GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '' }}
   # azure credentials
-  AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID  || '' }}
-  AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET  || '' }}
-  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID || '' }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || '' }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET || '' }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || '' }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || '' }}
   # auth credentials
   GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || '' }}
@@ -74,7 +75,7 @@ on:
     - cron: '*/30 * * * *'
   workflow_run:
     types: [completed]
-    workflows: [Build,Deploy,Tests,Release,E2E Tests,Infrastructure Deployment,Integration Tests]
+    workflows: [Build, Deploy, Tests, Release, E2E Tests]
 
   # Manual Triggers
   workflow_dispatch:
@@ -91,13 +92,22 @@ on:
 jobs:
   # Single job that handles all agent routing and execution
   a5c:
-    runs-on: runner8core
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
       security-events: write
-      actions: read
+      actions: write
+      attestations: write
+      checks: write
+      deployments: write
+      discussions: write
+      id-token: write
+      models: read
+      packages: write
+      pages: write
+      statuses: write
 
     steps:
       - name: Checkout Repository
@@ -139,8 +149,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: a5c-artifacts
-          # many paths
           path: |
             /tmp/agent-output.md
             /tmp/agent-output-*/**
-
