@@ -5,6 +5,7 @@ resource "random_password" "admin_password" {
 }
 
 resource "azurerm_private_dns_zone" "postgresql" {
+  count               = var.public_network_access_enabled ? 0 : 1
   name                = "privatelink.postgres.database.azure.com"
   resource_group_name = var.resource_group_name
 
@@ -12,22 +13,23 @@ resource "azurerm_private_dns_zone" "postgresql" {
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
+  count                 = var.public_network_access_enabled ? 0 : 1
   name                  = "${var.server_name}-dns-link"
   resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.postgresql.name
+  private_dns_zone_name = azurerm_private_dns_zone.postgresql[0].name
   virtual_network_id    = var.vnet_id
 
   tags = var.tags
 }
 
 resource "azurerm_postgresql_flexible_server" "main" {
-  name                   = var.server_name
-  resource_group_name    = var.resource_group_name
-  location              = var.location
-  version               = var.postgresql_version
-  delegated_subnet_id   = var.delegated_subnet_id
-  private_dns_zone_id   = azurerm_private_dns_zone.postgresql.id
-  public_network_access_enabled = true
+  name                         = var.server_name
+  resource_group_name          = var.resource_group_name
+  location                     = var.location
+  version                      = var.postgresql_version
+  delegated_subnet_id          = var.public_network_access_enabled ? null : var.delegated_subnet_id
+  private_dns_zone_id          = var.public_network_access_enabled ? null : azurerm_private_dns_zone.postgresql[0].id
+  public_network_access_enabled = var.public_network_access_enabled
   administrator_login   = var.admin_username
   administrator_password = var.admin_password != null ? var.admin_password : random_password.admin_password[0].result
 

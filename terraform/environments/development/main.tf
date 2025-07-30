@@ -52,9 +52,10 @@ locals {
   # Base name without hyphens for services with length constraints
   base_name           = replace(local.resource_prefix, "-", "")
   # Truncate for key vault (max 24 chars total: kv-<base_name>v2)
-  kv_base_name        = substr(local.base_name, 0, 19)
-  # Truncate for storage account (max 24 chars total: st<base_name>v2)
-  storage_base_name   = substr(local.base_name, 0, 20)
+  # Truncate for key vault (max 24 chars total: kv-<base_name>v2), preserve region suffix
+  kv_base_name        = "${substr(local.base_name, 0, 18)}${substr(local.base_name, length(local.base_name) - 1, 1)}"
+  # Truncate for storage account (max 24 chars total: st<base_name>v2), preserve region suffix
+  storage_base_name   = "${substr(local.base_name, 0, 19)}${substr(local.base_name, length(local.base_name) - 1, 1)}"
 }
 
 # Resource Group
@@ -156,6 +157,7 @@ module "postgresql" {
   resource_group_name          = module.resource_group.name
   delegated_subnet_id          = module.networking.database_subnet_id
   vnet_id                      = module.networking.vnet_id
+  public_network_access_enabled = true
   postgresql_version           = var.postgresql_version
   sku_name                     = var.postgresql_sku_name
   storage_mb                   = var.postgresql_storage_mb
