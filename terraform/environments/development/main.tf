@@ -48,6 +48,13 @@ locals {
 
   # Naming convention: {service}-hub-{environment}-{region}
   resource_prefix = "hub-${local.environment}-${replace(lower(local.location), " ", "")}"
+
+  # Base name without hyphens for services with length constraints
+  base_name           = replace(local.resource_prefix, "-", "")
+  # Truncate for key vault (max 24 chars total: kv-<base_name>v2)
+  kv_base_name        = substr(local.base_name, 0, 19)
+  # Truncate for storage account (max 24 chars total: st<base_name>v2)
+  storage_base_name   = substr(local.base_name, 0, 20)
 }
 
 # Resource Group
@@ -80,7 +87,7 @@ module "networking" {
 module "keyvault" {
   source = "../../modules/keyvault"
   
-  key_vault_name                   = "kv-${replace(local.resource_prefix, "-", "")}v2"
+  key_vault_name                   = "kv-${local.kv_base_name}v2"
   location                        = local.location
   resource_group_name             = module.resource_group.name
   allowed_subnet_ids              = [module.networking.aks_subnet_id, module.networking.private_endpoints_subnet_id]
@@ -113,7 +120,7 @@ module "keyvault" {
 module "storage" {
   source = "../../modules/storage"
   
-  storage_account_name           = "st${replace(local.resource_prefix, "-", "")}v2"
+  storage_account_name           = "st${local.storage_base_name}v2"
   location                      = local.location
   resource_group_name           = module.resource_group.name
   account_tier                  = var.storage_account_tier
