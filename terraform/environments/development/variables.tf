@@ -1,7 +1,7 @@
 variable "location" {
   description = "The Azure location where resources should be created"
   type        = string
-  default     = "East US 2"
+  default     = "East US"
 }
 
 variable "owner" {
@@ -95,7 +95,7 @@ variable "postgresql_backup_retention_days" {
 variable "kubernetes_version" {
   description = "The version of Kubernetes to use"
   type        = string
-  default     = "1.29"
+  default     = "1.28"
 }
 
 variable "aks_node_count" {
