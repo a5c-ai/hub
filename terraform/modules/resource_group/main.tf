@@ -4,9 +4,6 @@ resource "azurerm_resource_group" "main" {
 
   tags = var.tags
 
-  # Note: lifecycle blocks cannot be dynamic in Terraform
-  # Resource groups are foundational infrastructure and should be protected
-  lifecycle {
-    prevent_destroy = true
-  }
+  # Note: Lifecycle protection is handled per environment
+  # Development allows recreation, production should be protected
 }

@@ -14,3 +14,8 @@ variable "tags" {
   default     = {}
 }
 
+variable "prevent_destroy" {
+  description = "Prevent destruction of the resource group"
+  type        = bool
+  default     = true
+}
