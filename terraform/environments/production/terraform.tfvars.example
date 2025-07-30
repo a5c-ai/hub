@@ -74,6 +74,14 @@ alert_email_receivers = [
   }
 ]
 
+# GitHub Runner Configuration
+github_token           = "<your-github-token>"
+github_owner           = "<your-github-org-or-user>"
+github_repository      = "<your-repo-name>"
+runner_deployment_name = "runner"
+runner_replicas        = 2
+runner_labels = { env = "prod" }
+
 alert_sms_receivers = [
   {
     name         = "on-call-primary"

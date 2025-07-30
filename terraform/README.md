@@ -419,6 +419,42 @@ az keyvault list --resource-group "rg-hub-dev"
 3. Search existing issues in the repository
 4. Contact the infrastructure team
 
+## GitHub Runner Module
+
+To deploy self-hosted GitHub Actions runners on AKS via Terraform, use the `github_runner` module:
+
+1. Configure your environment variables or `terraform.tfvars`:
+   ```hcl
+   github_token            = "<your-github-token>"
+   github_owner            = "<your-github-org-or-user>"
+   github_repository       = "<your-repo-name>"
+   runner_deployment_name  = "runner"
+   runner_replicas         = 2
+   runner_labels           = { env = "dev" }
+   ```
+
+2. In your environment's `main.tf`, add:
+   ```hcl
+   module "github_runner" {
+     source                 = "../../modules/github_runner"
+     namespace              = var.namespace
+     chart_version          = var.chart_version
+     github_token           = var.github_token
+     github_owner           = var.github_owner
+     github_repository      = var.github_repository
+     runner_deployment_name = var.runner_deployment_name
+     runner_replicas        = var.runner_replicas
+     runner_labels          = var.runner_labels
+   }
+   ```
+
+3. Deploy the runners:
+   ```bash
+   cd terraform/environments/<environment>
+   terraform init
+   terraform apply -target=module.github_runner
+   ```
+
 ## License
 
 This infrastructure code is part of the Hub project and follows the same licensing terms as defined in the main project repository.

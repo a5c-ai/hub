@@ -6,6 +6,14 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.0"
@@ -280,6 +288,39 @@ resource "azurerm_role_assignment" "aks_keyvault_secrets_user" {
   scope                = module.keyvault.key_vault_id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = module.aks.cluster_identity_principal_id
+
+}
+
+# GitHub Runner Controller and RunnerDeployment
+data "azurerm_kubernetes_cluster" "cluster" {
+  name                = module.aks.cluster_name
+  resource_group_name = module.resource_group.name
+}
+
+provider "kubernetes" {
+  host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].host
+  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_certificate)
+  client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_key)
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].cluster_ca_certificate)
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].host
+    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_certificate)
+    client_key             = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].client_key)
+    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.cluster.kube_admin_config[0].cluster_ca_certificate)
+  }
+}
+
+module "github_runner" {
+  source                 = "../../modules/github_runner"
+  github_token           = var.github_token
+  github_owner           = var.github_owner
+  github_repository      = var.github_repository
+  runner_deployment_name = var.runner_deployment_name
+  runner_replicas        = var.runner_replicas
+  runner_labels          = var.runner_labels
 }
 
 resource "azurerm_role_assignment" "aks_storage_blob_data_contributor" {
