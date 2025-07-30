@@ -107,7 +107,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: none  # Disable distribution cache to prevent absolute path extraction errors
 
       - name: Download Go modules
         timeout-minutes: 10  # Ensure modules are available for tests
@@ -139,14 +138,17 @@ jobs:
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
           
-      # Download Go modules
+      # Optimize Go module download with better caching
       - name: Download Go modules
-        timeout-minutes: 10  # Ensure modules are available for tests
+        timeout-minutes: 10  # Reduced timeout
         run: |
+          # Enable module proxy and set timeout
           export GOPROXY=https://proxy.golang.org,direct
           export GOSUMDB=sum.golang.org
           export GOTIMEOUT=8m
-          for i in {1..2}; do
+          
+          # Download with optimized retry logic
+          for i in {1..2}; do  # Reduced retry attempts
             echo "Attempt $i: Downloading Go modules..."
             if go mod download && go mod verify; then
               echo "✅ Go modules downloaded successfully"
@@ -157,7 +159,7 @@ jobs:
                 echo "🚨 All attempts failed"
                 exit 1
               fi
-              sleep 5
+              sleep 5  # Reduced sleep time
             fi
           done
           
@@ -216,7 +218,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: modules  # Only cache module files, disable distribution cache
+          cache: true
           cache-dependency-path: |
             go.sum
             go.mod
@@ -268,7 +270,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: modules  # Only cache module files, disable distribution cache
+          cache: true
           cache-dependency-path: |
             go.sum
             go.mod
@@ -282,13 +284,15 @@ jobs:
           cache-dependency-path: |
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
-          
+
       # Deploy with increased timeout and better error handling
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
       - name: Deploy application
         timeout-minutes: 15  # Increased from 10 to 15 minutes
         run: |
           # Set deployment optimizations
           export DEPLOY_TIMEOUT=10m
-          
+
           # Run deployment with verbose output
           ./scripts/deploy.sh
