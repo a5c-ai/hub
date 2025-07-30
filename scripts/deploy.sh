@@ -3,7 +3,12 @@
 set -e
 
 # Configuration
-ENVIRONMENT=${1:-development}
+# Default environment: production in CI, development locally
+if [[ -n "$CI" ]]; then
+    ENVIRONMENT=${1:-production}
+else
+    ENVIRONMENT=${1:-development}
+fi
 DEPLOYMENT_TYPE=${DEPLOYMENT_TYPE:-kubernetes}
 BUILD_IMAGES=${BUILD_IMAGES:-true}
 RUN_TESTS=${RUN_TESTS:-true}
@@ -207,8 +212,8 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
     fi
 fi
 
-# Safety check for production
-if [[ "$ENVIRONMENT" == "production" && "$DRY_RUN" == "false" ]]; then
+# Safety check for production (skip confirmation in CI)
+if [[ "$ENVIRONMENT" == "production" && "$DRY_RUN" == "false" && -z "$CI" ]]; then
     warn "You are about to deploy to PRODUCTION!"
     read -p "Are you sure you want to continue? (yes/no): " confirmation
     if [[ "$confirmation" != "yes" ]]; then
