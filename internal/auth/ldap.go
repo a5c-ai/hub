@@ -96,7 +96,7 @@ func (m *MockLDAPConnection) Bind(username, password string) error {
 
 func (m *MockLDAPConnection) Search(baseDN, filter string, attributes []string) ([]LDAPSearchResult, error) {
 	var results []LDAPSearchResult
-	
+
 	for username, user := range m.users {
 		// Simple filter matching
 		if strings.Contains(filter, username) || strings.Contains(filter, user.Email) {
@@ -108,14 +108,14 @@ func (m *MockLDAPConnection) Search(baseDN, filter string, attributes []string) 
 				"displayName": {user.DisplayName},
 				"memberOf":    user.Groups,
 			}
-			
+
 			results = append(results, LDAPSearchResult{
 				DN:         user.DN,
 				Attributes: attrs,
 			})
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -151,12 +151,12 @@ func (s *LDAPService) createConnection() (LDAPConnection, error) {
 
 	// In production, you would use a real LDAP library like go-ldap
 	// Here's a placeholder for the real implementation:
-	
+
 	// conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%d", s.config.LDAP.Host, s.config.LDAP.Port))
 	// if err != nil {
 	//     return nil, fmt.Errorf("failed to connect to LDAP: %w", err)
 	// }
-	
+
 	// Bind with service account if configured
 	// if s.config.LDAP.BindDN != "" && s.config.LDAP.BindPassword != "" {
 	//     err = conn.Bind(s.config.LDAP.BindDN, s.config.LDAP.BindPassword)
@@ -165,9 +165,9 @@ func (s *LDAPService) createConnection() (LDAPConnection, error) {
 	//         return nil, fmt.Errorf("failed to bind to LDAP: %w", err)
 	//     }
 	// }
-	
+
 	// return conn, nil
-	
+
 	return NewMockLDAPConnection(), nil
 }
 
@@ -238,7 +238,7 @@ func (s *LDAPService) searchUser(conn LDAPConnection, username string) (*LDAPUse
 
 	// Search attributes
 	attributes := []string{"cn", "mail", "givenName", "sn", "displayName", "memberOf"}
-	
+
 	results, err := conn.Search(s.config.LDAP.BaseDN, filter, attributes)
 	if err != nil {
 		return nil, fmt.Errorf("LDAP search failed: %w", err)
@@ -323,7 +323,7 @@ func (s *LDAPService) findOrCreateLDAPUser(userInfo *LDAPUserInfo) (*models.User
 
 	// Create new user
 	fullName := s.buildFullName(userInfo.FirstName, userInfo.LastName, userInfo.DisplayName)
-	
+
 	user = models.User{
 		ID:            uuid.New(),
 		Username:      userInfo.Username,
@@ -363,7 +363,7 @@ func (s *LDAPService) buildFullName(firstName, lastName, displayName string) str
 func (s *LDAPService) isAdminUser(userInfo *LDAPUserInfo) bool {
 	// Check if user is in admin groups
 	adminGroups := []string{"admins", "administrators", "domain admins"}
-	
+
 	for _, group := range userInfo.Groups {
 		groupName := strings.ToLower(s.extractGroupName(group))
 		for _, adminGroup := range adminGroups {
@@ -372,7 +372,7 @@ func (s *LDAPService) isAdminUser(userInfo *LDAPUserInfo) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -399,7 +399,7 @@ func (s *LDAPService) SyncUsers() error {
 	// Search for all users
 	filter := "(objectClass=person)"
 	attributes := []string{"cn", "mail", "givenName", "sn", "displayName", "memberOf"}
-	
+
 	results, err := conn.Search(s.config.LDAP.BaseDN, filter, attributes)
 	if err != nil {
 		return fmt.Errorf("LDAP sync search failed: %w", err)
@@ -411,7 +411,7 @@ func (s *LDAPService) SyncUsers() error {
 		if values, found := result.Attributes["cn"]; found && len(values) > 0 {
 			username = values[0]
 		}
-		
+
 		if username == "" {
 			continue
 		}

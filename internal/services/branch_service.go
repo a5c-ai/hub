@@ -19,7 +19,7 @@ type BranchService interface {
 	Create(ctx context.Context, repoID uuid.UUID, req CreateBranchRequest) (*models.Branch, error)
 	Delete(ctx context.Context, repoID uuid.UUID, branchName string) error
 	SetDefault(ctx context.Context, repoID uuid.UUID, branchName string) error
-	
+
 	// Branch protection
 	GetProtectionRule(ctx context.Context, repoID uuid.UUID, pattern string) (*models.BranchProtectionRule, error)
 	GetProtectionRuleForBranch(ctx context.Context, repoID uuid.UUID, branchName string) (*models.BranchProtectionRule, error)
@@ -27,7 +27,7 @@ type BranchService interface {
 	UpdateProtectionRule(ctx context.Context, ruleID uuid.UUID, req UpdateBranchProtectionRequest) (*models.BranchProtectionRule, error)
 	DeleteProtectionRule(ctx context.Context, ruleID uuid.UUID) error
 	ListProtectionRules(ctx context.Context, repoID uuid.UUID) ([]*models.BranchProtectionRule, error)
-	
+
 	// Sync operations
 	SyncBranchesFromGit(ctx context.Context, repoID uuid.UUID) error
 }
@@ -40,20 +40,20 @@ type CreateBranchRequest struct {
 
 // CreateBranchProtectionRequest represents a request to create a branch protection rule
 type CreateBranchProtectionRequest struct {
-	Pattern                        string                       `json:"pattern"`
-	RequiredStatusChecks           *RequiredStatusChecks        `json:"required_status_checks,omitempty"`
-	EnforceAdmins                  bool                         `json:"enforce_admins"`
-	RequiredPullRequestReviews     *RequiredPullRequestReviews  `json:"required_pull_request_reviews,omitempty"`
-	Restrictions                   *BranchRestrictions          `json:"restrictions,omitempty"`
+	Pattern                    string                      `json:"pattern"`
+	RequiredStatusChecks       *RequiredStatusChecks       `json:"required_status_checks,omitempty"`
+	EnforceAdmins              bool                        `json:"enforce_admins"`
+	RequiredPullRequestReviews *RequiredPullRequestReviews `json:"required_pull_request_reviews,omitempty"`
+	Restrictions               *BranchRestrictions         `json:"restrictions,omitempty"`
 }
 
 // UpdateBranchProtectionRequest represents a request to update a branch protection rule
 type UpdateBranchProtectionRequest struct {
-	Pattern                        *string                      `json:"pattern,omitempty"`
-	RequiredStatusChecks           *RequiredStatusChecks        `json:"required_status_checks,omitempty"`
-	EnforceAdmins                  *bool                        `json:"enforce_admins,omitempty"`
-	RequiredPullRequestReviews     *RequiredPullRequestReviews  `json:"required_pull_request_reviews,omitempty"`
-	Restrictions                   *BranchRestrictions          `json:"restrictions,omitempty"`
+	Pattern                    *string                     `json:"pattern,omitempty"`
+	RequiredStatusChecks       *RequiredStatusChecks       `json:"required_status_checks,omitempty"`
+	EnforceAdmins              *bool                       `json:"enforce_admins,omitempty"`
+	RequiredPullRequestReviews *RequiredPullRequestReviews `json:"required_pull_request_reviews,omitempty"`
+	Restrictions               *BranchRestrictions         `json:"restrictions,omitempty"`
 }
 
 // RequiredStatusChecks represents required status checks for branch protection
@@ -64,10 +64,10 @@ type RequiredStatusChecks struct {
 
 // RequiredPullRequestReviews represents required pull request reviews for branch protection
 type RequiredPullRequestReviews struct {
-	RequiredApprovingReviewCount   int    `json:"required_approving_review_count"`
-	DismissStaleReviews           bool   `json:"dismiss_stale_reviews"`
-	RequireCodeOwnerReviews       bool   `json:"require_code_owner_reviews"`
-	RestrictPushesToCodeOwners    bool   `json:"restrict_pushes_to_code_owners"`
+	RequiredApprovingReviewCount int  `json:"required_approving_review_count"`
+	DismissStaleReviews          bool `json:"dismiss_stale_reviews"`
+	RequireCodeOwnerReviews      bool `json:"require_code_owner_reviews"`
+	RestrictPushesToCodeOwners   bool `json:"restrict_pushes_to_code_owners"`
 }
 
 // BranchRestrictions represents push restrictions for branch protection
@@ -78,19 +78,19 @@ type BranchRestrictions struct {
 
 // branchService implements the BranchService interface
 type branchService struct {
-	db               *gorm.DB
-	gitService       git.GitService
+	db                *gorm.DB
+	gitService        git.GitService
 	repositoryService RepositoryService
-	logger           *logrus.Logger
+	logger            *logrus.Logger
 }
 
 // NewBranchService creates a new branch service
 func NewBranchService(db *gorm.DB, gitService git.GitService, repositoryService RepositoryService, logger *logrus.Logger) BranchService {
 	return &branchService{
-		db:               db,
-		gitService:       gitService,
+		db:                db,
+		gitService:        gitService,
 		repositoryService: repositoryService,
-		logger:           logger,
+		logger:            logger,
 	}
 }
 
@@ -123,7 +123,7 @@ func (s *branchService) Get(ctx context.Context, repoID uuid.UUID, branchName st
 				err = s.db.Where("repository_id = ? AND name = ?", repoID, branchName).First(&branch).Error
 			}
 		}
-		
+
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return nil, fmt.Errorf("branch not found")
@@ -138,9 +138,9 @@ func (s *branchService) Get(ctx context.Context, repoID uuid.UUID, branchName st
 // Create creates a new branch
 func (s *branchService) Create(ctx context.Context, repoID uuid.UUID, req CreateBranchRequest) (*models.Branch, error) {
 	s.logger.WithFields(logrus.Fields{
-		"repo_id":   repoID,
-		"name":      req.Name,
-		"from_ref":  req.FromRef,
+		"repo_id":  repoID,
+		"name":     req.Name,
+		"from_ref": req.FromRef,
 	}).Info("Creating branch")
 
 	// Validate request
@@ -534,16 +534,16 @@ func matchPattern(pattern, branchName string) bool {
 	if pattern == "*" {
 		return true
 	}
-	
+
 	if pattern == branchName {
 		return true
 	}
-	
+
 	// Handle simple prefix patterns like "feature/*"
 	if len(pattern) > 2 && pattern[len(pattern)-2:] == "/*" {
 		prefix := pattern[:len(pattern)-2]
 		return len(branchName) >= len(prefix) && branchName[:len(prefix)] == prefix
 	}
-	
+
 	return false
 }

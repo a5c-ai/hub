@@ -23,54 +23,54 @@ type OrganizationAnalyticsService interface {
 
 // Analytics Data Structures
 type DashboardMetrics struct {
-	Overview              *OverviewMetrics              `json:"overview"`
-	RecentActivity        []*ActivitySummary            `json:"recent_activity"`
-	TopRepositories       []*RepositorySummary          `json:"top_repositories"`
-	ActiveMembers         []*MemberSummary              `json:"active_members"`
-	SecurityAlerts        []*SecurityAlert              `json:"security_alerts"`
-	StorageUsage          *StorageUsageMetrics          `json:"storage_usage"`
-	BandwidthUsage        *BandwidthUsageMetrics        `json:"bandwidth_usage"`
+	Overview        *OverviewMetrics       `json:"overview"`
+	RecentActivity  []*ActivitySummary     `json:"recent_activity"`
+	TopRepositories []*RepositorySummary   `json:"top_repositories"`
+	ActiveMembers   []*MemberSummary       `json:"active_members"`
+	SecurityAlerts  []*SecurityAlert       `json:"security_alerts"`
+	StorageUsage    *StorageUsageMetrics   `json:"storage_usage"`
+	BandwidthUsage  *BandwidthUsageMetrics `json:"bandwidth_usage"`
 }
 
 type OverviewMetrics struct {
-	TotalMembers       int     `json:"total_members"`
-	TotalRepositories  int     `json:"total_repositories"`
-	TotalTeams         int     `json:"total_teams"`
-	ActiveMembers30d   int     `json:"active_members_30d"`
-	CommitsThisMonth   int     `json:"commits_this_month"`
-	IssuesOpen         int     `json:"issues_open"`
-	PullRequestsOpen   int     `json:"pull_requests_open"`
-	SecurityScore      float64 `json:"security_score"`
+	TotalMembers      int     `json:"total_members"`
+	TotalRepositories int     `json:"total_repositories"`
+	TotalTeams        int     `json:"total_teams"`
+	ActiveMembers30d  int     `json:"active_members_30d"`
+	CommitsThisMonth  int     `json:"commits_this_month"`
+	IssuesOpen        int     `json:"issues_open"`
+	PullRequestsOpen  int     `json:"pull_requests_open"`
+	SecurityScore     float64 `json:"security_score"`
 }
 
 type ActivitySummary struct {
-	Date         time.Time `json:"date"`
-	Action       string    `json:"action"`
-	ActorName    string    `json:"actor_name"`
-	TargetType   string    `json:"target_type"`
-	TargetName   string    `json:"target_name"`
-	Description  string    `json:"description"`
+	Date        time.Time `json:"date"`
+	Action      string    `json:"action"`
+	ActorName   string    `json:"actor_name"`
+	TargetType  string    `json:"target_type"`
+	TargetName  string    `json:"target_name"`
+	Description string    `json:"description"`
 }
 
 type RepositorySummary struct {
-	Name            string    `json:"name"`
-	Language        string    `json:"language"`
-	Stars           int       `json:"stars"`
-	Forks           int       `json:"forks"`
-	Contributors    int       `json:"contributors"`
-	Commits30d      int       `json:"commits_30d"`
-	Issues30d       int       `json:"issues_30d"`
-	LastActivityAt  time.Time `json:"last_activity_at"`
+	Name           string    `json:"name"`
+	Language       string    `json:"language"`
+	Stars          int       `json:"stars"`
+	Forks          int       `json:"forks"`
+	Contributors   int       `json:"contributors"`
+	Commits30d     int       `json:"commits_30d"`
+	Issues30d      int       `json:"issues_30d"`
+	LastActivityAt time.Time `json:"last_activity_at"`
 }
 
 type MemberSummary struct {
-	Username       string    `json:"username"`
-	Name           string    `json:"name"`
-	Role           string    `json:"role"`
-	Commits30d     int       `json:"commits_30d"`
-	Issues30d      int       `json:"issues_30d"`
-	PullRequests30d int      `json:"pull_requests_30d"`
-	LastActiveAt   time.Time `json:"last_active_at"`
+	Username        string    `json:"username"`
+	Name            string    `json:"name"`
+	Role            string    `json:"role"`
+	Commits30d      int       `json:"commits_30d"`
+	Issues30d       int       `json:"issues_30d"`
+	PullRequests30d int       `json:"pull_requests_30d"`
+	LastActiveAt    time.Time `json:"last_active_at"`
 }
 
 type SecurityAlert struct {
@@ -83,37 +83,37 @@ type SecurityAlert struct {
 }
 
 type StorageUsageMetrics struct {
-	TotalUsedGB    float64 `json:"total_used_gb"`
-	TotalLimitGB   float64 `json:"total_limit_gb"`
-	UsagePercent   float64 `json:"usage_percent"`
+	TotalUsedGB     float64                  `json:"total_used_gb"`
+	TotalLimitGB    float64                  `json:"total_limit_gb"`
+	UsagePercent    float64                  `json:"usage_percent"`
 	TopRepositories []RepositoryStorageUsage `json:"top_repositories"`
 }
 
 type RepositoryStorageUsage struct {
-	Name     string  `json:"name"`
-	SizeGB   float64 `json:"size_gb"`
-	Percent  float64 `json:"percent"`
+	Name    string  `json:"name"`
+	SizeGB  float64 `json:"size_gb"`
+	Percent float64 `json:"percent"`
 }
 
 type BandwidthUsageMetrics struct {
-	TotalUsedGB    float64 `json:"total_used_gb"`
-	TotalLimitGB   float64 `json:"total_limit_gb"`
-	UsagePercent   float64 `json:"usage_percent"`
-	DailyUsage     []DailyBandwidthUsage `json:"daily_usage"`
+	TotalUsedGB  float64               `json:"total_used_gb"`
+	TotalLimitGB float64               `json:"total_limit_gb"`
+	UsagePercent float64               `json:"usage_percent"`
+	DailyUsage   []DailyBandwidthUsage `json:"daily_usage"`
 }
 
 type DailyBandwidthUsage struct {
-	Date     time.Time `json:"date"`
-	UsageGB  float64   `json:"usage_gb"`
+	Date    time.Time `json:"date"`
+	UsageGB float64   `json:"usage_gb"`
 }
 
 type MemberActivityMetrics struct {
-	Period         string                    `json:"period"`
-	TotalMembers   int                       `json:"total_members"`
-	ActiveMembers  int                       `json:"active_members"`
-	MemberGrowth   []MemberGrowthData        `json:"member_growth"`
-	ActivityTrends []ActivityTrendData       `json:"activity_trends"`
-	TopContributors []MemberSummary          `json:"top_contributors"`
+	Period          string              `json:"period"`
+	TotalMembers    int                 `json:"total_members"`
+	ActiveMembers   int                 `json:"active_members"`
+	MemberGrowth    []MemberGrowthData  `json:"member_growth"`
+	ActivityTrends  []ActivityTrendData `json:"activity_trends"`
+	TopContributors []MemberSummary     `json:"top_contributors"`
 }
 
 type MemberGrowthData struct {
@@ -132,12 +132,12 @@ type ActivityTrendData struct {
 }
 
 type RepositoryUsageMetrics struct {
-	Period             string                     `json:"period"`
-	TotalRepositories  int                        `json:"total_repositories"`
-	ActiveRepositories int                        `json:"active_repositories"`
-	RepositoryGrowth   []RepositoryGrowthData     `json:"repository_growth"`
-	LanguageStats      []LanguageStatsData        `json:"language_stats"`
-	TopRepositories    []RepositorySummary        `json:"top_repositories"`
+	Period             string                 `json:"period"`
+	TotalRepositories  int                    `json:"total_repositories"`
+	ActiveRepositories int                    `json:"active_repositories"`
+	RepositoryGrowth   []RepositoryGrowthData `json:"repository_growth"`
+	LanguageStats      []LanguageStatsData    `json:"language_stats"`
+	TopRepositories    []RepositorySummary    `json:"top_repositories"`
 }
 
 type RepositoryGrowthData struct {
@@ -148,26 +148,26 @@ type RepositoryGrowthData struct {
 }
 
 type LanguageStatsData struct {
-	Language    string  `json:"language"`
-	Count       int     `json:"count"`
-	Percentage  float64 `json:"percentage"`
+	Language   string  `json:"language"`
+	Count      int     `json:"count"`
+	Percentage float64 `json:"percentage"`
 }
 
 type TeamPerformanceMetrics struct {
-	Period        string                    `json:"period"`
-	TotalTeams    int                       `json:"total_teams"`
-	ActiveTeams   int                       `json:"active_teams"`
-	TeamActivity  []TeamActivityData        `json:"team_activity"`
-	TeamSizes     []TeamSizeData            `json:"team_sizes"`
+	Period       string             `json:"period"`
+	TotalTeams   int                `json:"total_teams"`
+	ActiveTeams  int                `json:"active_teams"`
+	TeamActivity []TeamActivityData `json:"team_activity"`
+	TeamSizes    []TeamSizeData     `json:"team_sizes"`
 }
 
 type TeamActivityData struct {
-	TeamName     string    `json:"team_name"`
-	Members      int       `json:"members"`
-	Commits30d   int       `json:"commits_30d"`
-	Issues30d    int       `json:"issues_30d"`
-	PRs30d       int       `json:"prs_30d"`
-	LastActive   time.Time `json:"last_active"`
+	TeamName   string    `json:"team_name"`
+	Members    int       `json:"members"`
+	Commits30d int       `json:"commits_30d"`
+	Issues30d  int       `json:"issues_30d"`
+	PRs30d     int       `json:"prs_30d"`
+	LastActive time.Time `json:"last_active"`
 }
 
 type TeamSizeData struct {
@@ -176,36 +176,36 @@ type TeamSizeData struct {
 }
 
 type SecurityMetrics struct {
-	Period           string                  `json:"period"`
-	SecurityScore    float64                 `json:"security_score"`
-	VulnerabilitiesFound int                `json:"vulnerabilities_found"`
-	VulnerabilitiesFixed int                `json:"vulnerabilities_fixed"`
-	SecurityAlerts   []SecurityAlert         `json:"security_alerts"`
-	ComplianceStatus map[string]bool         `json:"compliance_status"`
-	PolicyViolations []PolicyViolationData   `json:"policy_violations"`
+	Period               string                `json:"period"`
+	SecurityScore        float64               `json:"security_score"`
+	VulnerabilitiesFound int                   `json:"vulnerabilities_found"`
+	VulnerabilitiesFixed int                   `json:"vulnerabilities_fixed"`
+	SecurityAlerts       []SecurityAlert       `json:"security_alerts"`
+	ComplianceStatus     map[string]bool       `json:"compliance_status"`
+	PolicyViolations     []PolicyViolationData `json:"policy_violations"`
 }
 
 type PolicyViolationData struct {
-	PolicyName  string    `json:"policy_name"`
-	Count       int       `json:"count"`
+	PolicyName   string    `json:"policy_name"`
+	Count        int       `json:"count"`
 	LastOccurred time.Time `json:"last_occurred"`
 }
 
 type UsageAndCostMetrics struct {
-	Period           string                  `json:"period"`
-	BillingPlan      string                  `json:"billing_plan"`
-	SeatCount        int                     `json:"seat_count"`
-	StorageUsage     *StorageUsageMetrics    `json:"storage_usage"`
-	BandwidthUsage   *BandwidthUsageMetrics  `json:"bandwidth_usage"`
-	EstimatedCost    float64                 `json:"estimated_cost"`
-	CostBreakdown    []CostBreakdownData     `json:"cost_breakdown"`
-	UsageTrends      []UsageTrendData        `json:"usage_trends"`
+	Period         string                 `json:"period"`
+	BillingPlan    string                 `json:"billing_plan"`
+	SeatCount      int                    `json:"seat_count"`
+	StorageUsage   *StorageUsageMetrics   `json:"storage_usage"`
+	BandwidthUsage *BandwidthUsageMetrics `json:"bandwidth_usage"`
+	EstimatedCost  float64                `json:"estimated_cost"`
+	CostBreakdown  []CostBreakdownData    `json:"cost_breakdown"`
+	UsageTrends    []UsageTrendData       `json:"usage_trends"`
 }
 
 type CostBreakdownData struct {
-	Category    string  `json:"category"`
-	Amount      float64 `json:"amount"`
-	Percentage  float64 `json:"percentage"`
+	Category   string  `json:"category"`
+	Amount     float64 `json:"amount"`
+	Percentage float64 `json:"percentage"`
 }
 
 type UsageTrendData struct {
@@ -376,13 +376,13 @@ func (s *organizationAnalyticsService) GetSecurityMetrics(ctx context.Context, o
 	policyViolations := s.getPolicyViolations(org.ID, period)
 
 	return &SecurityMetrics{
-		Period:           period,
-		SecurityScore:    securityScore,
+		Period:               period,
+		SecurityScore:        securityScore,
 		VulnerabilitiesFound: 0, // Would integrate with security scanners
 		VulnerabilitiesFixed: 0, // Would integrate with security scanners
-		SecurityAlerts:   convertSecurityAlertSlice(securityAlerts),
-		ComplianceStatus: complianceStatus,
-		PolicyViolations: policyViolations,
+		SecurityAlerts:       convertSecurityAlertSlice(securityAlerts),
+		ComplianceStatus:     complianceStatus,
+		PolicyViolations:     policyViolations,
 	}, nil
 }
 
@@ -438,9 +438,9 @@ func (s *organizationAnalyticsService) getOverviewMetrics(orgID uuid.UUID) (*Ove
 		Distinct("actor_id").Count(&activeMembers30d)
 
 	// These would integrate with actual data sources
-	commitsThisMonth = 0  // Would query git data
-	issuesOpen = 0        // Would query issues
-	prsOpen = 0           // Would query pull requests
+	commitsThisMonth = 0 // Would query git data
+	issuesOpen = 0       // Would query issues
+	prsOpen = 0          // Would query pull requests
 
 	securityScore := s.calculateSecurityScore(orgID)
 
@@ -458,7 +458,7 @@ func (s *organizationAnalyticsService) getOverviewMetrics(orgID uuid.UUID) (*Ove
 
 // Additional helper methods would be implemented here for:
 // - getRecentActivity
-// - getTopRepositories  
+// - getTopRepositories
 // - getActiveMembers
 // - getSecurityAlerts
 // - getStorageUsage
@@ -495,7 +495,7 @@ func (s *organizationAnalyticsService) getRecentActivity(orgID uuid.UUID, limit 
 		if event.Actor != nil {
 			actorName = event.Actor.Username
 		}
-		
+
 		activities = append(activities, &ActivitySummary{
 			Date:        event.CreatedAt,
 			Action:      string(event.EventType),
@@ -568,11 +568,11 @@ func (s *organizationAnalyticsService) getActiveMembers(orgID uuid.UUID, limit i
 	// Get organization members with their activity stats
 	var members []struct {
 		models.User
-		Role           string    `json:"role"`
-		Commits30d     int64     `json:"commits_30d"`
-		Issues30d      int64     `json:"issues_30d"`
-		PullRequests30d int64    `json:"pull_requests_30d"`
-		LastActiveAt   time.Time `json:"last_active_at"`
+		Role            string    `json:"role"`
+		Commits30d      int64     `json:"commits_30d"`
+		Issues30d       int64     `json:"issues_30d"`
+		PullRequests30d int64     `json:"pull_requests_30d"`
+		LastActiveAt    time.Time `json:"last_active_at"`
 	}
 
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
@@ -598,13 +598,13 @@ func (s *organizationAnalyticsService) getActiveMembers(orgID uuid.UUID, limit i
 	var summaries []*MemberSummary
 	for _, member := range members {
 		summaries = append(summaries, &MemberSummary{
-			Username:       member.Username,
-			Name:           member.FullName,
-			Role:           member.Role,
-			Commits30d:     int(member.Commits30d),
-			Issues30d:      int(member.Issues30d),
+			Username:        member.Username,
+			Name:            member.FullName,
+			Role:            member.Role,
+			Commits30d:      int(member.Commits30d),
+			Issues30d:       int(member.Issues30d),
 			PullRequests30d: int(member.PullRequests30d),
-			LastActiveAt:   member.LastActiveAt,
+			LastActiveAt:    member.LastActiveAt,
 		})
 	}
 
@@ -690,9 +690,9 @@ func (s *organizationAnalyticsService) getStorageUsage(orgID uuid.UUID) (*Storag
 	}
 
 	return &StorageUsageMetrics{
-		TotalUsedGB:    totalUsedGB,
-		TotalLimitGB:   totalLimitGB,
-		UsagePercent:   usagePercent,
+		TotalUsedGB:     totalUsedGB,
+		TotalLimitGB:    totalLimitGB,
+		UsagePercent:    usagePercent,
 		TopRepositories: topRepos,
 	}, nil
 }
@@ -763,8 +763,8 @@ func (s *organizationAnalyticsService) calculateSecurityScore(orgID uuid.UUID) f
 
 func (s *organizationAnalyticsService) getComplianceStatus(orgID uuid.UUID) map[string]bool {
 	return map[string]bool{
-		"GDPR": true,
-		"SOC2": false,
+		"GDPR":     true,
+		"SOC2":     false,
 		"ISO27001": false,
 	}
 }

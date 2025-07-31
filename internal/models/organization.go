@@ -263,7 +263,7 @@ type OrganizationPolicy struct {
 	Description    string     `json:"description" gorm:"type:text"`
 	Configuration  string     `json:"configuration" gorm:"type:jsonb"`
 	Enabled        bool       `json:"enabled" gorm:"default:true"`
-	Enforcement    string     `json:"enforcement" gorm:"type:varchar(50);default:'warn'`
+	Enforcement    string     `json:"enforcement" gorm:"type:varchar(50);default:warn"`
 
 	// Relationships
 	Organization Organization `json:"organization,omitempty" gorm:"foreignKey:OrganizationID"`
@@ -280,7 +280,7 @@ const (
 	TemplateTypeRepository TemplateType = "repository"
 	TemplateTypeProject    TemplateType = "project"
 
-	TemplateTypeTeam       TemplateType = "team"
+	TemplateTypeTeam TemplateType = "team"
 )
 
 type OrganizationTemplate struct {

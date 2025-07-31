@@ -31,20 +31,20 @@ func NewTeamController(
 // Team management endpoints
 func (ctrl *TeamController) ListTeams(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	filters := services.TeamFilters{}
-	
+
 	if privacyStr := c.Query("privacy"); privacyStr != "" {
 		privacy := models.TeamPrivacy(privacyStr)
 		filters.Privacy = &privacy
 	}
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil {
 			filters.Limit = limit
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil {
 			filters.Offset = offset
@@ -62,7 +62,7 @@ func (ctrl *TeamController) ListTeams(c *gin.Context) {
 
 func (ctrl *TeamController) CreateTeam(c *gin.Context) {
 	orgName := c.Param("org")
-	
+
 	var req services.CreateTeamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -94,7 +94,7 @@ func (ctrl *TeamController) GetTeam(c *gin.Context) {
 func (ctrl *TeamController) UpdateTeam(c *gin.Context) {
 	orgName := c.Param("org")
 	teamName := c.Param("team")
-	
+
 	var req services.UpdateTeamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -156,7 +156,7 @@ func (ctrl *TeamController) AddTeamMember(c *gin.Context) {
 	var req struct {
 		Role models.TeamRole `json:"role" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -192,7 +192,7 @@ func (ctrl *TeamController) UpdateTeamMemberRole(c *gin.Context) {
 	var req struct {
 		Role models.TeamRole `json:"role" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -249,7 +249,7 @@ func (ctrl *TeamController) AddTeamRepository(c *gin.Context) {
 	var req struct {
 		Permission models.Permission `json:"permission" binding:"required"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -48,44 +48,44 @@ func createIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_users_email_active ON users(email, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_users_username_active ON users(username, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login_at)",
-		
+
 		// Session indexes
 		"CREATE INDEX IF NOT EXISTS idx_sessions_user_active ON sessions(user_id, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_sessions_expires_active ON sessions(expires_at, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_sessions_last_used ON sessions(last_used_at)",
 		"CREATE INDEX IF NOT EXISTS idx_sessions_ip_created ON sessions(ip_address, created_at)",
-		
+
 		// MFA indexes
 		"CREATE INDEX IF NOT EXISTS idx_backup_codes_user_used ON backup_codes(user_id, used)",
 		"CREATE INDEX IF NOT EXISTS idx_webauthn_credentials_user ON webauthn_credentials(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_sms_codes_user_expires ON sms_verification_codes(user_id, expires_at, used)",
-		
+
 		// Email verification indexes
 		"CREATE INDEX IF NOT EXISTS idx_email_tokens_expires_used ON email_verification_tokens(expires_at, used)",
 		"CREATE INDEX IF NOT EXISTS idx_password_reset_expires_used ON password_reset_tokens(expires_at, used)",
-		
+
 		// OAuth indexes
 		"CREATE INDEX IF NOT EXISTS idx_oauth_accounts_user_provider ON oauth_accounts(user_id, provider)",
 		"CREATE INDEX IF NOT EXISTS idx_oauth_accounts_provider_id ON oauth_accounts(provider, provider_id)",
 		"CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_used ON oauth_states(expires_at, used)",
-		
+
 		// Security indexes
 		"CREATE INDEX IF NOT EXISTS idx_security_events_user_created ON security_events(user_id, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_security_events_severity_created ON security_events(severity, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_security_events_ip_created ON security_events(ip_address, created_at)",
-		
+
 		// Login attempt indexes
 		"CREATE INDEX IF NOT EXISTS idx_login_attempts_email_created ON login_attempts(email, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_created ON login_attempts(ip_address, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_login_attempts_success_created ON login_attempts(success, created_at)",
-		
+
 		// Audit log indexes
 		"CREATE INDEX IF NOT EXISTS idx_audit_logs_user_created ON audit_logs(user_id, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_audit_logs_event_created ON audit_logs(event, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_audit_logs_risk_created ON audit_logs(risk_level, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_audit_logs_ip_created ON audit_logs(ip_address, created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_audit_logs_session_created ON audit_logs(session_id, created_at)",
-		
+
 		// Account lockout indexes
 		"CREATE INDEX IF NOT EXISTS idx_account_lockouts_user_active ON account_lockouts(user_id, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_account_lockouts_ip_active ON account_lockouts(ip_address, is_active)",
@@ -105,31 +105,31 @@ func createIndexes(db *gorm.DB) error {
 // CleanupExpiredData removes expired data from authentication tables
 func CleanupExpiredData(db *gorm.DB) error {
 	// Clean up expired email verification tokens (older than 30 days)
-	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)", 
+	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)",
 		getTimeAgo(30*24), getTimeAgo(7*24)).Delete(&EmailVerificationToken{}).Error; err != nil {
 		return fmt.Errorf("failed to cleanup email verification tokens: %w", err)
 	}
 
 	// Clean up expired password reset tokens (older than 7 days)
-	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)", 
+	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)",
 		getTimeAgo(24), getTimeAgo(24)).Delete(&PasswordResetToken{}).Error; err != nil {
 		return fmt.Errorf("failed to cleanup password reset tokens: %w", err)
 	}
 
 	// Clean up expired SMS verification codes (older than 1 day)
-	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)", 
+	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)",
 		getTimeAgo(1), getTimeAgo(1)).Delete(&SMSVerificationCode{}).Error; err != nil {
 		return fmt.Errorf("failed to cleanup SMS verification codes: %w", err)
 	}
 
 	// Clean up expired OAuth states (older than 1 hour)
-	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)", 
+	if err := db.Where("expires_at < ? OR (used = true AND updated_at < ?)",
 		getTimeAgo(0.04), getTimeAgo(0.04)).Delete(&OAuthState{}).Error; err != nil {
 		return fmt.Errorf("failed to cleanup OAuth states: %w", err)
 	}
 
 	// Clean up old sessions (expired or inactive for more than 7 days)
-	if err := db.Where("expires_at < ? OR (is_active = false AND updated_at < ?)", 
+	if err := db.Where("expires_at < ? OR (is_active = false AND updated_at < ?)",
 		getTimeAgo(0), getTimeAgo(7*24)).Delete(&Session{}).Error; err != nil {
 		return fmt.Errorf("failed to cleanup sessions: %w", err)
 	}
@@ -179,41 +179,41 @@ type DatabaseStats struct {
 
 func GetDatabaseStats(db *gorm.DB) (*DatabaseStats, error) {
 	stats := &DatabaseStats{}
-	
+
 	// Total users
 	db.Model(&models.User{}).Count(&stats.TotalUsers)
-	
+
 	// Active users
 	db.Model(&models.User{}).Where("is_active = true").Count(&stats.ActiveUsers)
-	
+
 	// Verified users
 	db.Model(&models.User{}).Where("email_verified = true").Count(&stats.VerifiedUsers)
-	
+
 	// MFA enabled users
 	db.Model(&models.User{}).Where("two_factor_enabled = true").Count(&stats.MFAEnabledUsers)
-	
+
 	// Sessions
 	db.Model(&Session{}).Count(&stats.TotalSessions)
 	db.Model(&Session{}).Where("is_active = true AND expires_at > datetime('now')").Count(&stats.ActiveSessions)
-	
+
 	// OAuth accounts
 	db.Model(&OAuthAccount{}).Count(&stats.OAuthAccounts)
-	
+
 	// Recent activity (last 24 hours)
 	db.Model(&AuditLog{}).Where("event = 'login' AND success = true AND created_at > datetime('now', '-24 hours')").Count(&stats.RecentLogins24h)
 	db.Model(&AuditLog{}).Where("event = 'login_failed' AND created_at > datetime('now', '-24 hours')").Count(&stats.FailedLogins24h)
 	db.Model(&SecurityEvent{}).Where("created_at > datetime('now', '-24 hours')").Count(&stats.SecurityEvents24h)
-	
+
 	// Pending verifications
 	db.Model(&EmailVerificationToken{}).Where("used = false AND expires_at > datetime('now')").Count(&stats.PendingVerifications)
-	
+
 	return stats, nil
 }
 
 // ValidateDatabaseIntegrity checks for common database integrity issues
 func ValidateDatabaseIntegrity(db *gorm.DB) []string {
 	var issues []string
-	
+
 	// Check for users without valid sessions but marked as recently active
 	var count int64
 	db.Raw(`
@@ -229,13 +229,13 @@ func ValidateDatabaseIntegrity(db *gorm.DB) []string {
 	if count > 0 {
 		issues = append(issues, fmt.Sprintf("%d users marked as recently active but have no active sessions", count))
 	}
-	
+
 	// Check for expired tokens that haven't been cleaned up
 	db.Model(&EmailVerificationToken{}).Where("expires_at < datetime('now', '-30 days')").Count(&count)
 	if count > 0 {
 		issues = append(issues, fmt.Sprintf("%d expired email verification tokens need cleanup", count))
 	}
-	
+
 	// Check for orphaned backup codes
 	db.Raw(`
 		SELECT COUNT(*) FROM backup_codes b 
@@ -247,7 +247,7 @@ func ValidateDatabaseIntegrity(db *gorm.DB) []string {
 	if count > 0 {
 		issues = append(issues, fmt.Sprintf("%d orphaned backup codes found", count))
 	}
-	
+
 	// Check for users with MFA enabled but no backup codes
 	db.Raw(`
 		SELECT COUNT(*) FROM users u 
@@ -260,7 +260,7 @@ func ValidateDatabaseIntegrity(db *gorm.DB) []string {
 	if count > 0 {
 		issues = append(issues, fmt.Sprintf("%d users with MFA enabled but no backup codes", count))
 	}
-	
+
 	return issues
 }
 
@@ -273,27 +273,27 @@ func RepairDatabaseIntegrity(db *gorm.DB) error {
 	`).Error; err != nil {
 		return fmt.Errorf("failed to remove orphaned backup codes: %w", err)
 	}
-	
+
 	if err := db.Exec(`
 		DELETE FROM sessions 
 		WHERE user_id NOT IN (SELECT id FROM users)
 	`).Error; err != nil {
 		return fmt.Errorf("failed to remove orphaned sessions: %w", err)
 	}
-	
+
 	if err := db.Exec(`
 		DELETE FROM oauth_accounts 
 		WHERE user_id NOT IN (SELECT id FROM users)
 	`).Error; err != nil {
 		return fmt.Errorf("failed to remove orphaned OAuth accounts: %w", err)
 	}
-	
+
 	// Deactivate expired sessions
 	if err := db.Model(&Session{}).
 		Where("expires_at < datetime('now') AND is_active = true").
 		Update("is_active", false).Error; err != nil {
 		return fmt.Errorf("failed to deactivate expired sessions: %w", err)
 	}
-	
+
 	return nil
 }

@@ -15,13 +15,13 @@ type Claims struct {
 	Username string    `json:"username"`
 	Email    string    `json:"email"`
 	// Roles granted to the user from external identity or group mapping
-	Roles    []string  `json:"roles,omitempty"`
-	IsAdmin  bool      `json:"is_admin"`
+	Roles   []string `json:"roles,omitempty"`
+	IsAdmin bool     `json:"is_admin"`
 	jwt.RegisteredClaims
 }
 
 type JWTManager struct {
-	secretKey string
+	secretKey  string
 	expiration time.Duration
 }
 

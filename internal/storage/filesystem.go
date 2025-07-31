@@ -34,7 +34,7 @@ func NewFilesystemBackend(config FilesystemConfig) (*FilesystemBackend, error) {
 // Upload uploads a file to the filesystem
 func (f *FilesystemBackend) Upload(ctx context.Context, path string, reader io.Reader, size int64) error {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	// Ensure the directory exists
 	dir := filepath.Dir(fullPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -68,7 +68,7 @@ func (f *FilesystemBackend) Upload(ctx context.Context, path string, reader io.R
 // Download downloads a file from the filesystem
 func (f *FilesystemBackend) Download(ctx context.Context, path string) (io.ReadCloser, error) {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	file, err := os.Open(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -83,7 +83,7 @@ func (f *FilesystemBackend) Download(ctx context.Context, path string) (io.ReadC
 // Delete deletes a file from the filesystem
 func (f *FilesystemBackend) Delete(ctx context.Context, path string) error {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	err := os.Remove(fullPath)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete file %s: %w", fullPath, err)
@@ -95,7 +95,7 @@ func (f *FilesystemBackend) Delete(ctx context.Context, path string) error {
 // Exists checks if a file exists in the filesystem
 func (f *FilesystemBackend) Exists(ctx context.Context, path string) (bool, error) {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	_, err := os.Stat(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -110,7 +110,7 @@ func (f *FilesystemBackend) Exists(ctx context.Context, path string) (bool, erro
 // GetSize returns the size of a file in bytes
 func (f *FilesystemBackend) GetSize(ctx context.Context, path string) (int64, error) {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	stat, err := os.Stat(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -125,7 +125,7 @@ func (f *FilesystemBackend) GetSize(ctx context.Context, path string) (int64, er
 // GetLastModified returns the last modified time of a file
 func (f *FilesystemBackend) GetLastModified(ctx context.Context, path string) (time.Time, error) {
 	fullPath := filepath.Join(f.basePath, path)
-	
+
 	stat, err := os.Stat(fullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -140,7 +140,7 @@ func (f *FilesystemBackend) GetLastModified(ctx context.Context, path string) (t
 // List lists files with the given prefix
 func (f *FilesystemBackend) List(ctx context.Context, prefix string) ([]string, error) {
 	var files []string
-	
+
 	err := filepath.Walk(f.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -159,7 +159,7 @@ func (f *FilesystemBackend) List(ctx context.Context, prefix string) ([]string, 
 
 		// Convert to forward slashes for consistency
 		relPath = strings.ReplaceAll(relPath, "\\", "/")
-		
+
 		if strings.HasPrefix(relPath, prefix) {
 			files = append(files, relPath)
 		}

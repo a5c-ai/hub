@@ -33,7 +33,7 @@ func (s *permissionService) GrantRepositoryPermission(ctx context.Context, repoI
 	// Check if permission already exists
 	var existing models.RepositoryPermission
 	err := s.db.Where("repository_id = ? AND subject_id = ? AND subject_type = ?", repoID, subjectID, subjectType).First(&existing).Error
-	
+
 	if err == nil {
 		// Update existing permission
 		existing.Permission = permission
@@ -48,7 +48,7 @@ func (s *permissionService) GrantRepositoryPermission(ctx context.Context, repoI
 			SubjectType:  subjectType,
 			Permission:   permission,
 		}
-		
+
 		if createErr := s.db.Create(newPermission).Error; createErr != nil {
 			return fmt.Errorf("failed to create permission: %w", createErr)
 		}
@@ -75,11 +75,11 @@ func (s *permissionService) GrantRepositoryPermission(ctx context.Context, repoI
 
 func (s *permissionService) RevokeRepositoryPermission(ctx context.Context, repoID uuid.UUID, subjectID uuid.UUID, subjectType models.SubjectType) error {
 	result := s.db.Where("repository_id = ? AND subject_id = ? AND subject_type = ?", repoID, subjectID, subjectType).Delete(&models.RepositoryPermission{})
-	
+
 	if result.Error != nil {
 		return fmt.Errorf("failed to revoke permission: %w", result.Error)
 	}
-	
+
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("permission not found")
 	}
@@ -212,11 +212,11 @@ func (s *permissionService) getHighestTeamPermission(ctx context.Context, userID
 	}
 
 	var highestPermission models.Permission
-	
+
 	for _, teamMember := range teamMembers {
 		// Get repository permissions for this team
 		var repoPermission models.RepositoryPermission
-		if err := s.db.Where("repository_id = ? AND subject_id = ? AND subject_type = ?", 
+		if err := s.db.Where("repository_id = ? AND subject_id = ? AND subject_type = ?",
 			repoID, teamMember.TeamID, models.SubjectTypeTeam).First(&repoPermission).Error; err != nil {
 			if err != gorm.ErrRecordNotFound {
 				return "", fmt.Errorf("failed to get team permission: %w", err)
@@ -238,7 +238,7 @@ func isHigherPermission(perm1, perm2 models.Permission) bool {
 	if perm2 == "" {
 		return perm1 != ""
 	}
-	
+
 	permissionLevels := map[models.Permission]int{
 		models.PermissionRead:     1,
 		models.PermissionTriage:   2,
@@ -254,7 +254,7 @@ func isPermissionSufficient(userPerm, requiredPerm models.Permission) bool {
 	if userPerm == "" {
 		return false
 	}
-	
+
 	permissionLevels := map[models.Permission]int{
 		models.PermissionRead:     1,
 		models.PermissionTriage:   2,

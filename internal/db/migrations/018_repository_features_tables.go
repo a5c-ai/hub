@@ -41,7 +41,7 @@ func migrate018Up(db *gorm.DB) error {
 	}
 
 	// Add indexes for performance
-	
+
 	// Repository languages indexes
 	err = db.Exec("CREATE INDEX IF NOT EXISTS idx_repository_languages_repo_id ON repository_languages(repository_id)").Error
 	if err != nil {

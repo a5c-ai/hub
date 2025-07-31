@@ -68,7 +68,7 @@ func (m *Migrator) Migrate() error {
 		}
 
 		fmt.Printf("Applying migration %s...\n", migration.Version)
-		
+
 		if err := migration.Up(m.db); err != nil {
 			return fmt.Errorf("failed to apply migration %s: %w", migration.Version, err)
 		}

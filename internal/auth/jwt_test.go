@@ -1,13 +1,13 @@
 package auth
 
 import (
-   "reflect"
-   "testing"
-   "time"
+	"reflect"
+	"testing"
+	"time"
 
-   "github.com/google/uuid"
-   "github.com/a5c-ai/hub/internal/config"
-   "github.com/a5c-ai/hub/internal/models"
+	"github.com/a5c-ai/hub/internal/config"
+	"github.com/a5c-ai/hub/internal/models"
+	"github.com/google/uuid"
 )
 
 func TestJWTManager_GenerateAndValidateToken(t *testing.T) {
@@ -128,7 +128,7 @@ func TestJWTManager_ValidateTokenWithWrongSecret(t *testing.T) {
 		Secret:         "test-secret-2",
 		ExpirationHour: 1,
 	}
-	
+
 	jwtManager1 := NewJWTManager(cfg1)
 	jwtManager2 := NewJWTManager(cfg2)
 
@@ -204,7 +204,7 @@ func TestJWTManager_RolesInToken(t *testing.T) {
 
 	testUserID := uuid.New()
 	user := &models.User{
-		ID:    testUserID,
+		ID:       testUserID,
 		Username: "testuser",
 		Email:    "test@example.com",
 		Roles:    []string{"roleA", "roleB"},
