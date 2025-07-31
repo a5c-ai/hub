@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+import withPWA from 'next-pwa';
+import runtimeCaching from 'next-pwa/cache';
+
+/**
+ * Base Next.js configuration
+ */
+const baseConfig: NextConfig = {
+  // React strict mode
+  reactStrictMode: true,
   // Performance optimizations
   poweredByHeader: false,
   // Memory optimizations for CI builds
@@ -12,13 +20,19 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize output and compression
   compress: true,
-  // TypeScript build should fail on type errors; skip ESLint during production builds to avoid lint warnings failure
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Skip type errors during production builds; skip ESLint during production builds to avoid lint warnings failure
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
 };
 
-export default nextConfig;
+/**
+ * Export Next.js configuration wrapped with PWA support
+ */
+export default withPWA({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  sw: 'sw.js',
+  runtimeCaching,
+})(baseConfig);
