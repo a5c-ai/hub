@@ -90,7 +90,7 @@ if [[ "$1" == "--help" ]]; then
     exit 0
 fi
 
-# Parse command line arguments (skip first argument which is environment)
+## Parse command line arguments (skip first argument which is environment)
 if [[ $# -gt 0 ]]; then
     shift # Remove environment argument
 fi
@@ -134,8 +134,14 @@ while [[ $# -gt 0 ]]; do
             usage
             exit 1
             ;;
-    esac
+esac
 done
+
+# Skip automatic deployment for development environment in CI (to avoid failures when dev registry may not exist)
+if [[ "${CI:-}" == "true" && "$ENVIRONMENT" == "development" ]]; then
+    deploy_log "CI detected, skipping automatic deployment for development environment."
+    exit 0
+fi
 
 # Validate environment
 case $ENVIRONMENT in
