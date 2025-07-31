@@ -5,7 +5,9 @@
   version          = var.chart_version
   namespace        = var.namespace
   create_namespace = true
-  install_crds     = true
+
+  # Install CRDs before deploying the chart (helm v2 API)
+  crd_install {}
 
   set {
     name  = "authSecret.github_token"
