@@ -172,13 +172,14 @@ deploy_log "Dry run: $DRY_RUN"
 if [[ -z "$REGISTRY" ]]; then
     case "$ENVIRONMENT" in
         development)
-            REGISTRY="acr-hub-development-westus3.azurecr.io"
+            # Use registry name without hyphens to match Terraform naming (acr${local.base_name}.azurecr.io)
+            REGISTRY="acrhubdevelopmentwestus3.azurecr.io"
             ;;
         staging)
-            REGISTRY="acr-hub-staging-westus3.azurecr.io"
+            REGISTRY="acrhubstagingwestus3.azurecr.io"
             ;;
         production)
-            REGISTRY="acr-hub-production-westus3.azurecr.io"
+            REGISTRY="acrhubproductionwestus3.azurecr.io"
             ;;
         *)
             deploy_log "Unknown environment: $ENVIRONMENT. Container registry not set."
