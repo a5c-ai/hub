@@ -198,7 +198,7 @@ export default function RepositoryBrowser({
             {/* Quick Setup Section */}
             <div className="bg-muted/50 rounded-xl p-8 mb-12 text-left max-w-3xl mx-auto">
               <h4 className="text-lg font-semibold text-foreground mb-6 text-center">
-                Quick setup — if you've done this kind of thing before
+                Quick setup — if you&apos;ve done this kind of thing before
               </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -445,4 +445,4 @@ git push -u origin main`}
       </div>
     </div>
   );
-} 
+}
