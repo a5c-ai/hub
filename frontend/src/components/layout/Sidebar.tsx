@@ -40,6 +40,12 @@ const navigation = [
     iconSolid: FolderIconSolid,
   },
   {
+    name: 'Organizations',
+    href: '/organizations',
+    icon: UsersIcon,
+    iconSolid: UsersIconSolid,
+  },
+  {
     name: 'Plugins',
     href: '/plugins',
     icon: PuzzlePieceIcon,

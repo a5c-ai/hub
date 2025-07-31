@@ -54,6 +54,16 @@ export default function BlobPage() {
           typeof err.response.data.message === 'string'
           ? err.response.data.message 
           : 'Failed to fetch file';
+        
+        // Check if this might be an empty repository (404 error)
+        const isEmptyRepo = errorMessage.includes('404') || errorMessage.includes('Not Found') || errorMessage.includes('repository is empty');
+        
+        if (isEmptyRepo) {
+          // Redirect to main repository page to show empty repo instructions
+          window.location.href = `/repositories/${owner}/${repo}`;
+          return;
+        }
+        
         setError(errorMessage);
       } finally {
         setLoading(false);

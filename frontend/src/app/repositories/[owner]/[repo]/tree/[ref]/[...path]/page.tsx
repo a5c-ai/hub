@@ -74,11 +74,20 @@ export default function TreePage() {
   }
 
   if (error) {
+    // Check if this might be an empty repository (404 error)
+    const isEmptyRepo = error.includes('404') || error.includes('Not Found') || error.includes('repository is empty');
+    
+    if (isEmptyRepo) {
+      // Redirect to main repository page to show empty repo instructions
+      window.location.href = `/repositories/${owner}/${repo}`;
+      return null;
+    }
+
     return (
       <AppLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <div className="text-red-600 text-lg mb-4">Error: {error}</div>
+            <div className="text-destructive text-lg mb-4">Error: {error}</div>
             <Button onClick={() => window.location.reload()}>
               Try Again
             </Button>

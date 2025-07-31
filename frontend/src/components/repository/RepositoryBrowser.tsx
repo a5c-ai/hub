@@ -177,9 +177,122 @@ export default function RepositoryBrowser({
   };
 
   if (error) {
+    // Check if this might be an empty repository (404 error)
+    const isEmptyRepo = error.includes('404') || error.includes('Not Found') || error.includes('repository is empty') || availableBranches.length === 0;
+    
+    if (isEmptyRepo) {
+      return (
+        <div className="text-center py-16">
+          <div className="max-w-4xl mx-auto px-4">
+            {/* Header Section */}
+            <div className="mb-12">
+              <svg className="w-20 h-20 mx-auto text-muted-foreground mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="text-2xl font-bold text-foreground mb-3">This repository is empty</h3>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Get started by creating a new file or uploading existing files.
+              </p>
+            </div>
+
+            {/* Quick Setup Section */}
+            <div className="bg-muted/50 rounded-xl p-8 mb-12 text-left max-w-3xl mx-auto">
+              <h4 className="text-lg font-semibold text-foreground mb-6 text-center">
+                Quick setup — if you've done this kind of thing before
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-foreground uppercase tracking-wide">HTTPS</span>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigator.clipboard.writeText(repository.clone_url || `http://localhost:8080/tmuskal/${repo}.git`)}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="bg-background border rounded-md p-4">
+                    <code className="text-sm font-mono text-foreground break-all">
+                      {repository.clone_url || `http://localhost:8080/tmuskal/${repo}.git`}
+                    </code>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-foreground uppercase tracking-wide">SSH</span>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigator.clipboard.writeText(repository.ssh_url || `git@localhost:tmuskal/${repo}.git`)}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="bg-background border rounded-md p-4">
+                    <code className="text-sm font-mono text-foreground break-all">
+                      {repository.ssh_url || `git@localhost:tmuskal/${repo}.git`}
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Command Instructions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-6xl mx-auto">
+              <div className="bg-background border border-border rounded-xl p-8">
+                <h4 className="text-lg font-semibold text-foreground mb-6">
+                  …or create a new repository on the command line
+                </h4>
+                <div className="bg-muted rounded-lg p-6 overflow-x-auto">
+                  <pre className="text-sm font-mono text-foreground leading-relaxed">
+{`echo "# ${repo}" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin ${repository.clone_url || `http://localhost:8080/tmuskal/${repo}.git`}
+git push -u origin main`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="bg-background border border-border rounded-xl p-8">
+                <h4 className="text-lg font-semibold text-foreground mb-6">
+                  …or push an existing repository from the command line
+                </h4>
+                <div className="bg-muted rounded-lg p-6 overflow-x-auto">
+                  <pre className="text-sm font-mono text-foreground leading-relaxed">
+{`git remote add origin ${repository.clone_url || `http://localhost:8080/tmuskal/${repo}.git`}
+git branch -M main
+git push -u origin main`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Refresh Button */}
+            <div className="mt-12 text-center">
+              <Button 
+                variant="outline" 
+                onClick={retryFetch}
+                disabled={loading}
+                className="px-6 py-2"
+              >
+                {loading ? 'Checking...' : 'Refresh'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // For other errors, show the generic error message
     return (
       <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{error}</div>
+        <div className="text-destructive mb-4">{error}</div>
         <Button 
           variant="outline" 
           size="sm" 

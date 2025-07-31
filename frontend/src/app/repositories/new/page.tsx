@@ -34,7 +34,7 @@ export default function NewRepositoryPage() {
   const onSubmit = async (data: CreateRepositoryFormData) => {
     try {
       clearError();
-      console.log('Creating repository:', data);
+      console.log('Creating repository with data:', data);
       const repository = await createRepository({
         name: data.name,
         description: data.description,
@@ -45,11 +45,11 @@ export default function NewRepositoryPage() {
       
       // Build the repository URL - use owner info if available
       const repoUrl = repository.full_name || `admin/${repository.name}`;
-      console.log('Navigating to:', `/repositories/${repoUrl}`);
+      console.log('Navigating to repository:', `/repositories/${repoUrl}`);
       router.push(`/repositories/${repoUrl}`);
     } catch (err) {
-      console.error('Failed to create repository:', err);
-      // Error is handled by the store
+      console.error('Repository creation failed:', err);
+      // Error details are logged in the store and displayed via error state
     }
   };
 

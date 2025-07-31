@@ -31,7 +31,7 @@ export function SSHKeyManagement() {
     
     const operation = async () => {
       const response = await sshKeyApi.getSSHKeys();
-      const keysData = Array.isArray(response) ? response : (response.data || []);
+      const keysData = Array.isArray(response) ? response : (response?.data || []);
       return keysData as SSHKey[];
     };
 
@@ -51,7 +51,7 @@ export function SSHKeyManagement() {
     
     const operation = async () => {
       const response = await sshKeyApi.createSSHKey(newKey);
-      const newSSHKey = (response.data || response) as SSHKey;
+      const newSSHKey = (response?.data || response) as SSHKey;
       return newSSHKey;
     };
 

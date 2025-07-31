@@ -23,7 +23,24 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/auth';
 import { useRepositoryStore } from '@/store/repository';
 import { formatRelativeTime, createErrorHandler } from '@/lib/utils';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/api';
+
+interface ActivityItem {
+  id: string;
+  message: string;
+  repository: string;
+  timestamp: string;
+}
+
+interface UserActivityResponse {
+  activities: ActivityItem[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    has_more: boolean;
+  };
+}
 
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -34,7 +51,7 @@ export default function DashboardPage() {
     fetchRepositories,
     clearError 
   } = useRepositoryStore();
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
 
@@ -61,8 +78,8 @@ export default function DashboardPage() {
       const fetchActivity = async () => {
         const handleError = createErrorHandler(setActivityError, setActivityLoading);
         const result = await handleError(async () => {
-          const response = await api.get(`/activity?filter=own`);
-          return response.data.activities;
+          const response = await apiClient.get(`/user/activity`) as unknown as UserActivityResponse;
+          return response?.activities || [];
         });
         if (result) {
           setActivities(result);

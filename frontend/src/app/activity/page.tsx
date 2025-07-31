@@ -5,9 +5,9 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+
 import { createErrorHandler } from '@/lib/utils';
 
 interface ActivityItem {
@@ -38,18 +38,28 @@ interface ActivityItem {
   created_at: string;
 }
 
+interface UserActivityResponse {
+  activities: ActivityItem[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    has_more: boolean;
+  };
+}
+
 export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'own' | 'following'>('all');
 
-  const fetchActivity = async (currentFilter = filter) => {
+  const fetchActivity = async () => {
     const handleError = createErrorHandler(setError, setLoading);
     
     const operation = async () => {
-      const response = await api.get(`/activity?filter=${currentFilter}`);
-      return response.data;
+      const response = await apiClient.get(`/user/activity`) as unknown as UserActivityResponse;
+      return response?.activities || [];
     };
 
     const result = await handleError(operation);
@@ -59,8 +69,8 @@ export default function ActivityPage() {
   };
 
   useEffect(() => {
-    fetchActivity(filter);
-  }, [filter]);
+    fetchActivity();
+  }, []);
 
   const getActivityIcon = (type: string) => {
     switch (type) {

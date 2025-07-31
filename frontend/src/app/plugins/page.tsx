@@ -17,7 +17,7 @@ export default function PluginsPage() {
   useEffect(() => {
     pluginApi
       .listMarketplace()
-      .then((resp) => setPlugins(resp.data))
+      .then((resp) => setPlugins(Array.isArray(resp) ? resp : []))
       .catch((err) => {
         console.error(err);
         setError('Failed to load plugins.');

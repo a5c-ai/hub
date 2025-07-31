@@ -18,11 +18,9 @@ import { createErrorHandler } from '@/lib/utils';
 
 interface Branch {
   name: string;
-  protected: boolean;
-  commit: {
-    sha: string;
-    message: string;
-  };
+  is_protected: boolean;
+  is_default: boolean;
+  sha: string;
 }
 
 interface BranchProtection {
@@ -166,7 +164,7 @@ export default function BranchProtectionPage() {
       // Update branch in the list
       setBranches(branches.map(branch => 
         branch.name === selectedBranch 
-          ? { ...branch, protected: true }
+          ? { ...branch, is_protected: true }
           : branch
       ));
       setShowProtectionModal(false);
@@ -187,7 +185,7 @@ export default function BranchProtectionPage() {
     if (result !== null) {
       setBranches(branches.map(branch => 
         branch.name === branchName 
-          ? { ...branch, protected: false }
+          ? { ...branch, is_protected: false }
           : branch
       ));
       fetchProtectionRules(); // Refresh rules list
@@ -360,7 +358,7 @@ export default function BranchProtectionPage() {
     
     // If branch is already protected, fetch current protection settings
     const branch = branches.find(b => b.name === branchName);
-    if (branch?.protected) {
+    if (branch?.is_protected) {
       await fetchBranchProtection(branchName);
     } else {
       // Reset to default protection settings
@@ -609,7 +607,7 @@ export default function BranchProtectionPage() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-semibold text-foreground">{branch.name}</h3>
-                        {branch.protected ? (
+                        {branch.is_protected ? (
                           <Badge variant="default" className="bg-green-100 text-green-800">
                             Protected
                           </Badge>
@@ -618,13 +616,14 @@ export default function BranchProtectionPage() {
                             Unprotected
                           </Badge>
                         )}
+                        {branch.is_default && (
+                          <Badge variant="outline" className="ml-2">
+                            Default
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Latest commit: {branch.commit.message.slice(0, 60)}
-                        {branch.commit.message.length > 60 ? '...' : ''}
-                      </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {branch.commit.sha.slice(0, 7)}
+                        {branch.sha ? branch.sha.slice(0, 7) : 'Unknown SHA'}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -633,9 +632,9 @@ export default function BranchProtectionPage() {
                         size="sm"
                         onClick={() => openProtectionModal(branch.name)}
                       >
-                        {branch.protected ? 'Edit Protection' : 'Add Protection'}
+                        {branch.is_protected ? 'Edit Protection' : 'Add Protection'}
                       </Button>
-                      {branch.protected && (
+                      {branch.is_protected && (
                         <Button
                           variant="outline"
                           size="sm"

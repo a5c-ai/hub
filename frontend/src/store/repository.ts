@@ -109,12 +109,29 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.getRepository(owner, repo);
-      if (response.success && response.data) {
-        set({
-          currentRepository: response.data as Repository,
-          isLoading: false,
-        });
+      
+      // Handle response - apiClient returns data directly or wrapped response
+      let repository: Repository | null = null;
+      
+      if (response && typeof response === 'object') {
+        // Check if it's a direct repository object
+        if ('id' in response && 'name' in response) {
+          repository = response as Repository;
+        }
+        // Check if it's wrapped in a success response
+        else if ('success' in response && response.success && 'data' in response && response.data) {
+          repository = response.data as Repository;
+        }
+        // Check if it's wrapped in just data
+        else if ('data' in response && response.data) {
+          repository = response.data as Repository;
+        }
       }
+      
+      set({
+        currentRepository: repository,
+        isLoading: false,
+      });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
@@ -137,9 +154,25 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       const response = await repoApi.createRepository(data);
       console.log('Repository store: API response received:', response);
       
-      // Handle direct repository response from backend
-      if (response && response.success && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
-        const newRepo = response.data as Repository;
+      // Handle response - apiClient returns data directly or wrapped response
+      let newRepo: Repository | null = null;
+      
+      if (response && typeof response === 'object') {
+        // Check if it's a direct repository object
+        if ('id' in response && 'name' in response) {
+          newRepo = response as Repository;
+        }
+        // Check if it's wrapped in a success response
+        else if ('success' in response && response.success && 'data' in response && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
+          newRepo = response.data as Repository;
+        }
+        // Check if it's wrapped in just data
+        else if ('data' in response && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
+          newRepo = response.data as Repository;
+        }
+      }
+      
+      if (newRepo) {
         console.log('Repository store: Created repository:', newRepo);
         set((state) => ({
           repositories: [newRepo, ...state.repositories],
@@ -149,14 +182,15 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       }
       
       console.error('Repository store: Unexpected response structure:', response);
-      throw new Error('Failed to create repository');
+      throw new Error('Invalid response format from server');
     } catch (error: unknown) {
+      console.error('Repository store: Create repository error:', error);
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
         'data' in error.response && typeof error.response.data === 'object' &&
         error.response.data !== null && 'error' in error.response.data
         ? String(error.response.data.error)
-        : 'Failed to create repository';
+        : error instanceof Error ? error.message : 'Failed to create repository';
       
       set({
         isLoading: false,
@@ -170,8 +204,26 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.updateRepository(owner, repo, data);
-      if (response.success && response.data) {
-        const updatedRepo = response.data as Repository;
+      
+      // Handle response - apiClient returns data directly or wrapped response
+      let updatedRepo: Repository | null = null;
+      
+      if (response && typeof response === 'object') {
+        // Check if it's a direct repository object
+        if ('id' in response && 'name' in response) {
+          updatedRepo = response as Repository;
+        }
+        // Check if it's wrapped in a success response
+        else if ('success' in response && response.success && 'data' in response && response.data) {
+          updatedRepo = response.data as Repository;
+        }
+        // Check if it's wrapped in just data
+        else if ('data' in response && response.data) {
+          updatedRepo = response.data as Repository;
+        }
+      }
+      
+      if (updatedRepo) {
         set((state) => ({
           repositories: state.repositories.map(r => 
             r.full_name === updatedRepo.full_name ? updatedRepo : r
@@ -181,6 +233,8 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
             : state.currentRepository,
           isLoading: false,
         }));
+      } else {
+        set({ isLoading: false });
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
@@ -202,16 +256,16 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
     set({ isLoading: true, error: null });
     try {
       const response = await repoApi.deleteRepository(owner, repo);
-      if (response.success) {
-        const fullName = `${owner}/${repo}`;
-        set((state) => ({
-          repositories: state.repositories.filter(r => r.full_name !== fullName),
-          currentRepository: state.currentRepository?.full_name === fullName
-            ? null 
-            : state.currentRepository,
-          isLoading: false,
-        }));
-      }
+      
+      // Delete is successful if no error is thrown
+      const fullName = `${owner}/${repo}`;
+      set((state) => ({
+        repositories: state.repositories.filter(r => r.full_name !== fullName),
+        currentRepository: state.currentRepository?.full_name === fullName
+          ? null 
+          : state.currentRepository,
+        isLoading: false,
+      }));
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
