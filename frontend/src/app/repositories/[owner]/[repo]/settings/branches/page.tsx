@@ -454,7 +454,7 @@ export default function BranchProtectionPage() {
 
         {/* Migration Tool */}
         <ProtectionRuleMigration
-          branches={branches}
+          branches={branches.map(branch => ({ name: branch.name, protected: branch.is_protected }))}
           onMigrate={handleMigrateProtectionRules}
           className="mb-8"
         />
