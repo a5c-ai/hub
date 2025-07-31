@@ -18,23 +18,51 @@ resource "time_sleep" "wait_for_crds" {
   create_duration = "30s"
 }
 
-resource "kubernetes_manifest" "runner_deployment" {
-  manifest = {
-    apiVersion = "actions.summerwind.dev/v1alpha1"
-    kind       = "RunnerDeployment"
-    metadata = {
-      name      = var.runner_deployment_name
-      namespace = var.namespace
-    }
-    spec = {
-      replicas = var.runner_replicas
-      template = {
-        spec = {
-          repository = "${var.github_owner}/${var.github_repository}"
-          labels     = var.runner_labels
+# Use kubectl to apply the RunnerDeployment manifest
+resource "null_resource" "runner_deployment" {
+  triggers = {
+    manifest_content = jsonencode({
+      apiVersion = "actions.summerwind.dev/v1alpha1"
+      kind       = "RunnerDeployment"
+      metadata = {
+        name      = var.runner_deployment_name
+        namespace = var.namespace
+      }
+      spec = {
+        replicas = var.runner_replicas
+        template = {
+          spec = {
+            repository = "${var.github_owner}/${var.github_repository}"
+            labels     = var.runner_labels
+          }
         }
       }
-    }
+    })
+    namespace = var.namespace
   }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      cat <<EOF | kubectl apply -f -
+      apiVersion: actions.summerwind.dev/v1alpha1
+      kind: RunnerDeployment
+      metadata:
+        name: ${var.runner_deployment_name}
+        namespace: ${var.namespace}
+      spec:
+        replicas: ${var.runner_replicas}
+        template:
+          spec:
+            repository: ${var.github_owner}/${var.github_repository}
+            labels: ${jsonencode(var.runner_labels)}
+      EOF
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl delete runnerdeployment ${var.runner_deployment_name} -n ${var.namespace} --ignore-not-found=true"
+  }
+
   depends_on = [time_sleep.wait_for_crds]
 }
