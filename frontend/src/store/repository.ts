@@ -57,17 +57,17 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       
       if (Array.isArray(response)) {
         // Direct array response
-        repositories = response as Repository[];
+        repositories = response as unknown as Repository[];
         totalCount = response.length;
       } else if (response.data && Array.isArray(response.data)) {
         // Wrapped array response
-        repositories = response.data as Repository[];
+        repositories = response.data as unknown as Repository[];
         totalCount = response.pagination?.total || response.data.length;
         currentPage = response.pagination?.page || 1;
         totalPages = response.pagination?.total_pages || 1;
       } else if (response && response.data) {
         // Other wrapped response
-        repositories = Array.isArray(response.data) ? response.data as Repository[] : [];
+        repositories = Array.isArray(response.data) ? response.data as unknown as Repository[] : [];
         totalCount = response.pagination?.total || repositories.length;
         currentPage = response.pagination?.page || 1;
         totalPages = response.pagination?.total_pages || 1;
@@ -116,15 +116,17 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       if (response && typeof response === 'object') {
         // Check if it's a direct repository object
         if ('id' in response && 'name' in response) {
-          repository = response as Repository;
+          // Intentional cast: convert via unknown to satisfy TypeScript
+          // Intentional cast: convert via unknown to satisfy TypeScript
+          repository = response as unknown as Repository;
         }
         // Check if it's wrapped in a success response
         else if ('success' in response && response.success && 'data' in response && response.data) {
-          repository = response.data as Repository;
+          repository = response.data as unknown as Repository;
         }
         // Check if it's wrapped in just data
         else if ('data' in response && response.data) {
-          repository = response.data as Repository;
+          repository = response.data as unknown as Repository;
         }
       }
       
@@ -160,15 +162,16 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       if (response && typeof response === 'object') {
         // Check if it's a direct repository object
         if ('id' in response && 'name' in response) {
-          newRepo = response as Repository;
+          // Intentional cast: convert via unknown to satisfy TypeScript
+          newRepo = response as unknown as Repository;
         }
         // Check if it's wrapped in a success response
         else if ('success' in response && response.success && 'data' in response && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
-          newRepo = response.data as Repository;
+          newRepo = response.data as unknown as Repository;
         }
         // Check if it's wrapped in just data
         else if ('data' in response && response.data && typeof response.data === 'object' && 'id' in response.data && 'name' in response.data) {
-          newRepo = response.data as Repository;
+          newRepo = response.data as unknown as Repository;
         }
       }
       
@@ -211,15 +214,16 @@ export const useRepositoryStore = create<RepositoryState & RepositoryActions>((s
       if (response && typeof response === 'object') {
         // Check if it's a direct repository object
         if ('id' in response && 'name' in response) {
-          updatedRepo = response as Repository;
+          // Intentional cast: convert via unknown to satisfy TypeScript
+          updatedRepo = response as unknown as Repository;
         }
         // Check if it's wrapped in a success response
         else if ('success' in response && response.success && 'data' in response && response.data) {
-          updatedRepo = response.data as Repository;
+          updatedRepo = response.data as unknown as Repository;
         }
         // Check if it's wrapped in just data
         else if ('data' in response && response.data) {
-          updatedRepo = response.data as Repository;
+          updatedRepo = response.data as unknown as Repository;
         }
       }
       
