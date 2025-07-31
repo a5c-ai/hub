@@ -28,8 +28,11 @@
    }
  }
 
- resource "kubernetes_manifest" "runner_deployment" {
-   manifest = {
+resource "kubernetes_manifest" "runner_deployment" {
+  # Skip schema validation to allow CRDs to be installed by Helm before applying this manifest
+  skip_schema_validation = true
+  # RunnerDeployment manifest for actions-runner-controller
+  manifest = {
      apiVersion = "actions.summerwind.dev/v1alpha1"
      kind       = "RunnerDeployment"
      metadata = {
