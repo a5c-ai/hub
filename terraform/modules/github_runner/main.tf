@@ -5,6 +5,7 @@
   version          = var.chart_version
   namespace        = var.namespace
   create_namespace = true
+  install_crds     = true
 
   set {
     name  = "authSecret.github_token"
