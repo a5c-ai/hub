@@ -38,6 +38,7 @@ resource "null_resource" "runner_deployment" {
         }
       }
     })
+    runner_deployment_name = var.runner_deployment_name
     namespace = var.namespace
   }
 
@@ -61,7 +62,7 @@ resource "null_resource" "runner_deployment" {
 
   provisioner "local-exec" {
     when    = destroy
-    command = "kubectl delete runnerdeployment ${var.runner_deployment_name} -n ${var.namespace} --ignore-not-found=true"
+    command = "kubectl delete runnerdeployment ${self.triggers.runner_deployment_name} -n ${self.triggers.namespace} --ignore-not-found=true"
   }
 
   depends_on = [time_sleep.wait_for_crds]
