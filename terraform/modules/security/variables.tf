@@ -82,6 +82,43 @@ variable "waf_rate_limit_threshold" {
   default     = 100
 }
 
+variable "waf_rate_limit_duration_in_minutes" {
+  description = "The duration in minutes for the WAF rate limit window"
+  type        = number
+  default     = 1
+}
+
+variable "waf_rate_limit_match_variable" {
+  description = "The request component to apply rate limiting to (e.g., RemoteAddr)"
+  type        = string
+  default     = "RemoteAddr"
+}
+
+variable "waf_rate_limit_selector_match_operator" {
+  description = "Operator to apply for rate limit match selector (e.g., IPMatch)"
+  type        = string
+  default     = "IPMatch"
+}
+
+variable "waf_rate_limit_selector" {
+  description = "Selector for rate limit match (e.g., specific header, query string)
+                 Leave empty to apply to all values"
+  type        = string
+  default     = ""
+}
+
+variable "waf_rate_limit_match_values" {
+  description = "List of match values for the rate limit condition"
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "waf_rate_limit_group_by_keys" {
+  description = "List of grouping keys for rate limiting (e.g., user session or IP address)"
+  type        = list(string)
+  default     = ["RemoteAddr"]
+}
+
 variable "waf_exclusions" {
   description = "List of WAF exclusions"
   type = list(object({
