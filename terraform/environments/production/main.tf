@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9"
+    }
   }
 
   backend "azurerm" {
@@ -57,6 +61,9 @@ locals {
 
   # Naming convention: {service}-hub-{environment}-{region}
   resource_prefix = "hub-${local.environment}-${replace(lower(local.location), " ", "")}"
+  
+  # Base name without hyphens for services with length constraints
+  base_name = replace(local.resource_prefix, "-", "")
 }
 
 # Resource Group
