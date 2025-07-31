@@ -21,7 +21,7 @@ resource "time_sleep" "wait_for_crds" {
 # Use kubectl to apply the RunnerDeployment manifest
 resource "null_resource" "runner_deployment" {
   triggers = {
-    manifest_content = jsonencode({
+    manifest_content       = jsonencode({
       apiVersion = "actions.summerwind.dev/v1alpha1"
       kind       = "RunnerDeployment"
       metadata = {
@@ -38,7 +38,8 @@ resource "null_resource" "runner_deployment" {
         }
       }
     })
-    namespace = var.namespace
+    namespace               = var.namespace
+    runner_deployment_name  = var.runner_deployment_name
   }
 
   provisioner "local-exec" {
@@ -61,7 +62,7 @@ resource "null_resource" "runner_deployment" {
 
   provisioner "local-exec" {
     when    = destroy
-    command = "kubectl delete runnerdeployment ${var.runner_deployment_name} -n ${var.namespace} --ignore-not-found=true"
+    command = "kubectl delete runnerdeployment ${self.triggers.runner_deployment_name} -n ${self.triggers.namespace} --ignore-not-found=true"
   }
 
   depends_on = [time_sleep.wait_for_crds]
