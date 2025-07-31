@@ -7,7 +7,7 @@
  variable "chart_version" {
    description = "Version of the actions-runner-controller Helm chart"
    type        = string
-   default     = "0.24.2"
+  default     = "0.23.7"
  }
 
  variable "github_token" {

@@ -56,6 +56,12 @@ resource "azurerm_postgresql_flexible_server" "main" {
     }
   }
 
+  lifecycle {
+    ignore_changes = [
+      "high_availability.0.standby_availability_zone",
+    ]
+  }
+
   tags = var.tags
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.postgresql]
