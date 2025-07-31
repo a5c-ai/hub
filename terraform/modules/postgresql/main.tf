@@ -58,7 +58,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   lifecycle {
     ignore_changes = [
-      high_availability[0].standby_availability_zone,
+      "high_availability[0].standby_availability_zone",
     ]
   }
 
