@@ -1,0 +1,294 @@
+# GitHub action to build
+
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - release
+  pull_request:
+    branches:
+      - main
+env:
+    DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    NEXTAUTH_URL: http://localhost:4002
+    NEXTAUTH_SECRET: secret
+    NEXTAUTH_SESSION_STRATEGY: database
+    AUTH_PROVIDERS: github,credentials,saml,idp-initiated
+    FEATURE_TEAM_SSO: true
+    FEATURE_TEAM_DSYNC: true
+    FEATURE_TEAM_AUDIT_LOG: true
+    FEATURE_TEAM_WEBHOOK: false
+    FEATURE_TEAM_API_KEY: true
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    AZURE_OPENAI_PROJECT_NAME: ${{ vars.AZURE_OPENAI_PROJECT_NAME || '' }}
+    AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY || '' }}
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}    
+    FEATURE_TEAM_DELETION: true
+    FEATURE_TEAM_PAYMENTS: true
+    CONFIRM_EMAIL: false
+    HIDE_LANDING_PAGE: false
+    GROUP_PREFIX: a5c-
+    DISABLE_NON_BUSINESS_EMAIL_SIGNUP: false
+    APP_URL: http://localhost:4002
+    JACKSON_PRODUCT_ID: a5c
+    JACKSON_WEBHOOK_SECRET: your-webhook-secret
+    JACKSON_API_KEY: secret
+    DEBUG: pw:webserver
+    CI: true
+    # vercel credentials
+    VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
+    VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || '' }}
+    VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID || '' }}      
+    # supabase credentials
+    SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || '' }}
+    SUPABASE_ORG_ID: ${{ vars.SUPABASE_ORG_ID || '' }}
+    SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || '' }}
+    SUPABASE_PROJECT_URL:  ${{ vars.SUPABASE_PROJECT_URL || '' }}
+    SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD || '' }}
+    # slack credentials
+    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN || '' }}
+    SLACK_SIGNING_SECRET: ${{ secrets.SLACK_SIGNING_SECRET || '' }}
+    SLACK_APP_TOKEN: ${{ secrets.SLACK_APP_TOKEN || '' }}
+    # discord credentials
+    DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN || '' }}
+    DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID || '' }}      
+    # access key for stripe api for management
+    STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || '' }}
+    # access key for stripe api for payments
+    STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY || '' }}
+    # webhook secret for stripe
+    STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || '' }}
+    # webhook url for stripe
+    STRIPE_WEBHOOK_URL: ${{ vars.STRIPE_WEBHOOK_URL || '' }}
+    # webhook id for stripe
+    STRIPE_WEBHOOK_ID: ${{ vars.STRIPE_WEBHOOK_ID || '' }}
+    # aws credentials 
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || '' }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
+    AWS_REGION: ${{ vars.AWS_REGION || '' }}
+    # gcloud credentials
+    GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '' }}
+    # azure credentials
+    AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID  || '' }}
+    AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET  || '' }}
+    AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID || '' }}
+    AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || '' }}
+
+    # auth credentials
+    GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || '' }}
+    GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || '' }}
+    AUTH_GITHUB_CLIENT_ID: ${{ secrets.AUTH_GITHUB_CLIENT_ID || '' }}
+    AUTH_GITHUB_CLIENT_SECRET: ${{ secrets.AUTH_GITHUB_CLIENT_SECRET || '' }}
+    AUTH_GITHUB_ORG_ID: ${{ vars.AUTH_GITHUB_ORG_ID || '' }}
+    AUTH_GITHUB_ORG_NAME: ${{ vars.AUTH_GITHUB_ORG_NAME || '' }}
+    AUTH_GITHUB_ORG_DESCRIPTION: ${{ vars.AUTH_GITHUB_ORG_DESCRIPTION || '' }}
+
+    # other credentials
+    HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY || '' }}
+    HEROKU_APP_NAME: ${{ vars.HEROKU_APP_NAME || '' }}
+    HEROKU_APP_ID: ${{ vars.HEROKU_APP_ID || '' }}
+    HEROKU_APP_URL: ${{ vars.HEROKU_APP_URL || '' }}
+
+jobs:
+  build:
+    runs-on: runner8core
+    timeout-minutes: 30  # Reduced timeout with optimized scripts
+    strategy:
+      matrix:
+        node-version: [22] 
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Setup Go with better caching and proper version specification
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          check-latest: false  # Disable version checking to speed up builds
+          cache: false  # Disable distribution cache to prevent absolute path extraction errors
+
+      - name: Download Go modules
+        timeout-minutes: 10  # Ensure modules are available for tests
+        run: |
+          export GOPROXY=https://proxy.golang.org,direct
+          export GOSUMDB=sum.golang.org
+          export GOTIMEOUT=8m
+          for i in {1..2}; do
+            echo "Attempt $i: Downloading Go modules..."
+            if go mod download && go mod verify; then
+              echo "✅ Go modules downloaded successfully"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              if [ $i -eq 2 ]; then
+                echo "🚨 All attempts failed"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
+          
+      - name: Setup Node.js with better caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+          check-latest: false  # Disable version checking to speed up builds
+          
+      # Download Go modules
+      - name: Download Go modules
+        timeout-minutes: 10  # Ensure modules are available for tests
+        run: |
+          export GOPROXY=https://proxy.golang.org,direct
+          export GOSUMDB=sum.golang.org
+          export GOTIMEOUT=8m
+          for i in {1..2}; do
+            echo "Attempt $i: Downloading Go modules..."
+            if go mod download && go mod verify; then
+              echo "✅ Go modules downloaded successfully"
+              break
+            else
+              echo "❌ Attempt $i failed, retrying..."
+              if [ $i -eq 2 ]; then
+                echo "🚨 All attempts failed"
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
+          
+      # Build with optimized timeout and better resource management
+      - name: Build application
+        timeout-minutes: 25  # Reduced timeout with optimized scripts
+        run: |
+          # Set build optimization flags
+          export CGO_ENABLED=0
+          export GOOS=linux
+          export GOARCH=amd64
+          export GOCACHE=/tmp/go-build-cache
+          
+          # Optimize for faster builds
+          export GOMAXPROCS=2  # Reduced to prevent resource exhaustion
+          export GOGC=100
+          
+          # Next.js build optimizations for performance
+          export DISABLE_COLLECT_BUILD_TRACES=1
+          export NEXT_TELEMETRY_DISABLED=1
+          export NEXT_BUILD_DISABLE_STATIC_OPTIMIZATION=false  # Re-enable for better performance
+          export NODE_OPTIONS="--max-old-space-size=4096"  # Balanced memory allocation
+          
+          # Run build with optimizations
+          ./scripts/build.sh
+        
+      # Upload build artifacts for other jobs with compression
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            frontend/.next/
+            go.sum
+            go.mod
+          retention-days: 1
+          compression-level: 9  # Maximum compression to reduce upload time
+          if-no-files-found: error
+          
+  test:
+    runs-on: runner8core
+    timeout-minutes: 30  # Increased timeout for test phase
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Download build artifacts with retry
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          
+      # Setup Go with caching and proper version specification
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          cache: true  # Enable module caching
+          cache-dependency-path: |
+            go.sum
+            go.mod
+          check-latest: false  # Disable version checking to speed up builds
+          
+      - name: Setup Node.js with caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+          check-latest: false  # Disable version checking to speed up builds
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('frontend/playwright.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
+      # Run tests with increased timeout and better error handling
+      - name: Run tests
+        timeout-minutes: 25  # Increased from 15 to 20 minutes
+        run: |
+          # Set test environment optimizations
+          export GO_TEST_TIMEOUT=10m
+          export NODE_OPTIONS="--max-old-space-size=4096"
+
+          # Run tests with verbose output
+          ./scripts/test.sh
+        
+  deploy:
+    runs-on: runner8core
+    timeout-minutes: 25  # Increased timeout for deploy phase
+    needs: test
+    # Only deploy on main branch
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download build artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      # Setup Go with caching and proper version specification
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'  # Use go.mod to determine version automatically
+          cache: true  # Enable module caching
+          cache-dependency-path: |
+            go.sum
+            go.mod
+          check-latest: false  # Disable version checking to speed up builds
+
+      - name: Setup Node.js with caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+          check-latest: false  # Disable version checking to speed up builds
+          
+      # Deploy with increased timeout and better error handling
+      - name: Deploy application
+        timeout-minutes: 25  # Increased from 15 to 25 minutes
+        run: |
+          # Set deployment optimizations
+          export DEPLOY_TIMEOUT=25m
+          
+          # Run deployment with verbose output
+          ./scripts/deploy.sh
