@@ -291,7 +291,7 @@ jobs:
         timeout-minutes: 15  # Increased from 10 to 15 minutes
         run: |
           # Set deployment optimizations
-          export DEPLOY_TIMEOUT=10m
+          export DEPLOY_TIMEOUT=15m
           
           # Run deployment with verbose output
           ./scripts/deploy.sh
