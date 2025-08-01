@@ -101,8 +101,10 @@ variable "waf_rate_limit_selector_match_operator" {
 }
 
 variable "waf_rate_limit_selector" {
-  description = "Selector for rate limit match (e.g., specific header, query string)
-                 Leave empty to apply to all values"
+  description = <<EOF
+Selector for rate limit match (e.g., specific header, query string)
+Leave empty to apply to all values
+EOF
   type        = string
   default     = ""
 }
