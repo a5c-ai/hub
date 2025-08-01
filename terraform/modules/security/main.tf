@@ -23,6 +23,31 @@ resource "azurerm_web_application_firewall_policy" "main" {
     max_request_body_size_in_kb = var.waf_max_request_body_size_kb
   }
 
+  # Custom rate limiting rules
+  dynamic "custom_rules" {
+    for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
+    content {
+      name                           = "${var.application_gateway_name}-ratelimit"
+      priority                       = 100
+      rule_type                      = "RateLimitRule"
+      rate_limit_threshold           = var.waf_rate_limit_threshold
+      rate_limit_duration_in_minutes = var.waf_rate_limit_duration_in_minutes
+
+      match_condition {
+        match_variables {
+          variable_name = var.waf_rate_limit_match_variable
+        }
+        selector_match_operator = var.waf_rate_limit_selector_match_operator
+        selector                = var.waf_rate_limit_selector
+        values                  = var.waf_rate_limit_match_values
+      }
+
+      dynamic "group_by" {
+        for_each = var.waf_rate_limit_group_by_keys
+        content { key = group_by.value }
+      }
+    }
+  }
   managed_rules {
     managed_rule_set {
       type    = "OWASP"
@@ -38,27 +63,6 @@ resource "azurerm_web_application_firewall_policy" "main" {
       }
     }
 
-    # Rate limiting rules
-    # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
-    dynamic "rate_limit_rule" {
-      for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
-      content {
-        name                            = "${var.application_gateway_name}-ratelimit"
-        priority                        = 100
-        rate_limit_threshold            = var.waf_rate_limit_threshold
-        rate_limit_duration_in_minutes  = var.waf_rate_limit_duration_in_minutes
-
-        match_variable                  = var.waf_rate_limit_match_variable
-        selector_match_operator         = var.waf_rate_limit_selector_match_operator
-        selector                        = var.waf_rate_limit_selector
-        match_values                    = var.waf_rate_limit_match_values
-
-        dynamic "group_by" {
-          for_each = var.waf_rate_limit_group_by_keys
-          content { key = group_by.value }
-        }
-      }
-    }
   }
 
 
