@@ -37,25 +37,40 @@ resource "azurerm_web_application_firewall_policy" "main" {
         selector                = exclusion.value.selector
       }
     }
+  }
 
-    # Rate limiting rules
-    # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
-    dynamic "rate_limit_rule" {
-      for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
-      content {
-        name                            = "${var.application_gateway_name}-ratelimit"
-        priority                        = 100
-        rate_limit_threshold            = var.waf_rate_limit_threshold
-        rate_limit_duration_in_minutes  = var.waf_rate_limit_duration_in_minutes
+  # Rate limiting custom rules
+  # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
+  dynamic "custom_rules" {
+    for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
+    content {
+      name      = "${var.application_gateway_name}-ratelimit"
+      priority  = 100
+      rule_type = "RateLimitRule"
+      action    = "Block"
 
-        match_variable                  = var.waf_rate_limit_match_variable
-        selector_match_operator         = var.waf_rate_limit_selector_match_operator
-        selector                        = var.waf_rate_limit_selector
-        match_values                    = var.waf_rate_limit_match_values
+      rate_limit_threshold           = var.waf_rate_limit_threshold
+      rate_limit_duration_in_minutes = var.waf_rate_limit_duration_in_minutes
 
-        dynamic "group_by" {
-          for_each = var.waf_rate_limit_group_by_keys
-          content { key = group_by.value }
+      match_conditions {
+        match_variables {
+          variable_name = var.waf_rate_limit_match_variable
+          selector      = var.waf_rate_limit_selector != "" ? var.waf_rate_limit_selector : null
+        }
+        operator           = var.waf_rate_limit_selector_match_operator
+        negation_condition = false
+        match_values       = var.waf_rate_limit_match_values
+      }
+
+      dynamic "group_by_user_session" {
+        for_each = length(var.waf_rate_limit_group_by_keys) > 0 ? [1] : []
+        content {
+          dynamic "group_by_variables" {
+            for_each = var.waf_rate_limit_group_by_keys
+            content {
+              variable_name = group_by_variables.value
+            }
+          }
         }
       }
     }
