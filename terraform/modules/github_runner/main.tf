@@ -6,6 +6,8 @@
   namespace        = var.namespace
   create_namespace = true
   timeout          = 600  # 10 minutes timeout
+  wait             = true
+  atomic           = true
 
   set {
     name  = "authSecret.github_token"
