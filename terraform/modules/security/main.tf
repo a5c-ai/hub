@@ -7,6 +7,10 @@ resource "azurerm_public_ip" "appgw" {
   zones               = var.availability_zones
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [zones]
+  }
 }
 
 resource "azurerm_web_application_firewall_policy" "main" {
@@ -40,25 +44,27 @@ resource "azurerm_web_application_firewall_policy" "main" {
   }
 
   # Rate limiting custom rules
-  # Implements configurable rate limit thresholds and match conditions
   dynamic "custom_rules" {
     for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
     content {
-      name      = "${var.application_gateway_name}-ratelimit"
-      priority  = 100
-      rule_type = "RateLimitRule"
-      action    = "Block"
-
-      rate_limit_threshold = var.waf_rate_limit_threshold
+      name                           = "${replace(var.application_gateway_name, "-", "_")}_ratelimit"
+      priority                       = 100
+      rule_type                      = "RateLimitRule"
+      action                         = "Block"
+      rate_limit_threshold           = var.waf_rate_limit_threshold
+      rate_limit_duration_in_minutes = var.waf_rate_limit_duration_in_minutes
 
       match_conditions {
         match_variables {
-          variable_name = "RemoteAddr"
+          variable_name           = var.waf_rate_limit_match_variable
+          selector_match_operator = var.waf_rate_limit_selector_match_operator
+          selector                = var.waf_rate_limit_selector
         }
-        operator           = "IPMatch"
+        operator           = var.waf_rate_limit_selector_match_operator
         negation_condition = false
-        match_values       = ["*"]
+        match_values       = var.waf_rate_limit_match_values
       }
+      group_by_keys = var.waf_rate_limit_group_by_keys
     }
   }
 
@@ -78,6 +84,10 @@ resource "azurerm_application_gateway" "main" {
   }
 
   zones = var.availability_zones
+
+  lifecycle {
+    ignore_changes = [zones]
+  }
 
   gateway_ip_configuration {
     name      = "my-gateway-ip-configuration"

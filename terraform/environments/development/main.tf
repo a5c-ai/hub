@@ -301,6 +301,7 @@ provider "helm" {
 
 module "github_runner" {
   source                 = "../../modules/github_runner"
+  count                  = var.github_token != "" ? 1 : 0
   github_token           = var.github_token
   github_owner           = var.github_owner
   github_repository      = var.github_repository
