@@ -39,8 +39,27 @@ resource "azurerm_web_application_firewall_policy" "main" {
     }
   }
 
-  # Rate limiting rules have been temporarily disabled due to configuration complexity
-  # TODO: Implement proper rate limiting with correct GroupBy user session clause
+  # Rate limiting rules
+  # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
+  dynamic "rate_limit_rules" {
+    for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
+    content {
+      name                            = "${var.application_gateway_name}-ratelimit"
+      priority                        = 100
+      rate_limit_threshold            = var.waf_rate_limit_threshold
+      rate_limit_duration_in_minutes  = var.waf_rate_limit_duration_in_minutes
+
+      match_variable                  = var.waf_rate_limit_match_variable
+      selector_match_operator         = var.waf_rate_limit_selector_match_operator
+      selector                        = var.waf_rate_limit_selector
+      match_values                    = var.waf_rate_limit_match_values
+
+      dynamic "group_by" {
+        for_each = var.waf_rate_limit_group_by_keys
+        content { key = group_by.value }
+      }
+    }
+  }
 
   tags = var.tags
 }
