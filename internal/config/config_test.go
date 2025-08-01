@@ -36,7 +36,7 @@ func TestLoadDefault(t *testing.T) {
 func TestLoadFromEnv(t *testing.T) {
 	oldPort := os.Getenv("PORT")
 	oldEnv := os.Getenv("ENVIRONMENT")
-	
+
 	defer func() {
 		os.Setenv("PORT", oldPort)
 		os.Setenv("ENVIRONMENT", oldEnv)

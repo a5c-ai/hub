@@ -36,7 +36,7 @@ func NewSMTPEmailService(cfg *config.Config) EmailService {
 func (s *SMTPEmailService) SendPasswordResetEmail(to, token string) error {
 	subject := "Password Reset Request"
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.baseURL, token)
-	
+
 	body := fmt.Sprintf(`
 		<html>
 		<body>
@@ -48,14 +48,14 @@ func (s *SMTPEmailService) SendPasswordResetEmail(to, token string) error {
 		</body>
 		</html>
 	`, resetURL)
-	
+
 	return s.sendEmail(to, subject, body)
 }
 
 func (s *SMTPEmailService) SendEmailVerification(to, token string) error {
 	subject := "Email Verification"
 	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", s.baseURL, token)
-	
+
 	body := fmt.Sprintf(`
 		<html>
 		<body>
@@ -66,18 +66,18 @@ func (s *SMTPEmailService) SendEmailVerification(to, token string) error {
 		</body>
 		</html>
 	`, verifyURL)
-	
+
 	return s.sendEmail(to, subject, body)
 }
 
 func (s *SMTPEmailService) SendMFASetupEmail(to string, backupCodes []string) error {
 	subject := fmt.Sprintf("Two-Factor Authentication Setup - %s", s.appName)
-	
+
 	codesHTML := ""
 	for _, code := range backupCodes {
 		codesHTML += fmt.Sprintf("<div style=\"background-color: #f8f9fa; padding: 8px; margin: 4px 0; font-family: monospace; border-radius: 4px;\">%s</div>", code)
 	}
-	
+
 	body := fmt.Sprintf(`
 		<html>
 		<head>
@@ -124,7 +124,7 @@ func (s *SMTPEmailService) SendMFASetupEmail(to string, backupCodes []string) er
 		</body>
 		</html>
 	`, s.appName, codesHTML, s.appName)
-	
+
 	return s.sendEmail(to, subject, body)
 }
 
@@ -150,7 +150,7 @@ func (s *SMTPEmailService) sendEmail(to, subject, body string) error {
 
 	// Connect to SMTP server
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
-	
+
 	var auth smtp.Auth
 	if s.username != "" && s.password != "" {
 		auth = smtp.PlainAuth("", s.username, s.password, s.host)
@@ -214,7 +214,6 @@ func (s *SMTPEmailService) sendEmail(to, subject, body string) error {
 
 	return nil
 }
-
 
 func extractTokenFromURL(body string) string {
 	// Simple token extraction for mock fallback
@@ -439,12 +438,12 @@ func (s *SMTPEmailService) logEmail(to, subject, body string) error {
 	fmt.Printf("Subject: %s\n", subject)
 	fmt.Printf("Body: %s\n", body)
 	fmt.Printf("=====================================\n")
-	
+
 	// In production, you might want to:
 	// 1. Log to a proper logging system
 	// 2. Store in database for audit trail
 	// 3. Send to a message queue for later processing
 	// 4. Use a different notification method (SMS, in-app notification)
-	
+
 	return nil
 }

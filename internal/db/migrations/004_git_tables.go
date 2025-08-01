@@ -46,7 +46,7 @@ func migrate004Up(db *gorm.DB) error {
 	}
 
 	// Add additional indexes for performance
-	
+
 	// Indexes for commits table
 	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_commits_repository_author_date ON commits(repository_id, author_date DESC)").Error; err != nil {
 		return err

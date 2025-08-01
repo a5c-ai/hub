@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	ErrSAMLNotConfigured = errors.New("SAML not configured")
-	ErrInvalidSAMLResponse = errors.New("invalid SAML response")
+	ErrSAMLNotConfigured    = errors.New("SAML not configured")
+	ErrInvalidSAMLResponse  = errors.New("invalid SAML response")
 	ErrSAMLSignatureInvalid = errors.New("SAML signature validation failed")
 )
 
@@ -51,11 +51,11 @@ type SAMLResponse struct {
 }
 
 type SAMLRequest struct {
-	XMLName xml.Name `xml:"urn:oasis:names:tc:SAML:2.0:protocol AuthnRequest"`
-	ID      string   `xml:"ID,attr"`
-	Version string   `xml:"Version,attr"`
-	IssueInstant string `xml:"IssueInstant,attr"`
-	Issuer  struct {
+	XMLName      xml.Name `xml:"urn:oasis:names:tc:SAML:2.0:protocol AuthnRequest"`
+	ID           string   `xml:"ID,attr"`
+	Version      string   `xml:"Version,attr"`
+	IssueInstant string   `xml:"IssueInstant,attr"`
+	Issuer       struct {
 		Value string `xml:",chardata"`
 	} `xml:"urn:oasis:names:tc:SAML:2.0:assertion Issuer"`
 }
@@ -289,7 +289,7 @@ func (s *SAMLService) findOrCreateSAMLUser(userInfo *SAMLUserInfo) (*models.User
 			user.FullName = userInfo.Name
 		}
 		s.db.Save(&user)
-		
+
 		// Handle group-based organization assignment for existing users
 		if len(userInfo.Groups) > 0 {
 			for _, group := range userInfo.Groups {
@@ -299,7 +299,7 @@ func (s *SAMLService) findOrCreateSAMLUser(userInfo *SAMLUserInfo) (*models.User
 				}
 			}
 		}
-		
+
 		return &user, nil
 	}
 
@@ -403,7 +403,7 @@ func (s *SAMLService) createOrAssignOrganization(userID uuid.UUID, groupName str
 	// Check if organization exists
 	var org models.Organization
 	err := s.db.Where("name = ?", groupName).First(&org).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Create new organization
 		org = models.Organization{
@@ -414,18 +414,18 @@ func (s *SAMLService) createOrAssignOrganization(userID uuid.UUID, groupName str
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
-		
+
 		if err := s.db.Create(&org).Error; err != nil {
 			return fmt.Errorf("failed to create organization: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to query organization: %w", err)
 	}
-	
+
 	// Check if user is already a member
 	var existingMember models.OrganizationMember
 	err = s.db.Where("organization_id = ? AND user_id = ?", org.ID, userID).First(&existingMember).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Add user as organization member
 		member := models.OrganizationMember{
@@ -436,13 +436,13 @@ func (s *SAMLService) createOrAssignOrganization(userID uuid.UUID, groupName str
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
 		}
-		
+
 		if err := s.db.Create(&member).Error; err != nil {
 			return fmt.Errorf("failed to add user to organization: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to check organization membership: %w", err)
 	}
-	
+
 	return nil
 }

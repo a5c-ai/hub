@@ -10,7 +10,7 @@ func init() {
 
 func migrate009Up(db *gorm.DB) error {
 	// Create full-text search indexes for better search performance
-	
+
 	// Users table - search index for username, full_name, email, bio, company
 	if err := db.Exec(`
 		CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_search_vector 

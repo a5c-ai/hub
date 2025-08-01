@@ -26,7 +26,7 @@ func TestFilesystemBackend_UploadDownload(t *testing.T) {
 	ctx := context.Background()
 	testPath := "test/file.txt"
 	testContent := "Hello, World!"
-	
+
 	// Test upload
 	reader := strings.NewReader(testContent)
 	err = backend.Upload(ctx, testPath, reader, int64(len(testContent)))
@@ -39,7 +39,7 @@ func TestFilesystemBackend_UploadDownload(t *testing.T) {
 
 	downloadedContent, err := io.ReadAll(downloadReader)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, testContent, string(downloadedContent))
 }
 

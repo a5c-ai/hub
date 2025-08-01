@@ -17,32 +17,32 @@ import (
 )
 
 var (
-	ErrOIDCNotConfigured    = errors.New("OIDC not configured")
-	ErrInvalidOIDCToken     = errors.New("invalid OIDC token")
-	ErrOIDCDiscoveryFailed  = errors.New("OIDC discovery failed")
+	ErrOIDCNotConfigured   = errors.New("OIDC not configured")
+	ErrInvalidOIDCToken    = errors.New("invalid OIDC token")
+	ErrOIDCDiscoveryFailed = errors.New("OIDC discovery failed")
 )
 
 // OIDC Discovery Document
 type OIDCDiscoveryDocument struct {
-	Issuer                string   `json:"issuer"`
-	AuthorizationEndpoint string   `json:"authorization_endpoint"`
-	TokenEndpoint         string   `json:"token_endpoint"`
-	UserinfoEndpoint      string   `json:"userinfo_endpoint"`
-	JwksURI               string   `json:"jwks_uri"`
-	ScopesSupported       []string `json:"scopes_supported"`
+	Issuer                 string   `json:"issuer"`
+	AuthorizationEndpoint  string   `json:"authorization_endpoint"`
+	TokenEndpoint          string   `json:"token_endpoint"`
+	UserinfoEndpoint       string   `json:"userinfo_endpoint"`
+	JwksURI                string   `json:"jwks_uri"`
+	ScopesSupported        []string `json:"scopes_supported"`
 	ResponseTypesSupported []string `json:"response_types_supported"`
 }
 
 // OIDC Claims
 type OIDCClaims struct {
-	Sub               string `json:"sub"`
-	Name              string `json:"name"`
-	GivenName         string `json:"given_name"`
-	FamilyName        string `json:"family_name"`
-	PreferredUsername string `json:"preferred_username"`
-	Email             string `json:"email"`
-	EmailVerified     bool   `json:"email_verified"`
-	Picture           string `json:"picture"`
+	Sub               string   `json:"sub"`
+	Name              string   `json:"name"`
+	GivenName         string   `json:"given_name"`
+	FamilyName        string   `json:"family_name"`
+	PreferredUsername string   `json:"preferred_username"`
+	Email             string   `json:"email"`
+	EmailVerified     bool     `json:"email_verified"`
+	Picture           string   `json:"picture"`
 	Groups            []string `json:"groups"`
 	Roles             []string `json:"roles"`
 }
@@ -109,7 +109,7 @@ func NewOIDCService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, aut
 
 func (s *OIDCService) discoverProvider(provider *OIDCProvider) error {
 	discoveryURL := strings.TrimSuffix(provider.IssuerURL, "/") + "/.well-known/openid_configuration"
-	
+
 	resp, err := http.Get(discoveryURL)
 	if err != nil {
 		return fmt.Errorf("failed to fetch discovery document: %w", err)
@@ -244,7 +244,7 @@ func (s *OIDCService) exchangeCode(provider *OIDCProvider, code string) (*OIDCTo
 func (s *OIDCService) getUserInfo(provider *OIDCProvider, tokenResponse *OIDCTokenResponse) (*OIDCClaims, error) {
 	// For simplicity, we'll use the userinfo endpoint
 	// In production, you should also validate and parse the ID token
-	
+
 	req, err := http.NewRequest("GET", provider.discovery.UserinfoEndpoint, nil)
 	if err != nil {
 		return nil, err
@@ -359,45 +359,45 @@ func (s *OIDCService) ProvisionUser(claims *OIDCClaims, config *JITProvisioningC
 		return s.findOrCreateOIDCUser(claims)
 	}
 
-   // Enhanced user provisioning with group/role mapping and role assignment
-   user, err := s.findOrCreateOIDCUser(claims)
-   if err != nil {
-       return nil, err
-   }
+	// Enhanced user provisioning with group/role mapping and role assignment
+	user, err := s.findOrCreateOIDCUser(claims)
+	if err != nil {
+		return nil, err
+	}
 
-   // Collect roles from token claims and group mappings
-   var userRoles []string
-   if len(claims.Roles) > 0 {
-       userRoles = append(userRoles, claims.Roles...)
-   }
-   for _, group := range claims.Groups {
-       if role, exists := config.GroupMapping[group]; exists {
-           userRoles = append(userRoles, role)
-       }
-   }
-   // Fallback to default role if none assigned
-   if len(userRoles) == 0 && config.DefaultRole != "" {
-       userRoles = append(userRoles, config.DefaultRole)
-   }
-   // Deduplicate roles and assign to user for JWT/session
-   seen := make(map[string]struct{}, len(userRoles))
-   for _, r := range userRoles {
-       if _, ok := seen[r]; !ok {
-           seen[r] = struct{}{}
-           user.Roles = append(user.Roles, r)
-       }
-   }
+	// Collect roles from token claims and group mappings
+	var userRoles []string
+	if len(claims.Roles) > 0 {
+		userRoles = append(userRoles, claims.Roles...)
+	}
+	for _, group := range claims.Groups {
+		if role, exists := config.GroupMapping[group]; exists {
+			userRoles = append(userRoles, role)
+		}
+	}
+	// Fallback to default role if none assigned
+	if len(userRoles) == 0 && config.DefaultRole != "" {
+		userRoles = append(userRoles, config.DefaultRole)
+	}
+	// Deduplicate roles and assign to user for JWT/session
+	seen := make(map[string]struct{}, len(userRoles))
+	for _, r := range userRoles {
+		if _, ok := seen[r]; !ok {
+			seen[r] = struct{}{}
+			user.Roles = append(user.Roles, r)
+		}
+	}
 
-   if config.CreateOrganizations {
-       for _, group := range claims.Groups {
-           if err := s.createOrAssignOrganization(user.ID, group); err != nil {
-               // Log error but don't fail the process
-               fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
-           }
-       }
-   }
+	if config.CreateOrganizations {
+		for _, group := range claims.Groups {
+			if err := s.createOrAssignOrganization(user.ID, group); err != nil {
+				// Log error but don't fail the process
+				fmt.Printf("Failed to create/assign organization %s for user %s: %v\n", group, user.Username, err)
+			}
+		}
+	}
 
-   return user, nil
+	return user, nil
 }
 
 // createOrAssignOrganization creates an organization if it doesn't exist and assigns the user
@@ -405,7 +405,7 @@ func (s *OIDCService) createOrAssignOrganization(userID uuid.UUID, groupName str
 	// Check if organization exists
 	var org models.Organization
 	err := s.db.Where("name = ?", groupName).First(&org).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Create new organization
 		org = models.Organization{
@@ -416,18 +416,18 @@ func (s *OIDCService) createOrAssignOrganization(userID uuid.UUID, groupName str
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		}
-		
+
 		if err := s.db.Create(&org).Error; err != nil {
 			return fmt.Errorf("failed to create organization: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to query organization: %w", err)
 	}
-	
+
 	// Check if user is already a member
 	var existingMember models.OrganizationMember
 	err = s.db.Where("organization_id = ? AND user_id = ?", org.ID, userID).First(&existingMember).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Add user as organization member
 		member := models.OrganizationMember{
@@ -438,13 +438,13 @@ func (s *OIDCService) createOrAssignOrganization(userID uuid.UUID, groupName str
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
 		}
-		
+
 		if err := s.db.Create(&member).Error; err != nil {
 			return fmt.Errorf("failed to add user to organization: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to check organization membership: %w", err)
 	}
-	
+
 	return nil
 }

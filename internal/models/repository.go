@@ -72,7 +72,6 @@ type Repository struct {
 	Branches              []Branch                 `json:"branches,omitempty" gorm:"foreignKey:RepositoryID"`
 	BranchProtectionRules []BranchProtectionRule   `json:"branch_protection_rules,omitempty" gorm:"foreignKey:RepositoryID"`
 	Stars                 []Star                   `json:"stars,omitempty" gorm:"foreignKey:RepositoryID"`
-
 }
 
 func (r *Repository) TableName() string {
@@ -167,5 +166,3 @@ type BranchProtectionRule struct {
 func (bpr *BranchProtectionRule) TableName() string {
 	return "branch_protection_rules"
 }
-
-

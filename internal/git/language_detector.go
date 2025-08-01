@@ -57,7 +57,7 @@ func (ld *LanguageDetector) detectFromShebang(content []byte) string {
 	}
 
 	shebang := strings.ToLower(firstLine)
-	
+
 	if strings.Contains(shebang, "python") {
 		return "Python"
 	}
@@ -87,45 +87,45 @@ func getExtensionLanguageMap() map[string]string {
 		".go": "Go",
 
 		// JavaScript/TypeScript
-		".js":   "JavaScript",
-		".jsx":  "JavaScript",
-		".ts":   "TypeScript",
-		".tsx":  "TypeScript",
-		".mjs":  "JavaScript",
-		".cjs":  "JavaScript",
+		".js":  "JavaScript",
+		".jsx": "JavaScript",
+		".ts":  "TypeScript",
+		".tsx": "TypeScript",
+		".mjs": "JavaScript",
+		".cjs": "JavaScript",
 
 		// Python
-		".py":   "Python",
-		".pyx":  "Python",
-		".pyi":  "Python",
-		".pyw":  "Python",
+		".py":  "Python",
+		".pyx": "Python",
+		".pyi": "Python",
+		".pyw": "Python",
 
 		// Java
-		".java": "Java",
+		".java":  "Java",
 		".class": "Java",
 
 		// C/C++
-		".c":    "C",
-		".h":    "C",
-		".cpp":  "C++",
-		".cxx":  "C++",
-		".cc":   "C++",
-		".hpp":  "C++",
-		".hxx":  "C++",
+		".c":   "C",
+		".h":   "C",
+		".cpp": "C++",
+		".cxx": "C++",
+		".cc":  "C++",
+		".hpp": "C++",
+		".hxx": "C++",
 
 		// C#
-		".cs":   "C#",
+		".cs": "C#",
 
 		// Rust
-		".rs":   "Rust",
+		".rs": "Rust",
 
 		// PHP
-		".php":  "PHP",
+		".php":   "PHP",
 		".phtml": "PHP",
 
 		// Ruby
-		".rb":   "Ruby",
-		".rbw":  "Ruby",
+		".rb":  "Ruby",
+		".rbw": "Ruby",
 
 		// Shell
 		".sh":   "Shell",
@@ -142,7 +142,7 @@ func getExtensionLanguageMap() map[string]string {
 		".less": "Less",
 
 		// Database
-		".sql":  "SQL",
+		".sql": "SQL",
 
 		// Configuration
 		".json": "JSON",
@@ -155,35 +155,35 @@ func getExtensionLanguageMap() map[string]string {
 		".cfg":  "Configuration",
 
 		// Documentation
-		".md":   "Markdown",
-		".rst":  "reStructuredText",
-		".txt":  "Text",
+		".md":  "Markdown",
+		".rst": "reStructuredText",
+		".txt": "Text",
 
 		// Docker
 		".dockerfile": "Dockerfile",
 
 		// Terraform
-		".tf":   "HCL",
-		".hcl":  "HCL",
+		".tf":  "HCL",
+		".hcl": "HCL",
 
 		// Kotlin
-		".kt":   "Kotlin",
-		".kts":  "Kotlin",
+		".kt":  "Kotlin",
+		".kts": "Kotlin",
 
 		// Swift
 		".swift": "Swift",
 
 		// Objective-C
-		".m":    "Objective-C",
-		".mm":   "Objective-C++",
+		".m":  "Objective-C",
+		".mm": "Objective-C++",
 
 		// Perl
-		".pl":   "Perl",
-		".pm":   "Perl",
+		".pl": "Perl",
+		".pm": "Perl",
 
 		// R
-		".r":    "R",
-		".R":    "R",
+		".r": "R",
+		".R": "R",
 
 		// Scala
 		".scala": "Scala",
@@ -193,19 +193,19 @@ func getExtensionLanguageMap() map[string]string {
 		".dart": "Dart",
 
 		// Lua
-		".lua":  "Lua",
+		".lua": "Lua",
 
 		// Erlang
-		".erl":  "Erlang",
-		".hrl":  "Erlang",
+		".erl": "Erlang",
+		".hrl": "Erlang",
 
 		// Elixir
-		".ex":   "Elixir",
-		".exs":  "Elixir",
+		".ex":  "Elixir",
+		".exs": "Elixir",
 
 		// Haskell
-		".hs":   "Haskell",
-		".lhs":  "Haskell",
+		".hs":  "Haskell",
+		".lhs": "Haskell",
 
 		// Clojure
 		".clj":  "Clojure",
@@ -213,9 +213,9 @@ func getExtensionLanguageMap() map[string]string {
 		".cljc": "Clojure",
 
 		// F#
-		".fs":   "F#",
-		".fsx":  "F#",
-		".fsi":  "F#",
+		".fs":  "F#",
+		".fsx": "F#",
+		".fsi": "F#",
 
 		// PowerShell
 		".ps1":  "PowerShell",
@@ -223,11 +223,11 @@ func getExtensionLanguageMap() map[string]string {
 		".psd1": "PowerShell",
 
 		// Assembly
-		".asm":  "Assembly",
-		".s":    "Assembly",
+		".asm": "Assembly",
+		".s":   "Assembly",
 
 		// Visual Basic
-		".vb":   "Visual Basic",
+		".vb": "Visual Basic",
 
 		// Groovy
 		".groovy": "Groovy",
@@ -241,88 +241,88 @@ func getExtensionLanguageMap() map[string]string {
 // getFilenameLanguageMap returns a map of specific filenames to programming languages
 func getFilenameLanguageMap() map[string]string {
 	return map[string]string{
-		"dockerfile":    "Dockerfile",
-		"dockerfile.dev": "Dockerfile",
-		"dockerfile.prod": "Dockerfile",
-		"dockerfile.test": "Dockerfile",
-		"makefile":      "Makefile",
-		"makefile.am":   "Makefile",
-		"makefile.in":   "Makefile",
-		"rakefile":      "Ruby",
-		"gemfile":       "Ruby",
-		"gemfile.lock":  "Ruby",
-		"package.json":  "JSON",
-		"package-lock.json": "JSON",
-		"composer.json": "JSON",
-		"composer.lock": "JSON",
-		"yarn.lock":     "YAML",
-		"requirements.txt": "Text",
-		"pipfile":       "TOML",
-		"pipfile.lock":  "JSON",
-		"cargo.toml":    "TOML",
-		"cargo.lock":    "TOML",
-		"go.mod":        "Go Module",
-		"go.sum":        "Go Module",
-		"pom.xml":       "XML",
-		"build.gradle":  "Gradle",
-		"settings.gradle": "Gradle",
-		"cmake.txt":     "CMake",
-		"cmakelists.txt": "CMake",
-		"vcxproj":       "MSBuild",
-		"pubspec.yaml":  "YAML",
-		"pubspec.lock":  "YAML",
-		"podfile":       "Ruby",
-		"podfile.lock":  "YAML",
-		"readme":        "Text",
-		"readme.md":     "Markdown",
-		"readme.txt":    "Text",
-		"license":       "Text",
-		"license.md":    "Markdown",
-		"license.txt":   "Text",
-		"changelog":     "Text",
-		"changelog.md":  "Markdown",
-		"changelog.txt": "Text",
-		"contributing.md": "Markdown",
+		"dockerfile":         "Dockerfile",
+		"dockerfile.dev":     "Dockerfile",
+		"dockerfile.prod":    "Dockerfile",
+		"dockerfile.test":    "Dockerfile",
+		"makefile":           "Makefile",
+		"makefile.am":        "Makefile",
+		"makefile.in":        "Makefile",
+		"rakefile":           "Ruby",
+		"gemfile":            "Ruby",
+		"gemfile.lock":       "Ruby",
+		"package.json":       "JSON",
+		"package-lock.json":  "JSON",
+		"composer.json":      "JSON",
+		"composer.lock":      "JSON",
+		"yarn.lock":          "YAML",
+		"requirements.txt":   "Text",
+		"pipfile":            "TOML",
+		"pipfile.lock":       "JSON",
+		"cargo.toml":         "TOML",
+		"cargo.lock":         "TOML",
+		"go.mod":             "Go Module",
+		"go.sum":             "Go Module",
+		"pom.xml":            "XML",
+		"build.gradle":       "Gradle",
+		"settings.gradle":    "Gradle",
+		"cmake.txt":          "CMake",
+		"cmakelists.txt":     "CMake",
+		"vcxproj":            "MSBuild",
+		"pubspec.yaml":       "YAML",
+		"pubspec.lock":       "YAML",
+		"podfile":            "Ruby",
+		"podfile.lock":       "YAML",
+		"readme":             "Text",
+		"readme.md":          "Markdown",
+		"readme.txt":         "Text",
+		"license":            "Text",
+		"license.md":         "Markdown",
+		"license.txt":        "Text",
+		"changelog":          "Text",
+		"changelog.md":       "Markdown",
+		"changelog.txt":      "Text",
+		"contributing.md":    "Markdown",
 		"code_of_conduct.md": "Markdown",
-		"security.md":   "Markdown",
-		".gitignore":    "Gitignore",
-		".gitattributes": "Gitattributes",
-		".editorconfig": "EditorConfig",
-		".eslintrc":     "JSON",
-		".eslintrc.js":  "JavaScript",
-		".eslintrc.json": "JSON",
-		".eslintrc.yaml": "YAML",
-		".eslintrc.yml": "YAML",
-		".prettierrc":   "JSON",
-		".prettierrc.js": "JavaScript",
-		".prettierrc.json": "JSON",
-		".prettierrc.yaml": "YAML",
-		".prettierrc.yml": "YAML",
-		".babelrc":      "JSON",
-		".babelrc.js":   "JavaScript",
-		".babelrc.json": "JSON",
-		"jest.config.js": "JavaScript",
-		"webpack.config.js": "JavaScript",
-		"rollup.config.js": "JavaScript",
-		"vite.config.js": "JavaScript",
-		"vite.config.ts": "TypeScript",
-		"tsconfig.json": "JSON",
-		"tslint.json":   "JSON",
-		"angular.json":  "JSON",
-		"nx.json":       "JSON",
-		"next.config.js": "JavaScript",
-		"next.config.ts": "TypeScript",
-		"nuxt.config.js": "JavaScript",
-		"nuxt.config.ts": "TypeScript",
-		"vue.config.js": "JavaScript",
-		"svelte.config.js": "JavaScript",
+		"security.md":        "Markdown",
+		".gitignore":         "Gitignore",
+		".gitattributes":     "Gitattributes",
+		".editorconfig":      "EditorConfig",
+		".eslintrc":          "JSON",
+		".eslintrc.js":       "JavaScript",
+		".eslintrc.json":     "JSON",
+		".eslintrc.yaml":     "YAML",
+		".eslintrc.yml":      "YAML",
+		".prettierrc":        "JSON",
+		".prettierrc.js":     "JavaScript",
+		".prettierrc.json":   "JSON",
+		".prettierrc.yaml":   "YAML",
+		".prettierrc.yml":    "YAML",
+		".babelrc":           "JSON",
+		".babelrc.js":        "JavaScript",
+		".babelrc.json":      "JSON",
+		"jest.config.js":     "JavaScript",
+		"webpack.config.js":  "JavaScript",
+		"rollup.config.js":   "JavaScript",
+		"vite.config.js":     "JavaScript",
+		"vite.config.ts":     "TypeScript",
+		"tsconfig.json":      "JSON",
+		"tslint.json":        "JSON",
+		"angular.json":       "JSON",
+		"nx.json":            "JSON",
+		"next.config.js":     "JavaScript",
+		"next.config.ts":     "TypeScript",
+		"nuxt.config.js":     "JavaScript",
+		"nuxt.config.ts":     "TypeScript",
+		"vue.config.js":      "JavaScript",
+		"svelte.config.js":   "JavaScript",
 		"tailwind.config.js": "JavaScript",
-		"postcss.config.js": "JavaScript",
-		".env":          "Environment",
-		".env.local":    "Environment",
-		".env.example":  "Environment",
-		".env.development": "Environment",
-		".env.production": "Environment",
-		".env.test":     "Environment",
+		"postcss.config.js":  "JavaScript",
+		".env":               "Environment",
+		".env.local":         "Environment",
+		".env.example":       "Environment",
+		".env.development":   "Environment",
+		".env.production":    "Environment",
+		".env.test":          "Environment",
 	}
 }

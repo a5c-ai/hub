@@ -8,10 +8,10 @@ func TestLanguageDetector_DetectLanguage(t *testing.T) {
 	detector := NewLanguageDetector()
 
 	tests := []struct {
-		name        string
-		filePath    string
-		content     []byte
-		expected    string
+		name     string
+		filePath string
+		content  []byte
+		expected string
 	}{
 		{
 			name:     "Go file by extension",
@@ -171,19 +171,19 @@ func TestLanguageDetector_DetectFromShebang(t *testing.T) {
 
 func TestNewLanguageDetector(t *testing.T) {
 	detector := NewLanguageDetector()
-	
+
 	if detector == nil {
 		t.Error("NewLanguageDetector() returned nil")
 	}
-	
+
 	if detector.extensionMap == nil {
 		t.Error("extensionMap is nil")
 	}
-	
+
 	if detector.filenameMap == nil {
 		t.Error("filenameMap is nil")
 	}
-	
+
 	// Test that common extensions are mapped
 	expectedExtensions := []string{".go", ".js", ".py", ".java", ".cpp", ".rs", ".php", ".rb"}
 	for _, ext := range expectedExtensions {
@@ -191,7 +191,7 @@ func TestNewLanguageDetector(t *testing.T) {
 			t.Errorf("Extension %q not found in extensionMap", ext)
 		}
 	}
-	
+
 	// Test that common filenames are mapped
 	expectedFilenames := []string{"dockerfile", "makefile", "package.json", "readme.md"}
 	for _, filename := range expectedFilenames {

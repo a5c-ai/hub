@@ -30,7 +30,7 @@ type User struct {
 	IsAdmin          bool       `json:"is_admin" gorm:"default:false"`
 	LastLoginAt      *time.Time `json:"last_login_at"`
 	// Roles extracted from external identity providers (e.g. OIDC), not persisted in DB
-	Roles            []string   `json:"roles" gorm:"-"`
+	Roles []string `json:"roles" gorm:"-"`
 
 	// Relationships
 	SSHKeys                 []SSHKey                 `json:"ssh_keys,omitempty" gorm:"foreignKey:UserID"`

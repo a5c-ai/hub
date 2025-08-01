@@ -275,8 +275,6 @@ func (h *AnalyticsHandlers) GetRepositoryIssues(c *gin.Context) {
 		return
 	}
 
-
-
 	c.JSON(http.StatusOK, gin.H{"error": "Issue analytics not available"})
 }
 
@@ -1319,9 +1317,9 @@ func (h *AnalyticsHandlers) getUserContributions(ctx context.Context, userID uui
 	}
 
 	return gin.H{
-		"total_commits":            commitStats.TotalCommits,
-		"total_additions":          commitStats.TotalAdditions,
-		"total_deletions":          commitStats.TotalDeletions,
+		"total_commits":   commitStats.TotalCommits,
+		"total_additions": commitStats.TotalAdditions,
+		"total_deletions": commitStats.TotalDeletions,
 
 		"total_pull_requests":      prCount,
 		"repositories_contributed": repoCount,

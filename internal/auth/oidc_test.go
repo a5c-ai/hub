@@ -1,10 +1,10 @@
 package auth
 
 import (
-   "testing"
+	"testing"
 
-   "github.com/stretchr/testify/assert"
-   "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProvisionUser_RoleAssignment(t *testing.T) {

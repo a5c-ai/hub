@@ -38,7 +38,7 @@ func (s *DeployKeyService) CreateDeployKey(ctx context.Context, repositoryID uui
 	if err != nil {
 		return nil, fmt.Errorf("invalid SSH key: %w", err)
 	}
-	
+
 	// Check if key already exists for this repository
 	var existing models.DeployKey
 	err = s.db.WithContext(ctx).Where("repository_id = ? AND fingerprint = ?", repositoryID, fingerprint).First(&existing).Error
@@ -47,7 +47,7 @@ func (s *DeployKeyService) CreateDeployKey(ctx context.Context, repositoryID uui
 	} else if err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to check existing deploy key: %w", err)
 	}
-	
+
 	deployKey := &models.DeployKey{
 		RepositoryID: repositoryID,
 		Title:        title,
@@ -56,11 +56,11 @@ func (s *DeployKeyService) CreateDeployKey(ctx context.Context, repositoryID uui
 		ReadOnly:     readOnly,
 		Verified:     true, // Auto-verify for now
 	}
-	
+
 	if err := s.db.WithContext(ctx).Create(deployKey).Error; err != nil {
 		return nil, fmt.Errorf("failed to create deploy key: %w", err)
 	}
-	
+
 	s.logger.WithFields(logrus.Fields{
 		"deploy_key_id": deployKey.ID,
 		"repository_id": repositoryID,
@@ -68,7 +68,7 @@ func (s *DeployKeyService) CreateDeployKey(ctx context.Context, repositoryID uui
 		"fingerprint":   fingerprint,
 		"read_only":     readOnly,
 	}).Info("Created deploy key")
-	
+
 	return deployKey, nil
 }
 
@@ -102,7 +102,7 @@ func (s *DeployKeyService) DeleteDeployKey(ctx context.Context, deployKeyID uuid
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("deploy key not found")
 	}
-	
+
 	s.logger.WithField("deploy_key_id", deployKeyID).Info("Deleted deploy key")
 	return nil
 }
@@ -113,7 +113,7 @@ func (s *DeployKeyService) VerifyDeployKey(ctx context.Context, deployKeyID uuid
 	if err != nil {
 		return err
 	}
-	
+
 	// Verify the SSH key format
 	_, err = s.parseSSHKey(deployKey.Key)
 	if err != nil {
@@ -121,11 +121,11 @@ func (s *DeployKeyService) VerifyDeployKey(ctx context.Context, deployKeyID uuid
 	} else {
 		deployKey.Verified = true
 	}
-	
+
 	if err := s.db.WithContext(ctx).Save(deployKey).Error; err != nil {
 		return fmt.Errorf("failed to update deploy key verification: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -135,11 +135,11 @@ func (s *DeployKeyService) UpdateLastUsed(ctx context.Context, fingerprint strin
 	result := s.db.WithContext(ctx).Model(&models.DeployKey{}).
 		Where("fingerprint = ?", fingerprint).
 		Update("last_used_at", now)
-	
+
 	if result.Error != nil {
 		return fmt.Errorf("failed to update last used: %w", result.Error)
 	}
-	
+
 	return nil
 }
 
@@ -165,16 +165,16 @@ func (s *DeployKeyService) ValidateSSHKey(key string) error {
 func (s *DeployKeyService) parseSSHKey(keyStr string) (ssh.PublicKey, error) {
 	// Clean up the key string
 	keyStr = strings.TrimSpace(keyStr)
-	
+
 	// Handle keys with comments
 	parts := strings.Fields(keyStr)
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("invalid SSH key format")
 	}
-	
+
 	// Reconstruct key without comment for parsing
 	keyForParsing := parts[0] + " " + parts[1]
-	
+
 	// Parse the SSH public key
 	publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(keyForParsing))
 	if err != nil {
@@ -185,7 +185,7 @@ func (s *DeployKeyService) parseSSHKey(keyStr string) (ssh.PublicKey, error) {
 		}
 		return nil, fmt.Errorf("failed to parse SSH key: %w", err)
 	}
-	
+
 	return publicKey, nil
 }
 
@@ -216,11 +216,11 @@ func (s *DeployKeyService) generateFingerprint(keyStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Generate SHA256 fingerprint (modern format)
 	hash := sha256.Sum256(publicKey.Marshal())
 	fingerprint := base64.StdEncoding.EncodeToString(hash[:])
-	
+
 	// Remove padding and format as SHA256:fingerprint
 	fingerprint = strings.TrimRight(fingerprint, "=")
 	return "SHA256:" + fingerprint, nil
@@ -232,10 +232,10 @@ func (s *DeployKeyService) generateMD5Fingerprint(keyStr string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Generate MD5 fingerprint (legacy format)
 	hash := md5.Sum(publicKey.Marshal())
-	
+
 	// Format as colon-separated hex pairs
 	var fingerprint strings.Builder
 	for i, b := range hash {
@@ -244,7 +244,7 @@ func (s *DeployKeyService) generateMD5Fingerprint(keyStr string) (string, error)
 		}
 		fingerprint.WriteString(fmt.Sprintf("%02x", b))
 	}
-	
+
 	return "MD5:" + fingerprint.String(), nil
 }
 
@@ -254,7 +254,7 @@ func (s *DeployKeyService) GetKeyType(keyStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return publicKey.Type(), nil
 }
 
@@ -264,7 +264,7 @@ func (s *DeployKeyService) GetKeySize(keyStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	// Get key size from the key type string
 	keyType := publicKey.Type()
 	switch keyType {
@@ -287,19 +287,19 @@ func (s *DeployKeyService) GetKeySize(keyStr string) (int, error) {
 // IsKeySecure checks if the SSH key meets security requirements
 func (s *DeployKeyService) IsKeySecure(keyStr string) (bool, []string, error) {
 	var warnings []string
-	
+
 	keyType, err := s.GetKeyType(keyStr)
 	if err != nil {
 		return false, warnings, err
 	}
-	
+
 	keySize, err := s.GetKeySize(keyStr)
 	if err != nil {
 		return false, warnings, err
 	}
-	
+
 	secure := true
-	
+
 	switch keyType {
 	case "ssh-rsa":
 		if keySize < 2048 {
@@ -321,7 +321,7 @@ func (s *DeployKeyService) IsKeySecure(keyStr string) (bool, []string, error) {
 	default:
 		warnings = append(warnings, fmt.Sprintf("Unknown key type: %s", keyType))
 	}
-	
+
 	return secure, warnings, nil
 }
 
@@ -339,16 +339,16 @@ func (s *DeployKeyService) ValidateKeyTitle(title string) error {
 	if strings.TrimSpace(title) == "" {
 		return fmt.Errorf("title cannot be empty")
 	}
-	
+
 	if len(title) > 255 {
 		return fmt.Errorf("title cannot exceed 255 characters")
 	}
-	
+
 	// Check for invalid characters
 	invalidChars := regexp.MustCompile(`[<>"/\\|?*\x00-\x1f\x7f]`)
 	if invalidChars.MatchString(title) {
 		return fmt.Errorf("title contains invalid characters")
 	}
-	
+
 	return nil
 }

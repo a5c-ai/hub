@@ -18,18 +18,18 @@ type OrganizationAuditService interface {
 	// Enhanced activity retrieval
 	GetActivitiesWithFilters(ctx context.Context, orgName string, filters ActivityFilters) (*ActivityResponse, error)
 	SearchActivities(ctx context.Context, orgName string, query string, filters ActivityFilters) (*ActivityResponse, error)
-	
+
 	// Export functionality
 	ExportActivities(ctx context.Context, orgName string, format string, filters ActivityFilters) ([]byte, error)
-	
+
 	// Retention policy management
 	ApplyRetentionPolicy(ctx context.Context, orgName string) error
 	GetRetentionPolicyStatus(ctx context.Context, orgName string) (*RetentionPolicyStatus, error)
-	
+
 	// Real-time notifications
 	SubscribeToActivity(ctx context.Context, orgName string, userID uuid.UUID, filters ActivitySubscriptionFilters) error
 	UnsubscribeFromActivity(ctx context.Context, orgName string, userID uuid.UUID) error
-	
+
 	// Compliance and audit reports
 	GenerateComplianceReport(ctx context.Context, orgName string, reportType string, period string) (*ComplianceReport, error)
 	GetAuditSummary(ctx context.Context, orgName string, period string) (*AuditSummary, error)
@@ -37,34 +37,34 @@ type OrganizationAuditService interface {
 
 // Request/Response Types
 type ActivityFilters struct {
-	Actions      []models.ActivityAction `json:"actions,omitempty"`
-	ActorIDs     []uuid.UUID             `json:"actor_ids,omitempty"`
-	TargetTypes  []string                `json:"target_types,omitempty"`
-	TargetIDs    []uuid.UUID             `json:"target_ids,omitempty"`
-	StartDate    *time.Time              `json:"start_date,omitempty"`
-	EndDate      *time.Time              `json:"end_date,omitempty"`
-	Limit        int                     `json:"limit,omitempty"`
-	Offset       int                     `json:"offset,omitempty"`
-	SortBy       string                  `json:"sort_by,omitempty"` // "created_at", "action", "actor"
-	SortOrder    string                  `json:"sort_order,omitempty"` // "asc", "desc"
+	Actions     []models.ActivityAction `json:"actions,omitempty"`
+	ActorIDs    []uuid.UUID             `json:"actor_ids,omitempty"`
+	TargetTypes []string                `json:"target_types,omitempty"`
+	TargetIDs   []uuid.UUID             `json:"target_ids,omitempty"`
+	StartDate   *time.Time              `json:"start_date,omitempty"`
+	EndDate     *time.Time              `json:"end_date,omitempty"`
+	Limit       int                     `json:"limit,omitempty"`
+	Offset      int                     `json:"offset,omitempty"`
+	SortBy      string                  `json:"sort_by,omitempty"`    // "created_at", "action", "actor"
+	SortOrder   string                  `json:"sort_order,omitempty"` // "asc", "desc"
 }
 
 type ActivityResponse struct {
-	Activities   []*EnhancedOrganizationActivity `json:"activities"`
-	TotalCount   int                             `json:"total_count"`
-	FilteredCount int                            `json:"filtered_count"`
-	HasMore      bool                            `json:"has_more"`
-	NextOffset   int                             `json:"next_offset"`
+	Activities    []*EnhancedOrganizationActivity `json:"activities"`
+	TotalCount    int                             `json:"total_count"`
+	FilteredCount int                             `json:"filtered_count"`
+	HasMore       bool                            `json:"has_more"`
+	NextOffset    int                             `json:"next_offset"`
 }
 
 type EnhancedOrganizationActivity struct {
 	*models.OrganizationActivity
-	ActorDetails  *UserDetails    `json:"actor_details,omitempty"`
-	TargetDetails *TargetDetails  `json:"target_details,omitempty"`
-	RiskLevel     string          `json:"risk_level"`
-	IPAddress     string          `json:"ip_address,omitempty"`
-	UserAgent     string          `json:"user_agent,omitempty"`
-	Location      string          `json:"location,omitempty"`
+	ActorDetails  *UserDetails   `json:"actor_details,omitempty"`
+	TargetDetails *TargetDetails `json:"target_details,omitempty"`
+	RiskLevel     string         `json:"risk_level"`
+	IPAddress     string         `json:"ip_address,omitempty"`
+	UserAgent     string         `json:"user_agent,omitempty"`
+	Location      string         `json:"location,omitempty"`
 }
 
 type UserDetails struct {
@@ -90,26 +90,26 @@ type ActivitySubscriptionFilters struct {
 }
 
 type RetentionPolicyStatus struct {
-	CurrentPolicy    string    `json:"current_policy"`
-	RetentionDays    int       `json:"retention_days"`
-	TotalActivities  int       `json:"total_activities"`
-	OldestActivity   time.Time `json:"oldest_activity"`
-	LastCleanup      time.Time `json:"last_cleanup"`
-	NextCleanup      time.Time `json:"next_cleanup"`
-	ActivitiesForCleanup int   `json:"activities_for_cleanup"`
+	CurrentPolicy        string    `json:"current_policy"`
+	RetentionDays        int       `json:"retention_days"`
+	TotalActivities      int       `json:"total_activities"`
+	OldestActivity       time.Time `json:"oldest_activity"`
+	LastCleanup          time.Time `json:"last_cleanup"`
+	NextCleanup          time.Time `json:"next_cleanup"`
+	ActivitiesForCleanup int       `json:"activities_for_cleanup"`
 }
 
 type ComplianceReport struct {
-	ReportType       string                    `json:"report_type"`
-	Period           string                    `json:"period"`
-	GeneratedAt      time.Time                 `json:"generated_at"`
-	Organization     string                    `json:"organization"`
-	Summary          *ComplianceSummary        `json:"summary"`
-	AccessEvents     []*AccessEvent            `json:"access_events"`
-	SecurityEvents   []*SecurityEvent          `json:"security_events"`
-	DataEvents       []*DataEvent              `json:"data_events"`
-	AdminEvents      []*AdminEvent             `json:"admin_events"`
-	PolicyViolations []*PolicyViolationEvent   `json:"policy_violations"`
+	ReportType       string                  `json:"report_type"`
+	Period           string                  `json:"period"`
+	GeneratedAt      time.Time               `json:"generated_at"`
+	Organization     string                  `json:"organization"`
+	Summary          *ComplianceSummary      `json:"summary"`
+	AccessEvents     []*AccessEvent          `json:"access_events"`
+	SecurityEvents   []*SecurityEvent        `json:"security_events"`
+	DataEvents       []*DataEvent            `json:"data_events"`
+	AdminEvents      []*AdminEvent           `json:"admin_events"`
+	PolicyViolations []*PolicyViolationEvent `json:"policy_violations"`
 }
 
 type ComplianceSummary struct {
@@ -124,14 +124,14 @@ type ComplianceSummary struct {
 }
 
 type AccessEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	User        string    `json:"user"`
-	Action      string    `json:"action"`
-	Resource    string    `json:"resource"`
-	Result      string    `json:"result"`
-	IPAddress   string    `json:"ip_address"`
-	UserAgent   string    `json:"user_agent"`
-	RiskLevel   string    `json:"risk_level"`
+	Timestamp time.Time `json:"timestamp"`
+	User      string    `json:"user"`
+	Action    string    `json:"action"`
+	Resource  string    `json:"resource"`
+	Result    string    `json:"result"`
+	IPAddress string    `json:"ip_address"`
+	UserAgent string    `json:"user_agent"`
+	RiskLevel string    `json:"risk_level"`
 }
 
 type SecurityEvent struct {
@@ -145,42 +145,42 @@ type SecurityEvent struct {
 }
 
 type DataEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	User        string    `json:"user"`
-	Action      string    `json:"action"`
-	DataType    string    `json:"data_type"`
-	Resource    string    `json:"resource"`
-	Size        int64     `json:"size"`
-	Encryption  bool      `json:"encryption"`
+	Timestamp  time.Time `json:"timestamp"`
+	User       string    `json:"user"`
+	Action     string    `json:"action"`
+	DataType   string    `json:"data_type"`
+	Resource   string    `json:"resource"`
+	Size       int64     `json:"size"`
+	Encryption bool      `json:"encryption"`
 }
 
 type AdminEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	Admin       string    `json:"admin"`
-	Action      string    `json:"action"`
-	Target      string    `json:"target"`
-	Changes     string    `json:"changes"`
-	Approved    bool      `json:"approved"`
+	Timestamp time.Time `json:"timestamp"`
+	Admin     string    `json:"admin"`
+	Action    string    `json:"action"`
+	Target    string    `json:"target"`
+	Changes   string    `json:"changes"`
+	Approved  bool      `json:"approved"`
 }
 
 type PolicyViolationEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	User        string    `json:"user"`
-	PolicyName  string    `json:"policy_name"`
-	Violation   string    `json:"violation"`
-	Action      string    `json:"action"`
-	Resolved    bool      `json:"resolved"`
+	Timestamp  time.Time `json:"timestamp"`
+	User       string    `json:"user"`
+	PolicyName string    `json:"policy_name"`
+	Violation  string    `json:"violation"`
+	Action     string    `json:"action"`
+	Resolved   bool      `json:"resolved"`
 }
 
 type AuditSummary struct {
-	Period              string                       `json:"period"`
-	TotalActivities     int                          `json:"total_activities"`
-	UniqueUsers         int                          `json:"unique_users"`
-	TopActions          []ActionSummary              `json:"top_actions"`
-	ActivityTrends      []ActivityTrendPoint         `json:"activity_trends"`
-	SecurityInsights    *SecurityInsights            `json:"security_insights"`
-	ComplianceStatus    map[string]bool              `json:"compliance_status"`
-	RecommendedActions  []string                     `json:"recommended_actions"`
+	Period             string               `json:"period"`
+	TotalActivities    int                  `json:"total_activities"`
+	UniqueUsers        int                  `json:"unique_users"`
+	TopActions         []ActionSummary      `json:"top_actions"`
+	ActivityTrends     []ActivityTrendPoint `json:"activity_trends"`
+	SecurityInsights   *SecurityInsights    `json:"security_insights"`
+	ComplianceStatus   map[string]bool      `json:"compliance_status"`
+	RecommendedActions []string             `json:"recommended_actions"`
 }
 
 type ActionSummary struct {
@@ -195,11 +195,11 @@ type ActivityTrendPoint struct {
 }
 
 type SecurityInsights struct {
-	SuspiciousActivities int               `json:"suspicious_activities"`
-	FailedAttempts      int               `json:"failed_attempts"`
-	UnusualLocations    []string          `json:"unusual_locations"`
-	OffHoursAccess      int               `json:"off_hours_access"`
-	RiskDistribution    map[string]int    `json:"risk_distribution"`
+	SuspiciousActivities int            `json:"suspicious_activities"`
+	FailedAttempts       int            `json:"failed_attempts"`
+	UnusualLocations     []string       `json:"unusual_locations"`
+	OffHoursAccess       int            `json:"off_hours_access"`
+	RiskDistribution     map[string]int `json:"risk_distribution"`
 }
 
 // Service Implementation
@@ -218,7 +218,7 @@ func (s *organizationAuditService) GetActivitiesWithFilters(ctx context.Context,
 	}
 
 	query := s.db.Where("organization_id = ?", org.ID).Preload("Actor")
-	
+
 	// Apply filters
 	query = s.applyActivityFilters(query, filters)
 
@@ -312,7 +312,7 @@ func (s *organizationAuditService) SearchActivities(ctx context.Context, orgName
 
 	// Build search query
 	dbQuery := s.db.Where("organization_id = ?", org.ID).Preload("Actor")
-	
+
 	// Add text search across multiple fields
 	if query != "" {
 		searchPattern := "%" + strings.ToLower(query) + "%"
@@ -502,9 +502,9 @@ func (s *organizationAuditService) GenerateComplianceReport(ctx context.Context,
 	// This would generate detailed compliance reports
 	// For now, return a basic structure
 	return &ComplianceReport{
-		ReportType:  reportType,
-		Period:      period,
-		GeneratedAt: time.Now(),
+		ReportType:   reportType,
+		Period:       period,
+		GeneratedAt:  time.Now(),
 		Organization: orgName,
 		Summary: &ComplianceSummary{
 			ComplianceScore: 85.5,
