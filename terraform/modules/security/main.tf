@@ -41,7 +41,7 @@ resource "azurerm_web_application_firewall_policy" "main" {
 
   # Rate limiting rules
   # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
-  dynamic "rate_limit_rules" {
+  dynamic "rate_limit_rule" {
     for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
     content {
       name                            = "${var.application_gateway_name}-ratelimit"
