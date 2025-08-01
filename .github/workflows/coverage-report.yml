@@ -20,6 +20,7 @@ jobs:
           cache-dependency-path: |
             go.mod
             go.sum
+          clean: true  # Clean installation directory before extracting toolchain to avoid file exists errors
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
