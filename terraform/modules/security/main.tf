@@ -49,7 +49,8 @@ resource "azurerm_web_application_firewall_policy" "main" {
       rule_type = "RateLimitRule"
       action    = "Block"
 
-      rate_limit_threshold = var.waf_rate_limit_threshold
+      rate_limit_threshold  = var.waf_rate_limit_threshold
+      group_by_user_session = true
 
       match_conditions {
         match_variables {
