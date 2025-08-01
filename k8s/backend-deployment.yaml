@@ -65,12 +65,12 @@ spec:
             secretKeyRef:
               name: hub-secrets
               key: jwt-secret
-        - name: GITHUB_OAUTH_CLIENT_ID
+        - name: GITHUB_CLIENT_ID
           valueFrom:
             secretKeyRef:
               name: hub-secrets
               key: github-oauth-client-id
-        - name: GITHUB_OAUTH_CLIENT_SECRET
+        - name: GITHUB_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: hub-secrets
@@ -80,6 +80,31 @@ spec:
             configMapKeyRef:
               name: hub-config
               key: GIT_DATA_PATH
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: DB_NAME
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hub-secrets
+              key: db-password
         resources:
           requests:
             memory: "256Mi"
