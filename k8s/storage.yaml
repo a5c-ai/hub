@@ -8,17 +8,6 @@ parameters:
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 ---
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: managed-premium
-provisioner: disk.csi.azure.com
-parameters:
-  skuName: Premium_LRS
-reclaimPolicy: Delete
-volumeBindingMode: WaitForFirstConsumer
----
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
