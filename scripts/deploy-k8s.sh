@@ -109,12 +109,30 @@ fi
 
 debug "Connected to cluster: $(kubectl config current-context)"
 
-# Create or update namespace
+## Create or update namespace
 log "Creating/updating namespace: $NAMESPACE"
 if [[ "$DRY_RUN" == "true" ]]; then
     kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml
 else
     kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+fi
+
+# Configure image pull secret for private registry if credentials provided
+if [[ -n "$REGISTRY" && -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_APPLICATION_CLIENT_SECRET" ]]; then
+    log "Applying image pull secret for registry $REGISTRY"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        kubectl create secret docker-registry acr-auth \
+          --docker-server="$REGISTRY" \
+          --docker-username="$AZURE_APPLICATION_CLIENT_ID" \
+          --docker-password="$AZURE_APPLICATION_CLIENT_SECRET" \
+          -n "$NAMESPACE" --dry-run=client -o yaml
+    else
+        kubectl create secret docker-registry acr-auth \
+          --docker-server="$REGISTRY" \
+          --docker-username="$AZURE_APPLICATION_CLIENT_ID" \
+          --docker-password="$AZURE_APPLICATION_CLIENT_SECRET" \
+          -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+    fi
 fi
 
 # Function to apply kubectl manifests
@@ -152,13 +170,14 @@ apply_kubectl_manifests() {
     for manifest in "${manifests[@]}"; do
         if [[ -f "$manifest" ]]; then
             log "Applying $manifest..."
-        # Apply image substitutions for app images only; skip database and redis manifests
+        # Apply image substitutions for application images only; skip database and redis manifests
         if [[ -n "$REGISTRY" && "$manifest" != *postgresql* && "$manifest" != *redis* ]]; then
             sed '/^[[:space:]]*namespace:/d' "$manifest" | \
-            sed -E "s#^([[:space:]]*image:[[:space:]]*)([^[:space:]:/]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
+            sed -E "s#^([[:space:]]*image:[[:space:]]*)([^[:space:]]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
             $apply_cmd - -n "$NAMESPACE"
         else
-            sed '/^[[:space:]]*namespace:/d' "$manifest" | $apply_cmd - -n "$NAMESPACE"
+            sed '/^[[:space:]]*namespace:/d' "$manifest" | \
+            $apply_cmd - -n "$NAMESPACE"
         fi
         else
             warn "Manifest not found: $manifest"
