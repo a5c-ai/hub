@@ -154,7 +154,7 @@ apply_kubectl_manifests() {
             log "Applying $manifest..."
         if [[ -n "$REGISTRY" ]]; then
             sed '/^[[:space:]]*namespace:/d' "$manifest" | \
-            sed -E "s#^([[:space:]]*image:[[:space:]]*)(hub/[^:]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
+            sed -E "s#^([[:space:]]*image:[[:space:]]*)([^[:space:]:/]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
             $apply_cmd - -n "$NAMESPACE"
         else
             sed '/^[[:space:]]*namespace:/d' "$manifest" | $apply_cmd - -n "$NAMESPACE"
