@@ -107,7 +107,7 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: none  # Disable distribution cache to prevent absolute path extraction errors
+          cache: false  # Disable distribution cache to prevent absolute path extraction errors
           clean: true  # Clean installation directory before extracting toolchain to avoid file exists errors
 
       - name: Download Go modules
