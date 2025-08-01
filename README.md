@@ -235,8 +235,8 @@ REDIS_URL=redis://host:6379/0
 
 # Authentication
 JWT_SECRET=your-jwt-secret
-GITHUB_OAUTH_CLIENT_ID=your-github-client-id
-GITHUB_OAUTH_CLIENT_SECRET=your-github-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 
 # Multi-Factor Authentication
 ENABLE_MFA=true
