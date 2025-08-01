@@ -288,10 +288,10 @@ jobs:
           
       # Deploy with increased timeout and better error handling
       - name: Deploy application
-        timeout-minutes: 15  # Increased from 10 to 15 minutes
+        timeout-minutes: 25  # Increased from 15 to 25 minutes
         run: |
           # Set deployment optimizations
-          export DEPLOY_TIMEOUT=15m
+          export DEPLOY_TIMEOUT=25m
           
           # Run deployment with verbose output
           ./scripts/deploy.sh
