@@ -144,20 +144,22 @@ apply_kubectl_manifests() {
     
     log "Applying Kubernetes manifests..."
     
-    # Apply in specific order for dependencies
+    # Base manifests
     manifests=(
         "$CONFIG_DIR/configmap.yaml"
         "$CONFIG_DIR/secrets.yaml"
-        "$CONFIG_DIR/storage.yaml"
     )
-    
+
+    # Include storage and dependency deployments only when not skipping dependencies (i.e., development)
     if [[ "$SKIP_DEPENDENCIES" == "false" ]]; then
         manifests+=(
+            "$CONFIG_DIR/storage.yaml"
             "$CONFIG_DIR/postgresql-deployment.yaml"
             "$CONFIG_DIR/redis-deployment.yaml"
         )
     fi
-    
+
+    # Core application manifests
     manifests+=(
         "$CONFIG_DIR/backend-deployment.yaml"
         "$CONFIG_DIR/frontend-deployment.yaml"
