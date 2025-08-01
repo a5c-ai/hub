@@ -14,6 +14,7 @@ private_endpoints_subnet_cidr  = "10.2.3.0/24"
 appgw_subnet_cidr             = "10.2.4.0/24"
 admin_source_address_prefix    = "YOUR_IP_ADDRESS/32"  # Replace with your IP
 enable_private_endpoints       = true
+public_dns_zone_name           = "<your-public-dns-zone>"
 
 # Storage Configuration
 storage_account_tier      = "Standard"

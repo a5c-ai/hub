@@ -91,7 +91,8 @@ module "networking" {
   appgw_subnet_cidr              = var.appgw_subnet_cidr
   admin_source_address_prefix     = var.admin_source_address_prefix
   
-  tags = local.common_tags
+  tags                 = local.common_tags
+  public_dns_zone_name = var.public_dns_zone_name
 }
 
 # Key Vault

@@ -138,6 +138,10 @@ go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 │   Load Balancer │────│   Ingress       │────│   CDN           │
 │   (NGINX)       │    │   Controller    │    │   (Optional)    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
+
+### DNS Routing
+
+We use ExternalDNS to automatically manage DNS records in Azure public DNS zones based on Kubernetes Ingress resources. Ensure your Ingress is annotated with `external-dns.alpha.kubernetes.io/hostname`. See the [Admin Guide](admin-guide.md) for details.
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐

@@ -9,6 +9,7 @@ cost_center    = "engineering"
 availability_zones = ["1", "2", "3"]
 
 # Networking Configuration
+public_dns_zone_name           = "<your-public-dns-zone>"
 vnet_address_space              = ["10.1.0.0/16"]
 aks_subnet_cidr                = "10.1.1.0/24"
 database_subnet_cidr           = "10.1.2.0/24"

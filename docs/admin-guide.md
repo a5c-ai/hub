@@ -1320,4 +1320,38 @@ kubectl rollout restart deployment -n hub
 
 This administrator guide provides comprehensive information for deploying and managing Hub Git Hosting Service. For additional support, refer to the [Developer Guide](developer-guide.md) for API and integration details, or the [User Guide](user-guide.md) for end-user instructions.
 
+## DNS Routing with ExternalDNS
+
+ExternalDNS integrates with Kubernetes to automatically manage DNS records in Azure public DNS zones based on Kubernetes resources such as Ingress or Service.
+
+### Prerequisites
+
+- Azure public DNS zone created and configured for your domain.
+- Service principal credentials with permissions to manage DNS records.
+- Kubernetes secret or ConfigMap containing Azure credentials and DNS zone information.
+
+### Deploy ExternalDNS
+
+Apply the ExternalDNS manifest to your cluster:
+
+```bash
+kubectl apply -f k8s/external-dns.yaml
+```
+
+### Configure Ingress Resources
+
+Annotate your Ingress resources to enable ExternalDNS to manage DNS records:
+
+```yaml
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: <your.hostname.example.com>
+```
+
+### Configuration Options
+
+- **Azure Resource Group**: Set via `--azure-resource-group` argument or environment variable.
+- **Public DNS Zone**: Set via `--domain-filter` or environment variable `PUBLIC_DNS_ZONE_NAME`.
+- **Image Version**: ExternalDNS image version is currently hardcoded (`v0.14.2`), consider updating the manifest for newer versions.
+
 For the latest updates and community support, visit the [project repository](https://github.com/a5c-ai/hub).
