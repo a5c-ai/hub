@@ -334,15 +334,16 @@ provider "helm" {
   }
 }
 
-module "github_runner" {
-  source                 = "../../modules/github_runner"
-  github_token           = var.github_token
-  github_owner           = var.github_owner
-  github_repository      = var.github_repository
-  runner_deployment_name = var.runner_deployment_name
-  runner_replicas        = var.runner_replicas
-  runner_labels          = var.runner_labels
-}
+# Temporarily disabled due to Helm deployment issues
+# module "github_runner" {
+#   source                 = "../../modules/github_runner"
+#   github_token           = var.github_token
+#   github_owner           = var.github_owner
+#   github_repository      = var.github_repository
+#   runner_deployment_name = var.runner_deployment_name
+#   runner_replicas        = var.runner_replicas
+#   runner_labels          = var.runner_labels
+# }
 
 resource "azurerm_role_assignment" "aks_storage_blob_data_contributor" {
   scope                = module.storage.storage_account_id
