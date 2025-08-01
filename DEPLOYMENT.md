@@ -29,6 +29,14 @@ The Hub application consists of:
   - `AZURE_AKS_CLUSTER_NAME`
   
   The build and deploy scripts will automatically perform ACR login and fetch AKS credentials when these variables are set.
+
+  To allow the AKS cluster to pull images from your Azure Container Registry without imagePullSecrets, grant pull permissions:
+
+  ```bash
+  az aks update --name $AZURE_AKS_CLUSTER_NAME \
+    --resource-group $AZURE_RESOURCE_GROUP_NAME \
+    --attach-acr <ACR_NAME>
+  ```
 - AKS cluster with:
   - Ingress controller (nginx-ingress)
   - Cert-manager for TLS certificates
@@ -56,6 +64,16 @@ echo -n "your-database-password" | base64
 echo -n "your-jwt-secret" | base64
 echo -n "your-github-client-id" | base64
 echo -n "your-github-client-secret" | base64
+```
+
+```bash
+# Create registry secret for image pulls
+kubectl create secret docker-registry acr-auth \
+  --docker-server=${REGISTRY} \
+  --docker-username=${AZURE_APPLICATION_CLIENT_ID} \
+  --docker-password=${AZURE_APPLICATION_CLIENT_SECRET} \
+  --docker-email=unused \
+  --namespace hub
 ```
 
 ### 3. Deploy to Kubernetes
