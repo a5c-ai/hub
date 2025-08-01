@@ -20,6 +20,8 @@ spec:
         app.kubernetes.io/name: hub
         app.kubernetes.io/component: backend
     spec:
+      imagePullSecrets:
+      - name: acr-auth
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
