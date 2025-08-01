@@ -84,6 +84,12 @@ usage() {
 DRY_RUN=false
 ROLLBACK=false
 
+# Skip tests in CI environment (tests already run in separate CI job)
+if [[ "$CI" == "true" ]]; then
+    warn "CI environment detected; skipping tests before deployment"
+    RUN_TESTS=false
+fi
+
 # Check for help first
 if [[ "$1" == "--help" ]]; then
     usage
@@ -223,7 +229,7 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
         deploy_log "Logging into Azure CLI..."
         az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
     fi
-    if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
+    if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
         deploy_log "Fetching AKS credentials for cluster $AZURE_AKS_CLUSTER_NAME..."
         # If KUBECONFIG is set, write credentials there; otherwise merge into default config
         if [[ -n "$KUBECONFIG" ]]; then
@@ -239,7 +245,7 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
                 --overwrite-existing
         fi
     else
-        warn "AZURE_RESOURCE_GROUP_NAME or AZURE_AKS_CLUSTER_NAME not set; skipping AKS credential fetch"
+        warn "Skipping AKS credential fetch; missing Azure login credentials or resource names"
     fi
 fi
 
