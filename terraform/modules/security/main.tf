@@ -39,28 +39,8 @@ resource "azurerm_web_application_firewall_policy" "main" {
     }
   }
 
-  # Rate limiting custom rules
-  # Implements configurable rate limit thresholds and match conditions
-  dynamic "custom_rules" {
-    for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
-    content {
-      name      = "ratelimit"
-      priority  = 100
-      rule_type = "RateLimitRule"
-      action    = "Block"
-
-      rate_limit_threshold = var.waf_rate_limit_threshold
-
-      match_conditions {
-        match_variables {
-          variable_name = "RemoteAddr"
-        }
-        operator           = "IPMatch"
-        negation_condition = false
-        match_values       = ["*"]
-      }
-    }
-  }
+  # Disable custom rate limiting rules for now due to Azure GroupBy requirements
+  # Can be re-enabled when proper GroupBy configuration is needed
 
 
   tags = var.tags

@@ -2,17 +2,17 @@
   name             = "actions-runner-controller"
   repository       = "https://actions-runner-controller.github.io/actions-runner-controller"
   chart            = "actions-runner-controller"
-  version          = var.chart_version
+  version          = "0.21.1"  # Use stable version
   namespace        = var.namespace
   create_namespace = true
-
+  timeout          = 600  # 10 minutes timeout
 
   set {
     name  = "authSecret.github_token"
     value = var.github_token
   }
 
-  # Disable cert-manager webhook since we don't have cert-manager installed
+  # Disable cert-manager and webhooks for simplicity
   set {
     name  = "certManagerEnabled"
     value = "false"
@@ -21,6 +21,16 @@
   set {
     name  = "admissionWebHooks.enabled"
     value = "false"
+  }
+
+  set {
+    name  = "metrics.enable"
+    value = "false"
+  }
+
+  set {
+    name  = "scope.watchNamespace"
+    value = var.namespace
   }
 }
 
