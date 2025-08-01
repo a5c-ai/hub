@@ -53,12 +53,11 @@ resource "azurerm_web_application_firewall_policy" "main" {
 
       match_conditions {
         match_variables {
-          variable_name = var.waf_rate_limit_match_variable
-          selector      = var.waf_rate_limit_selector != "" ? var.waf_rate_limit_selector : null
+          variable_name = "RemoteAddr"
         }
-        operator           = var.waf_rate_limit_selector_match_operator
+        operator           = "IPMatch"
         negation_condition = false
-        match_values       = var.waf_rate_limit_match_values
+        match_values       = ["*"]
       }
     }
   }
