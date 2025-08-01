@@ -1,0 +1,41 @@
+name: Coverage Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: 'modules'
+          cache-dependency-path: |
+            go.mod
+            go.sum
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Run tests with coverage
+        env:
+          COVERAGE: true
+          E2E: false
+        run: |
+          ./scripts/test.sh --no-e2e
+      - name: Upload coverage as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            coverage.out
+            frontend/coverage/lcov.info
+          retention-days: 1
