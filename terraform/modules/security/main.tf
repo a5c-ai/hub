@@ -40,7 +40,7 @@ resource "azurerm_web_application_firewall_policy" "main" {
   }
 
   # Rate limiting custom rules
-  # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
+  # Implements configurable rate limit thresholds and match conditions
   dynamic "custom_rules" {
     for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
     content {
@@ -49,8 +49,7 @@ resource "azurerm_web_application_firewall_policy" "main" {
       rule_type = "RateLimitRule"
       action    = "Block"
 
-      rate_limit_threshold           = var.waf_rate_limit_threshold
-      rate_limit_duration_in_minutes = var.waf_rate_limit_duration_in_minutes
+      rate_limit_threshold = var.waf_rate_limit_threshold
 
       match_conditions {
         match_variables {
@@ -60,18 +59,6 @@ resource "azurerm_web_application_firewall_policy" "main" {
         operator           = var.waf_rate_limit_selector_match_operator
         negation_condition = false
         match_values       = var.waf_rate_limit_match_values
-      }
-
-      dynamic "group_by_user_session" {
-        for_each = length(var.waf_rate_limit_group_by_keys) > 0 ? [1] : []
-        content {
-          dynamic "group_by_variables" {
-            for_each = var.waf_rate_limit_group_by_keys
-            content {
-              variable_name = group_by_variables.value
-            }
-          }
-        }
       }
     }
   }
