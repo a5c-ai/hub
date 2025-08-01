@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/a5c-ai/hub/internal/auth"
 	"github.com/a5c-ai/hub/internal/config"
@@ -252,12 +253,52 @@ func (h *AdminEmailHandlers) GetEmailHealth(c *gin.Context) {
 			"auth_configured": h.config.SMTP.Username != "" && h.config.SMTP.Password != "",
 			"from_configured": h.config.SMTP.From != "",
 		},
-		"stats": gin.H{
-			"emails_sent_today":     0, // TODO: implement actual stats
-			"emails_sent_this_week": 0,
-			"failed_emails_today":   0,
-			"success_rate":          100.0,
-		},
-		"last_check": "2025-07-26T05:00:00Z",
+		"stats": gin.H(func() gin.H {
+			// If no database, return default static stats (e.g., during tests)
+			if h.db == nil {
+				return gin.H{
+					"emails_sent_today":     0,
+					"emails_sent_this_week": 0,
+					"failed_emails_today":   0,
+					"success_rate":          100.0,
+				}
+			}
+			// Compute email send metrics from job_queue (completed=sent, failed)
+			now := time.Now().UTC()
+			startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+			// Week period: last calendar week excluding today (7 days ago to before today)
+			startOfWeek := startOfDay.AddDate(0, 0, -7)
+			var sentToday, failedToday, sentWeek int64
+			if err := h.db.Raw(
+				"SELECT COUNT(*) FROM job_queue WHERE status = ? AND created_at >= ?;",
+				"completed", startOfDay,
+			).Row().Scan(&sentToday); err != nil {
+				h.logger.WithError(err).Error("failed to count emails sent today")
+			}
+			if err := h.db.Raw(
+				"SELECT COUNT(*) FROM job_queue WHERE status = ? AND created_at >= ?;",
+				"failed", startOfDay,
+			).Row().Scan(&failedToday); err != nil {
+				h.logger.WithError(err).Error("failed to count emails failed today")
+			}
+			if err := h.db.Raw(
+				"SELECT COUNT(*) FROM job_queue WHERE status = ? AND created_at >= ? AND created_at < ?;",
+				"completed", startOfWeek, startOfDay,
+			).Row().Scan(&sentWeek); err != nil {
+				h.logger.WithError(err).Error("failed to count emails sent last week")
+			}
+			totalToday := sentToday + failedToday
+			successRate := 100.0
+			if totalToday > 0 {
+				successRate = float64(sentToday) / float64(totalToday) * 100.0
+			}
+			return gin.H{
+				"emails_sent_today":     sentToday,
+				"emails_sent_this_week": sentWeek,
+				"failed_emails_today":   failedToday,
+				"success_rate":          successRate,
+			}
+		}()),
+		"last_check": time.Now().UTC().Format(time.RFC3339),
 	})
 }
