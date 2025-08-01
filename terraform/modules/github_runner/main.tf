@@ -11,6 +11,17 @@
     name  = "authSecret.github_token"
     value = var.github_token
   }
+
+  # Disable cert-manager webhook since we don't have cert-manager installed
+  set {
+    name  = "certManagerEnabled"
+    value = "false"
+  }
+
+  set {
+    name  = "admissionWebHooks.enabled"
+    value = "false"
+  }
 }
 
 # Wait for CRDs to be installed and ready
