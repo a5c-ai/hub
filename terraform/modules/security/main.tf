@@ -37,29 +37,30 @@ resource "azurerm_web_application_firewall_policy" "main" {
         selector                = exclusion.value.selector
       }
     }
-  }
 
-  # Rate limiting rules
-  # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
-  dynamic "rate_limit_rule" {
-    for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
-    content {
-      name                            = "${var.application_gateway_name}-ratelimit"
-      priority                        = 100
-      rate_limit_threshold            = var.waf_rate_limit_threshold
-      rate_limit_duration_in_minutes  = var.waf_rate_limit_duration_in_minutes
+    # Rate limiting rules
+    # Implements configurable rate limit thresholds, duration, match conditions, and grouping keys
+    dynamic "rate_limit_rule" {
+      for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
+      content {
+        name                            = "${var.application_gateway_name}-ratelimit"
+        priority                        = 100
+        rate_limit_threshold            = var.waf_rate_limit_threshold
+        rate_limit_duration_in_minutes  = var.waf_rate_limit_duration_in_minutes
 
-      match_variable                  = var.waf_rate_limit_match_variable
-      selector_match_operator         = var.waf_rate_limit_selector_match_operator
-      selector                        = var.waf_rate_limit_selector
-      match_values                    = var.waf_rate_limit_match_values
+        match_variable                  = var.waf_rate_limit_match_variable
+        selector_match_operator         = var.waf_rate_limit_selector_match_operator
+        selector                        = var.waf_rate_limit_selector
+        match_values                    = var.waf_rate_limit_match_values
 
-      dynamic "group_by" {
-        for_each = var.waf_rate_limit_group_by_keys
-        content { key = group_by.value }
+        dynamic "group_by" {
+          for_each = var.waf_rate_limit_group_by_keys
+          content { key = group_by.value }
+        }
       }
     }
   }
+
 
   tags = var.tags
 }
