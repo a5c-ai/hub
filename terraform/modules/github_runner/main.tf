@@ -1,4 +1,13 @@
- resource "helm_release" "controller" {
+resource "helm_release" "controller_crds" {
+  name             = "actions-runner-controller-crds"
+  repository       = "https://actions-runner-controller.github.io/actions-runner-controller"
+  chart            = "actions-runner-controller-crds"
+  version          = var.chart_version
+  namespace        = var.namespace
+  create_namespace = true
+}
+
+resource "helm_release" "controller" {
   name             = "actions-runner-controller"
   repository       = "https://actions-runner-controller.github.io/actions-runner-controller"
   chart            = "actions-runner-controller"
@@ -6,6 +15,8 @@
   namespace        = var.namespace
   create_namespace = true
 
+
+  depends_on = [helm_release.controller_crds]
 
   set {
     name  = "authSecret.github_token"
@@ -15,7 +26,7 @@
 
 # Wait for CRDs to be installed and ready
 resource "time_sleep" "wait_for_crds" {
-  depends_on = [helm_release.controller]
+  depends_on = [helm_release.controller_crds]
   create_duration = "30s"
 }
 

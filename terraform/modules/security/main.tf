@@ -44,7 +44,7 @@ resource "azurerm_web_application_firewall_policy" "main" {
   dynamic "custom_rules" {
     for_each = var.enable_waf && var.waf_rate_limit_threshold > 0 ? [1] : []
     content {
-      name      = "${var.application_gateway_name}-ratelimit"
+      name      = "ratelimit"
       priority  = 100
       rule_type = "RateLimitRule"
       action    = "Block"
