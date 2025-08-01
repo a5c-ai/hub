@@ -47,3 +47,13 @@ output "database_nsg_id" {
   description = "The ID of the database network security group"
   value       = azurerm_network_security_group.database.id
 }
+
+output "public_dns_zone_name" {
+  description = "The name of the public DNS zone"
+  value       = var.public_dns_zone_name
+}
+
+output "public_dns_zone_id" {
+  description = "The ID of the public DNS zone"
+  value       = length(var.public_dns_zone_name) != 0 ? azurerm_dns_zone.public[0].id : ""
+}

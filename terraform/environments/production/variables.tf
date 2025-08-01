@@ -310,6 +310,13 @@ variable "runner_labels" {
   default     = {}
 }
 
+# DNS Configuration
+variable "public_dns_zone_name" {
+  description = "The name of the public DNS zone"
+  type        = string
+  default     = ""
+}
+
 variable "alert_sms_receivers" {
   description = "List of SMS receivers for alerts"
   type = list(object({
