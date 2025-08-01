@@ -219,7 +219,16 @@ if [[ "$WAIT_FOR_READY" == "true" && "$USE_HELM" == "false" && "$DRY_RUN" == "fa
     for deployment in "${deployments[@]}"; do
         log "Waiting for deployment: $deployment"
         # Wait for deployment readiness with configurable timeout
-        kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout="$TIMEOUT"
+        if ! kubectl rollout status deployment/"$deployment" -n "$NAMESPACE" --timeout="$TIMEOUT"; then
+            error "Deployment of $deployment failed or timed out."
+            log "Fetching pods in namespace $NAMESPACE..."
+            kubectl get pods -n "$NAMESPACE"
+            log "Fetching logs for $deployment pods..."
+            for pod in $(kubectl get pods -n "$NAMESPACE" -l app=${deployment%-*} -o name); do
+                kubectl logs "$pod" -n "$NAMESPACE" || true
+            done
+            exit 1
+        fi
     done
 fi
 
