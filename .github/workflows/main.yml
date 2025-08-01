@@ -101,13 +101,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Setup Go with better caching and proper version specification
+      # Setup Go with proper version specification and enable distribution cache
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache to prevent absolute path extraction errors
+          cache: true  # Enable distribution cache for toolchain
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-mod-
 
       - name: Download Go modules
         timeout-minutes: 10  # Ensure modules are available for tests
@@ -211,16 +221,23 @@ jobs:
         with:
           name: build-artifacts
           
-      # Setup Go with caching and proper version specification
+      # Setup Go with proper version specification and enable distribution cache
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: 'modules'  # Only cache module files, disable distribution cache
-          cache-dependency-path: |
-            go.sum
-            go.mod
           check-latest: false  # Disable version checking to speed up builds
+          cache: true  # Enable distribution cache for toolchain
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-mod-
           
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
@@ -263,16 +280,23 @@ jobs:
         with:
           name: build-artifacts
 
-      # Setup Go with caching and proper version specification
+      # Setup Go with proper version specification and enable distribution cache
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
-          cache: 'modules'  # Only cache module files, disable distribution cache
-          cache-dependency-path: |
-            go.sum
-            go.mod
           check-latest: false  # Disable version checking to speed up builds
+          cache: true  # Enable distribution cache for toolchain
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-mod-
 
       - name: Setup Node.js with caching
         uses: actions/setup-node@v4
