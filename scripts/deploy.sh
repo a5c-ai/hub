@@ -311,7 +311,10 @@ deploy_kubernetes() {
         fi
     fi
     
-    k8s_args="$k8s_args --wait"
+    # Only wait for deployments in non-development environments to avoid CI hangs on dev clusters
+    if [[ "$ENVIRONMENT" != "development" ]]; then
+        k8s_args="$k8s_args --wait"
+    fi
     
     if [[ "$ROLLBACK" == "true" ]]; then
         deploy_log "Rolling back Kubernetes deployment..."
