@@ -1,0 +1,7 @@
+# Updated GitHub Actions workflow to run deploy job only on manual dispatch
+# Copy this file to .github/workflows/main.yml to apply the changes.
+
+jobs:
+  deploy:
+    # Only deploy on main branch via manual dispatch
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
