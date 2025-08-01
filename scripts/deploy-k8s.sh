@@ -173,7 +173,7 @@ apply_kubectl_manifests() {
         # Apply image substitutions for application images only; skip database and redis manifests
         if [[ -n "$REGISTRY" && "$manifest" != *postgresql* && "$manifest" != *redis* ]]; then
             sed '/^[[:space:]]*namespace:/d' "$manifest" | \
-            sed -E "s#^([[:space:]]*image:[[:space:]]*)([^[:space:]]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
+            sed -E "s#^([[:space:]]*image:[[:space:]]+)([^[:space:]]+):.*#\\1${REGISTRY}/\\2:${VERSION}#" | \
             $apply_cmd - -n "$NAMESPACE"
         else
             sed '/^[[:space:]]*namespace:/d' "$manifest" | \
