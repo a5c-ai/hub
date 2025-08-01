@@ -8,6 +8,7 @@ import (
 
 	"github.com/a5c-ai/hub/internal/config"
 	"github.com/a5c-ai/hub/internal/models"
+	"github.com/go-ldap/ldap/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -98,8 +99,8 @@ func (m *MockLDAPConnection) Search(baseDN, filter string, attributes []string) 
 	var results []LDAPSearchResult
 
 	for username, user := range m.users {
-		// Simple filter matching
-		if strings.Contains(filter, username) || strings.Contains(filter, user.Email) {
+		// Return all entries when searching for objectClass for a connection test
+		if strings.Contains(filter, "(objectClass") || strings.Contains(filter, username) || strings.Contains(filter, user.Email) {
 			attrs := map[string][]string{
 				"cn":          {username},
 				"mail":        {user.Email},
@@ -143,32 +144,64 @@ func NewLDAPService(db *gorm.DB, jwtManager *JWTManager, cfg *config.Config, aut
 	}, nil
 }
 
+// realLDAPConnection wraps a go-ldap connection for production use.
+type realLDAPConnection struct {
+	conn *ldap.Conn
+}
+
+func (r *realLDAPConnection) Bind(username, password string) error {
+	return r.conn.Bind(username, password)
+}
+
+func (r *realLDAPConnection) Search(baseDN, filter string, attributes []string) ([]LDAPSearchResult, error) {
+	req := ldap.NewSearchRequest(
+		baseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		filter,
+		attributes,
+		nil,
+	)
+	sr, err := r.conn.Search(req)
+	if err != nil {
+		return nil, err
+	}
+	var results []LDAPSearchResult
+	for _, entry := range sr.Entries {
+		attrs := make(map[string][]string, len(entry.Attributes))
+		for _, a := range entry.Attributes {
+			attrs[a.Name] = a.Values
+		}
+		results = append(results, LDAPSearchResult{
+			DN:         entry.DN,
+			Attributes: attrs,
+		})
+	}
+	return results, nil
+}
+
+func (r *realLDAPConnection) Close() error {
+	r.conn.Close()
+	return nil
+}
+
+// createConnection returns an LDAPConnection: mock in development or a real one in production.
 func (s *LDAPService) createConnection() (LDAPConnection, error) {
-	// For development, use mock connection
 	if s.config.Environment == "development" || s.config.LDAP.Host == "" {
 		return NewMockLDAPConnection(), nil
 	}
-
-	// In production, you would use a real LDAP library like go-ldap
-	// Here's a placeholder for the real implementation:
-
-	// conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%d", s.config.LDAP.Host, s.config.LDAP.Port))
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to connect to LDAP: %w", err)
-	// }
-
-	// Bind with service account if configured
-	// if s.config.LDAP.BindDN != "" && s.config.LDAP.BindPassword != "" {
-	//     err = conn.Bind(s.config.LDAP.BindDN, s.config.LDAP.BindPassword)
-	//     if err != nil {
-	//         conn.Close()
-	//         return nil, fmt.Errorf("failed to bind to LDAP: %w", err)
-	//     }
-	// }
-
-	// return conn, nil
-
-	return NewMockLDAPConnection(), nil
+	// dial to LDAP server
+	conn, err := ldap.DialURL(fmt.Sprintf("ldap://%s:%d", s.config.LDAP.Host, s.config.LDAP.Port))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to LDAP: %w", err)
+	}
+	// service account bind if configured
+	if s.config.LDAP.BindDN != "" && s.config.LDAP.BindPassword != "" {
+		if err = conn.Bind(s.config.LDAP.BindDN, s.config.LDAP.BindPassword); err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("failed to bind to LDAP: %w", err)
+		}
+	}
+	return &realLDAPConnection{conn: conn}, nil
 }
 
 func (s *LDAPService) Authenticate(username, password string) (*AuthResponse, error) {
@@ -230,7 +263,7 @@ func (s *LDAPService) Authenticate(username, password string) (*AuthResponse, er
 
 func (s *LDAPService) searchUser(conn LDAPConnection, username string) (*LDAPUserInfo, error) {
 	// Build search filter
-	filter := s.config.LDAP.UserFilter
+	filter := fmt.Sprintf(s.config.LDAP.UserFilter, username)
 	if filter == "" {
 		filter = "(uid=%s)"
 	}
