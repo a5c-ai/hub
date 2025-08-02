@@ -59,6 +59,9 @@ resource "helm_release" "arc_runner_set" {
   namespace        = var.runners_namespace
   create_namespace = false
   timeout          = 600
+  # Ensure resources are recreated when patch fails (e.g., updating volumeClaimTemplate spec)
+  atomic           = true
+  force_update     = true
 
   values = [
     yamlencode({
