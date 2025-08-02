@@ -6,10 +6,10 @@ import (
 )
 
 func init() {
-	registerMigration("001_5_add_missing_tables", migrate001_5Up, migrate001_5Down)
+	registerMigration("001_missing_tables", migrate001_missing_tablesUp, migrate001_missing_tablesDown)
 }
 
-func migrate001_5Up(db *gorm.DB) error {
+func migrate001_missing_tablesUp(db *gorm.DB) error {
 	// Create missing tables that should have been in 001_initial_schema
 	// but were added later to fix migration 002 dependencies
 
@@ -46,7 +46,7 @@ func migrate001_5Up(db *gorm.DB) error {
 	return nil
 }
 
-func migrate001_5Down(db *gorm.DB) error {
+func migrate001_missing_tablesDown(db *gorm.DB) error {
 	// Drop the tables in reverse order
 	return db.Migrator().DropTable(
 		&models.Comment{},
