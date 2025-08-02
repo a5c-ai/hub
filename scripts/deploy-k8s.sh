@@ -244,7 +244,7 @@ if [[ "$WAIT_FOR_READY" == "true" && "$USE_HELM" == "false" && "$DRY_RUN" == "fa
             log "Fetching pods in namespace $NAMESPACE..."
             kubectl get pods -n "$NAMESPACE"
             log "Fetching logs for $deployment pods..."
-            for pod in $(kubectl get pods -n "$NAMESPACE" -l app=${deployment%-*} -o name); do
+            for pod in $(kubectl get pods -n "$NAMESPACE" -l app="$deployment" -o name); do
                 kubectl logs "$pod" -n "$NAMESPACE" || true
             done
             exit 1
