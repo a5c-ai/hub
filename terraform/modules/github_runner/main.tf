@@ -90,27 +90,15 @@ resource "helm_release" "arc_runner_set" {
                 memory = "1Gi"
               }
             }
+            volumeMounts = [{
+              name = "work"
+              mountPath = "/home/runner/_work"
+            }]
           }]
+          # Use simple volume configuration for runner workspace
           volumes = [{
-            name = "runner-workspace"
-            ephemeral = {
-              volumeClaimTemplate = {
-                metadata = {
-                  labels = {
-                    app = "github-runner"
-                  }
-                }
-                spec = {
-                  accessModes = ["ReadWriteOnce"]
-                  storageClassName = var.storage_class_name
-                  resources = {
-                    requests = {
-                      storage = "1Gi"
-                    }
-                  }
-                }
-              }
-            }
+            name = "work"
+            emptyDir = {}
           }]
         }
       }

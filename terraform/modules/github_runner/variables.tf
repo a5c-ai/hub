@@ -112,7 +112,7 @@ variable "runner_image" {
 }
 
 variable "storage_class_name" {
-  description = "Storage class name for ephemeral volumes"
+  description = "Storage class name for ephemeral volumes (currently unused - kept for future use)"
   type        = string
   default     = "default"
 }
