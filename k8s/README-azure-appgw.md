@@ -90,6 +90,27 @@ Each environment (development, staging, production) is configured with:
 3. Application Gateway subnet in the VNet
 4. DNS zone configured for external DNS
 
+### Let's Encrypt Certificate Provisioning
+
+We use cert-manager to automate TLS certificates from Let's Encrypt. To set this up:
+
+1. **Install cert-manager CRDs**:
+   ```bash
+   kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.9.1/cert-manager.crds.yaml
+   ```
+2. **Install cert-manager via Helm**:
+   ```bash
+   helm repo add jetstack https://charts.jetstack.io
+   helm repo update
+   helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.9.1
+   ```
+3. **Apply ClusterIssuer and Certificate**:
+   ```bash
+   kubectl apply -f k8s/cert-manager-issuers.yaml
+   ```
+
+cert-manager will automatically request and renew certificates for `hub.a5c.ai`, populating the `hub-azure-ssl-certificate` secret.
+
 ### Terraform Deployment
 
 1. **Plan the deployment**:

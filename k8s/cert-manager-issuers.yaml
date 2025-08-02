@@ -1,0 +1,49 @@
+---
+# Cert-Manager ClusterIssuers for Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # Use Let's Encrypt staging server for testing
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: support@a5c.ai
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+    - http01:
+        ingress:
+          class: azure/application-gateway
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    # Use Let's Encrypt production server for real certificates
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: support@a5c.ai
+    privateKeySecretRef:
+      name: letsencrypt-production
+    solvers:
+    - http01:
+        ingress:
+          class: azure/application-gateway
+
+---
+# Certificate resource for hub.a5c.ai using Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hub-tls
+  namespace: hub
+spec:
+  dnsNames:
+    - hub.a5c.ai
+  secretName: hub-azure-ssl-certificate
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+    group: cert-manager.io

@@ -7,12 +7,8 @@ metadata:
   labels:
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: azure-ssl
-type: Opaque
-data:
-  # Base64 encoded SSL certificate data
-  # Replace with your actual certificate data
-  # tls.crt: <base64-encoded-certificate>
-  # tls.key: <base64-encoded-private-key>
+type: kubernetes.io/tls
+# NOTE: This secret will be automatically managed by cert-manager.
 
 ---
 # Azure Application Gateway WAF Policy Configuration
