@@ -97,6 +97,7 @@ resource "helm_release" "arc_runner_set" {
               volumeClaimTemplate = {
                 spec = {
                   accessModes = ["ReadWriteOnce"]
+                  storageClassName = var.storage_class_name
                   resources = {
                     requests = {
                       storage = "1Gi"

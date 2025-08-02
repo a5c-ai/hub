@@ -110,3 +110,9 @@ variable "runner_image" {
   type        = string
   default     = null
 }
+
+variable "storage_class_name" {
+  description = "Storage class name for ephemeral volumes"
+  type        = string
+  default     = "default"
+}
