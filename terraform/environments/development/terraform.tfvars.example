@@ -38,10 +38,16 @@ alert_email_receivers = [
   }
 ]
 
-# GitHub Runner Configuration
-github_token           = "<your-github-token>"
-github_owner           = "<your-github-org-or-user>"
-github_repository      = "<your-repo-name>"
-runner_deployment_name = "runner"
-runner_replicas        = 2
-runner_labels = { env = "dev" }
+# GitHub Actions Runner Controller (ARC) Configuration
+enable_github_runners        = true
+github_config_url           = "https://github.com/<your-org>"  # Replace with your GitHub organization URL
+github_app_id              = "<your-github-app-id>"           # GitHub App ID from app settings
+github_app_installation_id = "<your-installation-id>"         # Installation ID from app installation URL
+github_app_private_key     = "<path-to-private-key.pem>"      # Path to GitHub App private key file
+
+# Runner Configuration
+runner_scale_set_name   = "hub-dev-runners"
+runner_min_replicas     = 0
+runner_max_replicas     = 5
+runner_container_mode   = "dind"
+runner_labels          = ["development", "linux"]

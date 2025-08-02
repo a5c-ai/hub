@@ -300,16 +300,33 @@ provider "helm" {
   }
 }
 
-# Temporarily disabled due to Helm deployment issues
-# module "github_runner" {
-#   source                 = "../../modules/github_runner"
-#   github_token           = var.github_token
-#   github_owner           = var.github_owner
-#   github_repository      = var.github_repository
-#   runner_deployment_name = var.runner_deployment_name
-#   runner_replicas        = var.runner_replicas
-#   runner_labels          = var.runner_labels
-# }
+# GitHub Actions Runner Controller (ARC)
+module "github_runner" {
+  count  = var.enable_github_runners ? 1 : 0
+  source = "../../modules/github_runner"
+
+  # GitHub App Configuration
+  github_config_url           = var.github_config_url
+  github_app_id              = var.github_app_id
+  github_app_installation_id = var.github_app_installation_id
+  github_app_private_key     = var.github_app_private_key
+
+  # Runner Configuration
+  runner_scale_set_name = var.runner_scale_set_name
+  min_runners          = var.runner_min_replicas
+  max_runners          = var.runner_max_replicas
+  container_mode       = var.runner_container_mode
+  runner_labels        = var.runner_labels
+
+  # Development-specific settings
+  controller_namespace = "arc-systems"
+  runners_namespace   = "arc-runners"
+
+  depends_on = [
+    module.aks,
+    data.azurerm_kubernetes_cluster.cluster
+  ]
+}
 
 resource "azurerm_role_assignment" "aks_storage_blob_data_contributor" {
   scope                = module.storage.storage_account_id

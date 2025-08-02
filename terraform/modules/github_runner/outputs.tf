@@ -1,14 +1,34 @@
- output "helm_release_name" {
-   description = "Name of the Helm release for actions-runner-controller"
-   value       = helm_release.controller.name
- }
+ output "controller_release_name" {
+  description = "Name of the Helm release for the ARC controller"
+  value       = helm_release.arc_controller.name
+}
 
- output "runner_deployment_name" {
-   description = "Name of the RunnerDeployment resource"
-   value       = var.runner_deployment_name
- }
+output "runner_set_release_name" {
+  description = "Name of the Helm release for the runner scale set"
+  value       = helm_release.arc_runner_set.name
+}
 
- output "runner_namespace" {
-   description = "Namespace where runner controller and runners are deployed"
-   value       = var.namespace
- }
+output "controller_namespace" {
+  description = "Namespace where the ARC controller is deployed"
+  value       = var.controller_namespace
+}
+
+output "runners_namespace" {
+  description = "Namespace where the runner scale set is deployed"
+  value       = var.runners_namespace
+}
+
+output "runner_scale_set_name" {
+  description = "Name of the runner scale set (use this in 'runs-on' in GitHub workflows)"
+  value       = var.runner_scale_set_name
+}
+
+output "github_config_url" {
+  description = "GitHub organization URL configured for the runners"
+  value       = var.github_config_url
+}
+
+output "github_secret_name" {
+  description = "Name of the Kubernetes secret containing GitHub App credentials"
+  value       = kubernetes_secret.github_app_secret.metadata[0].name
+}

@@ -6,9 +6,9 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.9"
     }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.0"
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.20"
     }
     time = {
       source  = "hashicorp/time"

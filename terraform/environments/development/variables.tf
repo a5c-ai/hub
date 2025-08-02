@@ -120,41 +120,66 @@ variable "alert_email_receivers" {
   default = []
 }
 
-# GitHub Runner Variables
-variable "github_token" {
-  description = "GitHub token for self-hosted runner registration"
+# GitHub Runner Variables (Modern ARC)
+variable "enable_github_runners" {
+  description = "Enable GitHub Actions Runner Controller (ARC)"
+  type        = bool
+  default     = true
+}
+
+variable "github_config_url" {
+  description = "GitHub organization URL (e.g., https://github.com/your-org)"
   type        = string
   default     = ""
 }
 
-variable "github_owner" {
-  description = "GitHub organization or user"
+variable "github_app_id" {
+  description = "GitHub App ID for runner authentication"
   type        = string
   default     = ""
 }
 
-variable "github_repository" {
-  description = "GitHub repository name"
+variable "github_app_installation_id" {
+  description = "GitHub App Installation ID"
   type        = string
   default     = ""
 }
 
-variable "runner_deployment_name" {
-  description = "Name for the RunnerDeployment resource"
+variable "github_app_private_key" {
+  description = "GitHub App private key (PEM format)"
   type        = string
-  default     = "runner"
+  sensitive   = true
+  default     = ""
 }
 
-variable "runner_replicas" {
-  description = "Number of runners to maintain"
+variable "runner_scale_set_name" {
+  description = "Name for the runner scale set (used in 'runs-on' in workflows)"
+  type        = string
+  default     = "hub-dev-runners"
+}
+
+variable "runner_min_replicas" {
+  description = "Minimum number of runners"
   type        = number
-  default     = 2
+  default     = 0
+}
+
+variable "runner_max_replicas" {
+  description = "Maximum number of runners"
+  type        = number
+  default     = 5
+}
+
+variable "runner_container_mode" {
+  description = "Container mode for runners (dind or kubernetes)"
+  type        = string
+  default     = "dind"
 }
 
 variable "runner_labels" {
-  description = "Labels to apply to runner pods"
-  type        = map(string)
-  default     = {}
+  description = "Additional labels to assign to runners"
+  type        = list(string)
+  default     = ["development"]
 }
 
 # DNS Configuration

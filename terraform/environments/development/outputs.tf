@@ -93,3 +93,19 @@ output "container_registry_login_server" {
   description = "The login server for the Container Registry"
   value       = module.container_registry.login_server
 }
+
+# GitHub Runner Outputs
+output "github_runner_scale_set_name" {
+  description = "The name of the GitHub runner scale set (use this in 'runs-on' in workflows)"
+  value       = var.enable_github_runners ? module.github_runner[0].runner_scale_set_name : null
+}
+
+output "github_runner_controller_namespace" {
+  description = "The namespace where the GitHub runner controller is deployed"
+  value       = var.enable_github_runners ? module.github_runner[0].controller_namespace : null
+}
+
+output "github_runner_namespace" {
+  description = "The namespace where GitHub runners are deployed"
+  value       = var.enable_github_runners ? module.github_runner[0].runners_namespace : null
+}
