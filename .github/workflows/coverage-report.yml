@@ -9,7 +9,7 @@ on:
 
 jobs:
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: hub-dev-runners
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go
