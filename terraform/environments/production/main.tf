@@ -322,6 +322,7 @@ resource "azurerm_role_assignment" "agic_application_gateway_contributor" {
   role_definition_name = "Contributor"
   principal_id         = module.aks.agic_identity_object_id
 
+  ignore_existing = true
   depends_on = [module.aks]
 }
 
@@ -330,6 +331,7 @@ resource "azurerm_role_assignment" "agic_resource_group_reader" {
   role_definition_name = "Reader"
   principal_id         = module.aks.agic_identity_object_id
 
+  ignore_existing = true
   depends_on = [module.aks]
 }
 
