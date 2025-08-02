@@ -34,7 +34,25 @@ livenessProbe:
 - ✅ `readinessProbe: /api/health` 
 - ✅ `startupProbe: /api/health`
 
-### 2. Azure Load Balancer Service (`k8s/services.yaml`)
+### 2. Backend Deployment (`k8s/backend-deployment.yaml`)
+```yaml
+# Before: All probes used /health
+livenessProbe:
+  httpGet:
+    path: /health  # ❌
+
+# After: All probes use /api/health
+livenessProbe:
+  httpGet:
+    path: /api/health  # ✅
+```
+
+**Updated all three probe types for backend:**
+- ✅ `livenessProbe: /api/health`
+- ✅ `readinessProbe: /api/health`
+- ✅ `startupProbe: /api/health`
+
+### 3. Azure Load Balancer Service (`k8s/services.yaml`)
 ```yaml
 # Before
 service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/"
@@ -43,7 +61,7 @@ service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/"
 service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/api/health"
 ```
 
-### 3. Ingress Routes (Multiple files)
+### 4. Ingress Routes (Multiple files)
 Updated health check routes in:
 - `k8s/ingress.yaml`
 - `k8s/ingress-azure.yaml` 
