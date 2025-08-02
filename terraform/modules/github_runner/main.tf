@@ -59,9 +59,9 @@ resource "helm_release" "arc_runner_set" {
   namespace        = var.runners_namespace
   create_namespace = false
   timeout          = 600
-  # Ensure resources are recreated when patch fails (e.g., updating volumeClaimTemplate spec)
-  atomic           = true
-  force_update     = true
+  # Temporarily disable atomic to get better error details
+  # atomic           = true
+  # force_update     = true
 
   values = [
     yamlencode({
@@ -80,11 +80,12 @@ resource "helm_release" "arc_runner_set" {
         type = var.container_mode == "kubernetes" ? "kubernetes" : "dind"
       }
       
+      # Minimal template configuration for DinD mode
+      # Let ARC handle volumes and other pod configuration automatically
       template = {
         spec = {
           containers = [{
-            name  = "runner"
-            image = var.runner_image != null ? var.runner_image : "ghcr.io/actions/actions-runner:2.319.1"
+            name = "runner"
             resources = {
               requests = {
                 cpu    = "100m"
