@@ -16,11 +16,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// waitForServer pings health endpoint until ready or timeout.
+// waitForServer pings /api/health endpoint until ready or timeout.
 func waitForServer(t *testing.T, baseURL string) {
 	deadline := time.Now().Add(30 * time.Second)
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(fmt.Sprintf("%s/health", baseURL))
+		resp, err := http.Get(fmt.Sprintf("%s/api/health", baseURL))
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {

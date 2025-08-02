@@ -18,10 +18,10 @@ func TestHealthEndpoint(t *testing.T) {
 		baseURL = "http://localhost:8080"
 	}
 
-	// Retry GET /health for up to 30 seconds
+	// Retry GET /api/health for up to 30 seconds
 	deadline := time.Now().Add(30 * time.Second)
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(fmt.Sprintf("%s/health", baseURL))
+		resp, err := http.Get(fmt.Sprintf("%s/api/health", baseURL))
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
