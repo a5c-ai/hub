@@ -229,7 +229,7 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
         deploy_log "Logging into Azure CLI..."
         az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
     fi
-    if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
+if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
         deploy_log "Fetching AKS credentials for cluster $AZURE_AKS_CLUSTER_NAME..."
         # If KUBECONFIG is set, write credentials there; otherwise merge into default config
         if [[ -n "$KUBECONFIG" ]]; then
@@ -248,6 +248,25 @@ if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; th
         warn "Skipping AKS credential fetch; missing Azure login credentials or resource names"
     fi
 fi
+
+# Ensure cert-manager is installed in the cluster
+install_cert_manager() {
+    deploy_log "Ensuring cert-manager is installed on the cluster..."
+    if ! command -v helm &> /dev/null; then
+        warn "Helm not found; skipping cert-manager installation. Please install Helm to enable automatic certificate management."
+        return
+    fi
+    # Add Jetstack Helm repository if missing
+    if ! helm repo list | grep -q '^jetstack\s'; then
+        helm repo add jetstack https://charts.jetstack.io
+    fi
+    helm repo update
+    # Install or upgrade cert-manager with CRDs
+    helm upgrade --install cert-manager jetstack/cert-manager \
+        --namespace cert-manager \
+        --create-namespace \
+        --set installCRDs=true
+}
 
 # Safety check for production
 if [[ "$ENVIRONMENT" == "production" && "$DRY_RUN" == "false" ]]; then
@@ -298,7 +317,9 @@ fi
 # Function to deploy with Kubernetes
 deploy_kubernetes() {
     deploy_log "Deploying with Kubernetes..."
-    
+
+    # Install cert-manager before deploying application resources
+    install_cert_manager
     local k8s_args="$ENVIRONMENT"
     if [[ "$DRY_RUN" == "true" ]]; then
         k8s_args="$k8s_args --dry-run"
