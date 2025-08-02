@@ -46,7 +46,7 @@ github_auth_method          = "token"  # Use token authentication (simpler for C
 # Force secret recreation: 2025-08-02
 
 # Runner Configuration
-runner_scale_set_name   = "ubuntu-latest"
+runner_scale_set_name   = "hub-dev-runners"
 runner_min_replicas     = 0
 runner_max_replicas     = 5
 runner_container_mode   = "dind"
