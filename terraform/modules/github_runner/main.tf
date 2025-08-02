@@ -50,6 +50,35 @@ resource "time_sleep" "wait_for_controller" {
   create_duration = "30s"
 }
 
+# Clean up existing problematic AutoscalingRunnerSet resource
+resource "null_resource" "cleanup_existing_runner_set" {
+  triggers = {
+    # Trigger cleanup when runner set name changes
+    runner_set_name = var.runner_scale_set_name
+    namespace = var.runners_namespace
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Delete existing AutoscalingRunnerSet if it exists
+      kubectl delete autoscalingrunnersets.actions.github.com -n ${var.runners_namespace} ${var.runner_scale_set_name} --ignore-not-found=true --timeout=60s
+      
+      # Wait a moment for cleanup
+      sleep 5
+      
+      # Also clean up any orphaned ephemeral runners
+      kubectl delete ephemeralrunners.actions.github.com -n ${var.runners_namespace} --all --timeout=60s --ignore-not-found=true
+    EOT
+    
+    on_failure = continue
+  }
+
+  depends_on = [
+    kubernetes_namespace.runners,
+    time_sleep.wait_for_controller
+  ]
+}
+
 # Create the runner scale set
 resource "helm_release" "arc_runner_set" {
   name             = var.runner_scale_set_name
@@ -59,6 +88,12 @@ resource "helm_release" "arc_runner_set" {
   namespace        = var.runners_namespace
   create_namespace = false
   timeout          = 600
+  
+  # Add lifecycle rule to force recreation when needed
+  lifecycle {
+    create_before_destroy = false
+  }
+  
   # Temporarily disable atomic to get better error details
   # atomic           = true
   # force_update     = true
@@ -84,6 +119,7 @@ resource "helm_release" "arc_runner_set" {
 
   depends_on = [
     kubernetes_secret.github_secret,
-    time_sleep.wait_for_controller
+    time_sleep.wait_for_controller,
+    null_resource.cleanup_existing_runner_set
   ]
 }
