@@ -91,21 +91,6 @@ resource "helm_release" "arc_runner_set" {
               }
             }
           }]
-          volumes = [{
-            name = "runner-workspace"
-            ephemeral = {
-              volumeClaimTemplate = {
-                spec = {
-                  accessModes = ["ReadWriteOnce"]
-                  resources = {
-                    requests = {
-                      storage = "1Gi"
-                    }
-                  }
-                }
-              }
-            }
-          }]
         }
       }
     })

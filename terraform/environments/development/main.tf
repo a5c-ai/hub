@@ -279,6 +279,7 @@ resource "azurerm_role_assignment" "aks_keyvault_secrets_user" {
   scope                = module.keyvault.key_vault_id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = module.aks.cluster_identity_principal_id
+  skip_existing        = true
 }
 
 # AGIC Role Assignments
@@ -286,8 +287,8 @@ resource "azurerm_role_assignment" "agic_application_gateway_contributor" {
   scope                = module.security.application_gateway_id
   role_definition_name = "Contributor"
   principal_id         = module.aks.agic_identity_object_id
+  skip_existing        = true
 
-  ignore_existing = true
   depends_on = [module.aks]
 }
 
@@ -295,8 +296,8 @@ resource "azurerm_role_assignment" "agic_resource_group_reader" {
   scope                = module.resource_group.id
   role_definition_name = "Reader"
   principal_id         = module.aks.agic_identity_object_id
+  skip_existing        = true
 
-  ignore_existing = true
   depends_on = [module.aks]
 }
 
