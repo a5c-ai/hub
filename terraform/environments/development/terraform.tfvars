@@ -1,0 +1,54 @@
+# Example terraform.tfvars file for development environment
+# Copy this file to terraform.tfvars and customize the values
+
+# Basic Configuration
+location = "West US 3"
+owner    = "hub-development-team"
+
+# Networking Configuration
+vnet_address_space              = ["10.0.0.0/16"]
+aks_subnet_cidr                = "10.0.1.0/24"
+database_subnet_cidr           = "10.0.2.0/24"
+private_endpoints_subnet_cidr  = "10.0.3.0/24"
+appgw_subnet_cidr             = "10.0.4.0/24"
+admin_source_address_prefix    = "*"  # Allow all IPs for development (change to your IP for security)
+enable_private_endpoints       = false  # Disable private endpoints for simpler development setup
+public_dns_zone_name           = ""  # Optional: set if you have a DNS zone
+
+# Storage Configuration
+storage_account_tier      = "Standard"
+storage_replication_type  = "LRS"
+
+# PostgreSQL Configuration
+postgresql_version                = "15"
+postgresql_sku_name              = "B_Standard_B1ms"
+postgresql_storage_mb            = 32768
+postgresql_backup_retention_days = 7
+
+# AKS Configuration
+kubernetes_version = "1.28"
+aks_node_count    = 2
+aks_vm_size       = "Standard_D2s_v5"
+
+# Monitoring Configuration
+alert_email_receivers = [
+  {
+    name          = "dev-team"
+    email_address = "your-email@example.com"  # Replace with your actual email
+  }
+]
+
+# GitHub Actions Runner Controller (ARC) Configuration
+# Disabled for now - enable after setting up GitHub App
+enable_github_runners        = false
+# github_config_url           = "https://github.com/<your-org>"  # Replace with your GitHub organization URL
+# github_app_id              = "<your-github-app-id>"           # GitHub App ID from app settings
+# github_app_installation_id = "<your-installation-id>"         # Installation ID from app installation URL
+# github_app_private_key     = "<path-to-private-key.pem>"      # Path to GitHub App private key file
+
+# Runner Configuration
+runner_scale_set_name   = "hub-dev-runners"
+runner_min_replicas     = 0
+runner_max_replicas     = 5
+runner_container_mode   = "dind"
+runner_labels          = ["development", "linux"]
