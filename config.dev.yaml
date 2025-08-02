@@ -21,6 +21,13 @@ cors:
     - http://localhost:3000
     - http://localhost:3001
 
+# Storage configuration
+storage:
+  repository_path: "./repositories"
+  artifacts:
+    backend: "filesystem"
+    base_path: "./artifacts"
+
 elasticsearch:
   enabled: true
   addresses:
