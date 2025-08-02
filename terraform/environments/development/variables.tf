@@ -131,18 +131,33 @@ variable "github_config_url" {
   description = "GitHub organization URL (e.g., https://github.com/your-org)"
   type        = string
   default     = ""
+  
+  validation {
+    condition = can(regex("^https://github\\.com/[a-zA-Z0-9._-]+$", var.github_config_url)) || var.github_config_url == ""
+    error_message = "GitHub config URL must be a valid GitHub organization URL (e.g., https://github.com/your-org)."
+  }
 }
 
 variable "github_app_id" {
   description = "GitHub App ID for runner authentication"
   type        = string
   default     = ""
+  
+  validation {
+    condition = can(regex("^[0-9]+$", var.github_app_id)) || var.github_app_id == ""
+    error_message = "GitHub App ID must be a numeric string."
+  }
 }
 
 variable "github_app_installation_id" {
   description = "GitHub App Installation ID"
   type        = string
   default     = ""
+  
+  validation {
+    condition = can(regex("^[0-9]+$", var.github_app_installation_id)) || var.github_app_installation_id == ""
+    error_message = "GitHub App Installation ID must be a numeric string."
+  }
 }
 
 variable "github_app_private_key" {
@@ -150,6 +165,11 @@ variable "github_app_private_key" {
   type        = string
   sensitive   = true
   default     = ""
+  
+  validation {
+    condition = can(regex("-----BEGIN.*PRIVATE KEY-----", var.github_app_private_key)) || var.github_app_private_key == ""
+    error_message = "GitHub App private key must be in PEM format."
+  }
 }
 
 variable "runner_scale_set_name" {

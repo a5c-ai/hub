@@ -300,10 +300,31 @@ provider "helm" {
   }
 }
 
+# Validation for GitHub Runner configuration
+locals {
+  github_config_provided = var.github_config_url != "" && var.github_app_id != "" && var.github_app_installation_id != "" && var.github_app_private_key != ""
+}
+
 # GitHub Actions Runner Controller (ARC)
 module "github_runner" {
   count  = var.enable_github_runners ? 1 : 0
   source = "../../modules/github_runner"
+
+  # Validate that GitHub configuration is provided when runners are enabled
+  lifecycle {
+    precondition {
+      condition     = !var.enable_github_runners || local.github_config_provided
+      error_message = <<-EOT
+        GitHub runner configuration is incomplete. When enable_github_runners = true, you must provide:
+        - github_config_url (e.g., "https://github.com/your-org")
+        - github_app_id (numeric string)
+        - github_app_installation_id (numeric string)
+        - github_app_private_key (PEM format)
+        
+        Please check your terraform.tfvars file and ensure all GitHub App values are set.
+      EOT
+    }
+  }
 
   # GitHub App Configuration
   github_config_url           = var.github_config_url
