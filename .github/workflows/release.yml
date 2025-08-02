@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       
@@ -43,7 +43,7 @@ jobs:
         
   deploy-production:
     needs: release
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     environment: production
     
     steps:

@@ -9,7 +9,7 @@ on:
 
 jobs:
   integration:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:15-alpine

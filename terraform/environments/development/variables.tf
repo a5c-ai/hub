@@ -158,7 +158,7 @@ variable "github_token" {
 variable "runner_scale_set_name" {
   description = "Name for the runner scale set (used in 'runs-on' in workflows)"
   type        = string
-  default     = "hub-dev-runners"
+  default     = "ubuntu-latest"
 }
 
 variable "runner_min_replicas" {
