@@ -29,7 +29,7 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	gitService := git.NewGitService(logger)
 	repoBasePath := cfg.Storage.RepositoryPath
 	if repoBasePath == "" {
-		repoBasePath = "/var/lib/hub/repositories"
+		repoBasePath = "./repositories"
 	}
 
 	repositoryService := services.NewRepositoryService(database.DB, gitService, logger, repoBasePath)

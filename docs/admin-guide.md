@@ -745,8 +745,8 @@ teams:
 # For single-node deployments
 storage:
   backend: local
-  path: /var/lib/hub/repositories
-  backup_path: /var/lib/hub/backups
+  path: ./repositories
+  backup_path: ./backups
 ```
 
 #### Network Storage (NFS)
@@ -1044,7 +1044,7 @@ data:
 # cleanup-hub.sh
 
 # Clean up old build artifacts (older than 30 days)
-find /var/lib/hub/artifacts -type f -mtime +30 -delete
+find ./artifacts -type f -mtime +30 -delete
 
 # Clean up old log files (older than 90 days)
 find /var/log/hub -type f -name "*.log" -mtime +90 -delete

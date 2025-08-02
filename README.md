@@ -335,7 +335,7 @@ storage:
     container_name: repositories
   artifacts:
     backend: "filesystem"  # Options: filesystem, azure, s3
-    base_path: "/var/lib/hub/artifacts"
+    base_path: "./artifacts"
     max_size_mb: 1024
     retention_days: 90
     azure:
