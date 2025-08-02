@@ -107,7 +107,11 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
+
+      - name: Clean Go module cache
+        run: |
+          rm -rf ~/go/pkg/mod
+          rm -rf ~/.cache/go-build
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -149,27 +153,6 @@ jobs:
             frontend/package-lock.json
           check-latest: false  # Disable version checking to speed up builds
           
-      # Download Go modules
-      - name: Download Go modules
-        timeout-minutes: 10  # Ensure modules are available for tests
-        run: |
-          export GOPROXY=https://proxy.golang.org,direct
-          export GOSUMDB=sum.golang.org
-          export GOTIMEOUT=8m
-          for i in {1..2}; do
-            echo "Attempt $i: Downloading Go modules..."
-            if go mod download && go mod verify; then
-              echo "✅ Go modules downloaded successfully"
-              break
-            else
-              echo "❌ Attempt $i failed, retrying..."
-              if [ $i -eq 2 ]; then
-                echo "🚨 All attempts failed"
-                exit 1
-              fi
-              sleep 5
-            fi
-          done
           
       # Build with optimized timeout and better resource management
       - name: Build application
@@ -227,7 +210,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -286,7 +268,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
 
       - name: Cache Go modules
         uses: actions/cache@v3
