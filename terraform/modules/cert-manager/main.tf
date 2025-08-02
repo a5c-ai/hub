@@ -1,23 +1,13 @@
 # cert-manager Terraform module for AKS
 
-# cert-manager namespace
-resource "kubernetes_namespace" "cert_manager" {
-  metadata {
-    name = "cert-manager"
-    labels = {
-      "app.kubernetes.io/name" = "cert-manager"
-      "app.kubernetes.io/component" = "namespace"
-    }
-  }
-}
-
 # cert-manager Helm release
 resource "helm_release" "cert_manager" {
   name       = "cert-manager"
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
   version    = var.cert_manager_version
-  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
+  namespace        = "cert-manager"
+  create_namespace = true
 
   set {
     name  = "installCRDs"
@@ -26,7 +16,7 @@ resource "helm_release" "cert_manager" {
 
   set {
     name  = "global.leaderElection.namespace"
-    value = kubernetes_namespace.cert_manager.metadata[0].name
+    value = "cert-manager"
   }
 
   # Azure-specific configuration for Application Gateway
@@ -41,7 +31,7 @@ resource "helm_release" "cert_manager" {
     value = "true"
   }
 
-  depends_on = [kubernetes_namespace.cert_manager]
+
   timeout = 300
 }
 

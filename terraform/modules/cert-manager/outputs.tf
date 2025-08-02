@@ -1,6 +1,6 @@
 output "namespace" {
   description = "The namespace where cert-manager is installed"
-  value       = kubernetes_namespace.cert_manager.metadata[0].name
+  value       = "cert-manager"
 }
 
 output "helm_release_name" {
