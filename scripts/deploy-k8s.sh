@@ -109,6 +109,31 @@ fi
 
 debug "Connected to cluster: $(kubectl config current-context)"
 
+# Check if cert-manager is installed
+check_cert_manager() {
+    log "Checking cert-manager installation..."
+    if ! kubectl get namespace cert-manager >/dev/null 2>&1; then
+        warn "cert-manager namespace not found"
+        warn "To enable TLS certificates, install cert-manager first:"
+        warn "  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.9.1/cert-manager.crds.yaml"
+        warn "  helm repo add jetstack https://charts.jetstack.io"
+        warn "  helm repo update"
+        warn "  helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.9.1"
+        return 1
+    fi
+    
+    if ! kubectl get pods -n cert-manager -l app=cert-manager --field-selector=status.phase=Running >/dev/null 2>&1; then
+        warn "cert-manager pods are not running"
+        warn "Check cert-manager status: kubectl get pods -n cert-manager"
+        return 1
+    fi
+    
+    log "cert-manager is installed and running"
+    return 0
+}
+
+check_cert_manager
+
 ## Create or update namespace
 log "Creating/updating namespace: $NAMESPACE"
 if [[ "$DRY_RUN" == "true" ]]; then
@@ -149,6 +174,7 @@ apply_kubectl_manifests() {
         "$CONFIG_DIR/configmap.yaml"
         "$CONFIG_DIR/secrets.yaml"
         "$CONFIG_DIR/storage.yaml"
+        "$CONFIG_DIR/cert-manager-issuers.yaml"
     )
     
     if [[ "$SKIP_DEPENDENCIES" == "false" ]]; then
@@ -268,6 +294,25 @@ if [[ "$DRY_RUN" == "false" ]]; then
         INGRESS_HOST=$(kubectl get ingress hub-ingress -n "$NAMESPACE" -o jsonpath='{.spec.rules[0].host}' 2>/dev/null || echo "")
         if [[ -n "$INGRESS_HOST" ]]; then
             log "Application should be available at: https://$INGRESS_HOST"
+        fi
+    fi
+    
+    # Check certificate status if cert-manager is available
+    if kubectl get namespace cert-manager >/dev/null 2>&1; then
+        log "Certificate status:"
+        if kubectl get certificate -n "$NAMESPACE" >/dev/null 2>&1; then
+            kubectl get certificate -n "$NAMESPACE"
+            
+            # Check if TLS secret exists
+            if kubectl get secret hub-azure-ssl-certificate -n "$NAMESPACE" >/dev/null 2>&1; then
+                log "✓ TLS certificate secret found"
+            else
+                warn "✗ TLS certificate secret not found yet"
+                warn "  Monitor certificate: kubectl describe certificate -n $NAMESPACE"
+                warn "  Check cert-manager logs: kubectl logs -n cert-manager -l app=cert-manager"
+            fi
+        else
+            warn "No certificates found in namespace $NAMESPACE"
         fi
     fi
 fi
