@@ -55,11 +55,36 @@ spec:
             secretKeyRef:
               name: hub-secrets
               key: database-url
-        - name: REDIS_URL
+        - name: REDIS_ENABLED
           valueFrom:
-            secretKeyRef:
-              name: hub-secrets
-              key: redis-url
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_ENABLED
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_PORT
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_DB
+        - name: REDIS_MAX_RETRIES
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_MAX_RETRIES
+        - name: REDIS_POOL_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REDIS_POOL_SIZE
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:

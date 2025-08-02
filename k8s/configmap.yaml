@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: config
 data:
   APP_ENV: "production"
-  LOG_LEVEL: "info"
+  LOG_LEVEL: "4"
   GIT_PROTOCOL: "https"
   FRONTEND_URL: "https://hub.example.com"
   BACKEND_URL: "https://hub.example.com/api"
@@ -20,9 +20,12 @@ data:
   DB_PORT: "5432"
   DB_NAME: "hub"
   # Redis configuration (non-sensitive)
+  REDIS_ENABLED: "true"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   REDIS_DB: "0"
+  REDIS_MAX_RETRIES: "3"
+  REDIS_POOL_SIZE: "10"
   # Git configuration
   GIT_DATA_PATH: "/repositories"
   GIT_TEMP_PATH: "/tmp/git"
