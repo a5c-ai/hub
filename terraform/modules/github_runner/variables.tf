@@ -27,20 +27,42 @@ variable "github_config_url" {
   type        = string
 }
 
+variable "auth_method" {
+  description = "Authentication method: 'app' for GitHub App or 'token' for GitHub token"
+  type        = string
+  default     = "app"
+  validation {
+    condition     = contains(["app", "token"], var.auth_method)
+    error_message = "Auth method must be either 'app' or 'token'."
+  }
+}
+
+# GitHub App Authentication (when auth_method = "app")
 variable "github_app_id" {
   description = "GitHub App ID for authentication"
   type        = string
+  default     = ""
 }
 
 variable "github_app_installation_id" {
   description = "GitHub App Installation ID"
   type        = string
+  default     = ""
 }
 
 variable "github_app_private_key" {
   description = "GitHub App private key (PEM format)"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+# GitHub Token Authentication (when auth_method = "token")
+variable "github_token" {
+  description = "GitHub token with permissions to register and manage runners"
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 variable "runner_scale_set_name" {

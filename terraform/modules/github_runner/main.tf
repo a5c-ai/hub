@@ -24,14 +24,16 @@ resource "helm_release" "arc_controller" {
   depends_on = [kubernetes_namespace.controller]
 }
 
-# Create a secret for GitHub App authentication
-resource "kubernetes_secret" "github_app_secret" {
+# Create a secret for GitHub authentication (App or Token)
+resource "kubernetes_secret" "github_secret" {
   metadata {
-    name      = "github-app-secret"
+    name      = "github-secret"
     namespace = var.runners_namespace
   }
 
-  data = {
+  data = var.auth_method == "token" ? {
+    github_token = var.github_token
+  } : {
     github_app_id              = var.github_app_id
     github_app_installation_id = var.github_app_installation_id
     github_app_private_key     = var.github_app_private_key
@@ -61,7 +63,7 @@ resource "helm_release" "arc_runner_set" {
   values = [
     yamlencode({
       githubConfigUrl    = var.github_config_url
-      githubConfigSecret = kubernetes_secret.github_app_secret.metadata[0].name
+      githubConfigSecret = kubernetes_secret.github_secret.metadata[0].name
       
       runnerGroup = var.runner_group
       runnerScaleSetName = var.runner_scale_set_name
@@ -92,7 +94,7 @@ resource "helm_release" "arc_runner_set" {
   ]
 
   depends_on = [
-    kubernetes_secret.github_app_secret,
+    kubernetes_secret.github_secret,
     time_sleep.wait_for_controller
   ]
 }

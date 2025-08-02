@@ -302,7 +302,7 @@ provider "helm" {
 
 # Validation for GitHub Runner configuration
 locals {
-  github_config_provided = var.github_config_url != "" && var.github_app_id != "" && var.github_app_installation_id != "" && var.github_app_private_key != ""
+  github_config_provided = var.github_config_url != "" && var.github_token != ""
 }
 
 # GitHub configuration validation check
@@ -311,12 +311,10 @@ check "github_runner_config" {
     condition = !var.enable_github_runners || local.github_config_provided
     error_message = <<-EOT
       GitHub runner configuration is incomplete. When enable_github_runners = true, you must provide:
-      - github_config_url (e.g., "https://github.com/your-org")
-      - github_app_id (numeric string)
-      - github_app_installation_id (numeric string)
-      - github_app_private_key (PEM format)
+      - github_config_url (e.g., "https://github.com/your-org") in terraform.tfvars
+      - github_token via environment variable TF_VAR_github_token
       
-      Please check your terraform.tfvars file and ensure all GitHub App values are set.
+      For GitHub Actions pipelines, the token is typically available as secrets.GITHUB_TOKEN.
     EOT
   }
 }
@@ -326,11 +324,17 @@ module "github_runner" {
   count  = var.enable_github_runners ? 1 : 0
   source = "../../modules/github_runner"
 
-  # GitHub App Configuration
-  github_config_url           = var.github_config_url
-  github_app_id              = var.github_app_id
-  github_app_installation_id = var.github_app_installation_id
-  github_app_private_key     = var.github_app_private_key
+  # GitHub Configuration
+  github_config_url = var.github_config_url
+  auth_method       = var.github_auth_method
+
+  # Token Authentication (default)
+  github_token = var.github_token
+
+  # GitHub App Authentication (optional)
+  github_app_id              = ""
+  github_app_installation_id = ""
+  github_app_private_key     = ""
 
   # Runner Configuration
   runner_scale_set_name = var.runner_scale_set_name

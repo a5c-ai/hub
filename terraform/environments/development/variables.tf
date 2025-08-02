@@ -138,38 +138,21 @@ variable "github_config_url" {
   }
 }
 
-variable "github_app_id" {
-  description = "GitHub App ID for runner authentication"
+variable "github_auth_method" {
+  description = "Authentication method: 'app' for GitHub App or 'token' for GitHub token"
   type        = string
-  default     = ""
-  
+  default     = "token"
   validation {
-    condition = can(regex("^[0-9]+$", var.github_app_id)) || var.github_app_id == ""
-    error_message = "GitHub App ID must be a numeric string."
+    condition     = contains(["app", "token"], var.github_auth_method)
+    error_message = "Auth method must be either 'app' or 'token'."
   }
 }
 
-variable "github_app_installation_id" {
-  description = "GitHub App Installation ID"
-  type        = string
-  default     = ""
-  
-  validation {
-    condition = can(regex("^[0-9]+$", var.github_app_installation_id)) || var.github_app_installation_id == ""
-    error_message = "GitHub App Installation ID must be a numeric string."
-  }
-}
-
-variable "github_app_private_key" {
-  description = "GitHub App private key (PEM format)"
+variable "github_token" {
+  description = "GitHub token with permissions to register and manage runners (when using token auth)"
   type        = string
   sensitive   = true
   default     = ""
-  
-  validation {
-    condition = can(regex("-----BEGIN.*PRIVATE KEY-----", var.github_app_private_key)) || var.github_app_private_key == ""
-    error_message = "GitHub App private key must be in PEM format."
-  }
 }
 
 variable "runner_scale_set_name" {

@@ -39,12 +39,10 @@ alert_email_receivers = [
 ]
 
 # GitHub Actions Runner Controller (ARC) Configuration
-# Disabled for now - enable after setting up GitHub App
-enable_github_runners        = false
-# github_config_url           = "https://github.com/<your-org>"  # Replace with your GitHub organization URL
-# github_app_id              = "<your-github-app-id>"           # GitHub App ID from app settings
-# github_app_installation_id = "<your-installation-id>"         # Installation ID from app installation URL
-# github_app_private_key     = "<path-to-private-key.pem>"      # Path to GitHub App private key file
+enable_github_runners        = true
+github_config_url           = "https://github.com/YOUR-ORG-NAME"  # Replace with your GitHub organization URL
+github_auth_method          = "token"  # Use token authentication (simpler for CI/CD)
+# github_token will be provided via environment variable TF_VAR_github_token
 
 # Runner Configuration
 runner_scale_set_name   = "hub-dev-runners"

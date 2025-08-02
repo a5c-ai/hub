@@ -29,6 +29,6 @@ output "github_config_url" {
 }
 
 output "github_secret_name" {
-  description = "Name of the Kubernetes secret containing GitHub App credentials"
-  value       = kubernetes_secret.github_app_secret.metadata[0].name
+  description = "Name of the Kubernetes secret containing GitHub credentials"
+  value       = kubernetes_secret.github_secret.metadata[0].name
 }
