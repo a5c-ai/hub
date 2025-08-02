@@ -305,6 +305,7 @@ locals {
   github_config_provided = var.github_config_url != "" && var.github_token != ""
 }
 
+
 # GitHub configuration validation check
 check "github_runner_config" {
   assert {
