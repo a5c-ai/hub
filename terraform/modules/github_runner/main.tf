@@ -76,19 +76,12 @@ resource "helm_release" "arc_runner_set" {
       }
       
       template = {
-        spec = merge(
-          {
-            containers = [{
-              name  = "runner"
-              image = var.runner_image != null ? var.runner_image : "ghcr.io/actions/actions-runner:latest"
-            }]
-          },
-          length(var.runner_labels) > 0 ? {
-            nodeSelector = {
-              for label in var.runner_labels : "runner-label-${label}" => "true"
-            }
-          } : {}
-        )
+        spec = {
+          containers = [{
+            name  = "runner"
+            image = var.runner_image != null ? var.runner_image : "ghcr.io/actions/actions-runner:latest"
+          }]
+        }
       }
     })
   ]
