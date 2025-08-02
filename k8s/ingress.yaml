@@ -16,7 +16,7 @@ metadata:
     # Custom health probe configuration
     appgw.ingress.kubernetes.io/health-probe-hostname: hub.a5c.ai
     appgw.ingress.kubernetes.io/health-probe-port: "8080"
-    appgw.ingress.kubernetes.io/health-probe-path: "/health"
+    appgw.ingress.kubernetes.io/health-probe-path: "/api/health"
     appgw.ingress.kubernetes.io/health-probe-status-codes: "200-399"
     appgw.ingress.kubernetes.io/health-probe-interval: "30"
     appgw.ingress.kubernetes.io/health-probe-timeout: "30"
@@ -42,7 +42,7 @@ spec:
   tls:
   - hosts:
     - hub.a5c.ai
-    secretName: hub-tls-azure
+    secretName: hub-azure-ssl-certificate
   rules:
   - host: hub.a5c.ai
     http:

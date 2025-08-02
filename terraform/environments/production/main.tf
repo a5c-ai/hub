@@ -317,19 +317,21 @@ resource "azurerm_role_assignment" "aks_keyvault_secrets_user" {
 }
 
 # AGIC Role Assignments
+# Conditionally create role assignments based on variable
+# Set create_agic_role_assignments = true in tfvars only if you want to manage these via Terraform
 resource "azurerm_role_assignment" "agic_application_gateway_contributor" {
+  count                = var.create_agic_role_assignments ? 1 : 0
   scope                = module.security.application_gateway_id
   role_definition_name = "Contributor"
   principal_id         = module.aks.agic_identity_object_id
-
   depends_on = [module.aks]
 }
 
 resource "azurerm_role_assignment" "agic_resource_group_reader" {
+  count                = var.create_agic_role_assignments ? 1 : 0
   scope                = module.resource_group.id
   role_definition_name = "Reader"
   principal_id         = module.aks.agic_identity_object_id
-
   depends_on = [module.aks]
 }
 

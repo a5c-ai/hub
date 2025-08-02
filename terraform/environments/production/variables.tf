@@ -335,3 +335,10 @@ variable "alert_webhook_receivers" {
   }))
   default = []
 }
+
+# AGIC Configuration
+variable "create_agic_role_assignments" {
+  description = "Create AGIC role assignments via Terraform. Set to false if managed externally."
+  type        = bool
+  default     = true
+}
