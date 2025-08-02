@@ -40,7 +40,7 @@ alert_email_receivers = [
 
 # GitHub Actions Runner Controller (ARC) Configuration
 enable_github_runners        = true
-github_config_url           = "https://github.com/tmusk"  # Replace with your GitHub organization URL
+github_config_url           = "https://github.com/a5c-ai"  # Replace with your GitHub organization URL
 github_auth_method          = "token"  # Use token authentication (simpler for CI/CD)
 # github_token will be provided via environment variable TF_VAR_github_token
 
