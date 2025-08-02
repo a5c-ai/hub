@@ -38,7 +38,8 @@ resource "helm_release" "cert_manager" {
 
 # Wait for cert-manager to be ready before creating issuers
 resource "time_sleep" "wait_for_cert_manager" {
-  depends_on = var.manage_cert_manager ? [helm_release.cert_manager[0]] : []
+  count           = var.manage_cert_manager ? 1 : 0
+  depends_on      = [helm_release.cert_manager[0]]
   create_duration = "60s"
 }
 
