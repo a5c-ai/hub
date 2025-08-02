@@ -95,6 +95,26 @@ resource "helm_release" "arc_runner_set" {
                 memory = "1Gi"
               }
             }
+            volumeMounts = [{
+              name      = "work"
+              mountPath = "/home/runner/_work"
+            }]
+          }]
+          volumes = [{
+            name = "work"
+            ephemeral = {
+              volumeClaimTemplate = {
+                spec = {
+                  accessModes      = ["ReadWriteOnce"]
+                  storageClassName = var.storage_class_name
+                  resources = {
+                    requests = {
+                      storage = var.workspace_storage_size
+                    }
+                  }
+                }
+              }
+            }
           }]
         }
       }

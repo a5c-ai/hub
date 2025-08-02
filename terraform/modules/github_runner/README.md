@@ -121,6 +121,8 @@ jobs:
 | `container_mode` | Container mode (dind or kubernetes) | `string` | `"dind"` | no |
 | `runner_image` | Custom runner image | `string` | `null` | no |
 | `runner_labels` | Additional labels for runners | `list(string)` | `[]` | no |
+| `storage_class_name` | Storage class name for ephemeral volumes | `string` | `"default"` | no |
+| `workspace_storage_size` | Storage size for ephemeral workspace volume | `string` | `"5Gi"` | no |
 
 ## Outputs
 

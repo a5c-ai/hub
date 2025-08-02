@@ -116,3 +116,9 @@ variable "storage_class_name" {
   type        = string
   default     = "default"
 }
+
+variable "workspace_storage_size" {
+  description = "Storage size for ephemeral workspace volume"
+  type        = string
+  default     = "5Gi"
+}
