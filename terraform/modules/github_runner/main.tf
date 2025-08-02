@@ -29,9 +29,6 @@ resource "kubernetes_secret" "github_secret" {
   metadata {
     name      = "github-secret"
     namespace = var.runners_namespace
-    annotations = {
-      "terraform.io/last-updated" = timestamp()
-    }
   }
 
   data = var.auth_method == "token" ? {
