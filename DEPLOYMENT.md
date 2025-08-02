@@ -165,8 +165,8 @@ GIT_DATA_PATH: /repositories
 ```yaml
 NODE_ENV: production
 PORT: 3000
-NEXT_PUBLIC_API_URL: https://hub.example.com/api
-NEXT_PUBLIC_APP_URL: https://hub.example.com
+  NEXT_PUBLIC_API_URL: https://hub.a5c.ai/api
+  NEXT_PUBLIC_APP_URL: https://hub.a5c.ai
 ```
 
 ### Secrets Management
@@ -430,4 +430,4 @@ For deployment issues:
 
 ---
 
-**Note**: Replace `hub.example.com` with your actual domain and update registry URLs with your container registry.
+**Note**: Replace `hub.a5c.ai` with your actual domain and update registry URLs with your container registry.

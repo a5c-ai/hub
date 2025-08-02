@@ -7,6 +7,12 @@ metadata:
     app: hub-backend
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: backend
+  annotations:
+    # Azure Load Balancer annotations for Azure integration
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/health"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-protocol: "http"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-interval: "5"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-num-of-probe: "2"
 spec:
   selector:
     app: hub-backend
@@ -27,6 +33,12 @@ metadata:
     app: hub-frontend
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: frontend
+  annotations:
+    # Azure Load Balancer annotations for Azure integration
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-protocol: "http"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-interval: "5"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-num-of-probe: "2"
 spec:
   selector:
     app: hub-frontend

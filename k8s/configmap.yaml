@@ -10,8 +10,8 @@ data:
   APP_ENV: "production"
   LOG_LEVEL: "4"
   GIT_PROTOCOL: "https"
-  FRONTEND_URL: "https://hub.example.com"
-  BACKEND_URL: "https://hub.example.com/api"
+  FRONTEND_URL: "https://hub.a5c.ai"
+  BACKEND_URL: "https://hub.a5c.ai/api"
   GIN_MODE: "release"
   PORT: "8080"
   FRONTEND_PORT: "3000"
@@ -32,4 +32,4 @@ data:
   # Application settings
   MAX_UPLOAD_SIZE: "100MB"
   SESSION_TIMEOUT: "24h"
-  CORS_ORIGINS: "https://hub.example.com"
+  CORS_ORIGINS: "https://hub.a5c.ai"

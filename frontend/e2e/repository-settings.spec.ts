@@ -13,7 +13,7 @@ test.describe('Repository Settings & Administration', () => {
     stargazers_count: 10,
     forks_count: 2,
     updated_at: '2024-07-20T10:00:00Z',
-    clone_url: 'https://hub.example.com/testuser/test-repo.git'
+    clone_url: 'https://hub.a5c.ai/testuser/test-repo.git'
   };
 
   test.beforeEach(async ({ page }) => {

@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: ingress
   annotations:
+    # NGINX Ingress Controller configuration
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -20,14 +21,19 @@ metadata:
       more_set_headers "X-Content-Type-Options: nosniff";
       more_set_headers "X-XSS-Protection: 1; mode=block";
       more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
-    external-dns.alpha.kubernetes.io/hostname: hub.example.com
+    
+    # External DNS for automatic DNS record creation (works with both NGINX and Azure)
+    external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
+    
+    # Azure Load Balancer compatibility annotations
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/health"
 spec:
   tls:
   - hosts:
-    - hub.example.com
+    - hub.a5c.ai
     secretName: hub-tls
   rules:
-  - host: hub.example.com
+  - host: hub.a5c.ai
     http:
       paths:
       # API routes go to backend

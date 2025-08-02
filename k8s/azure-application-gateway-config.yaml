@@ -1,0 +1,56 @@
+# Azure Application Gateway specific configuration
+# This ConfigMap contains additional Azure-specific settings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-appgw-config
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: azure-config
+data:
+  # Azure Application Gateway specific settings
+  azure.json: |
+    {
+      "cloud": "AzurePublicCloud",
+      "tenantId": "${AZURE_TENANT_ID}",
+      "subscriptionId": "${AZURE_SUBSCRIPTION_ID}",
+      "resourceGroup": "${AZURE_RESOURCE_GROUP}",
+      "location": "${AZURE_LOCATION}",
+      "vmType": "vmss",
+      "subnetName": "${AZURE_SUBNET_NAME}",
+      "securityGroupName": "${AZURE_SECURITY_GROUP_NAME}",
+      "vnetName": "${AZURE_VNET_NAME}",
+      "vnetResourceGroup": "${AZURE_VNET_RESOURCE_GROUP}",
+      "routeTableName": "${AZURE_ROUTE_TABLE_NAME}",
+      "primaryAvailabilitySetName": "${AZURE_AVAILABILITY_SET_NAME}",
+      "loadBalancerSku": "Standard",
+      "disableOutboundSNAT": false,
+      "excludeMasterFromStandardLB": true,
+      "useInstanceMetadata": true
+    }
+
+---
+# Service for Azure Application Gateway health probes
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-appgw-health-service
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: appgw-health
+  annotations:
+    # Mark this service for Azure Application Gateway health probes
+    appgw.ingress.kubernetes.io/health-probe-hostname: "hub.a5c.ai"
+    appgw.ingress.kubernetes.io/health-probe-port: "8080"
+    appgw.ingress.kubernetes.io/health-probe-path: "/health"
+spec:
+  type: ClusterIP
+  selector:
+    app: hub-backend
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8080
+    protocol: TCP

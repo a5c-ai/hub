@@ -1,0 +1,39 @@
+# Azure Load Balancer Service for external exposure if needed
+# This creates an Azure Load Balancer that can work with Azure Application Gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-azure-lb-service
+  namespace: hub
+  labels:
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: azure-lb
+  annotations:
+    # Azure Load Balancer specific annotations
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/health"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-protocol: "http"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-interval: "5"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-num-of-probe: "2"
+    
+    # If you need a static IP, uncomment and set the IP
+    # service.beta.kubernetes.io/azure-load-balancer-ipv4: "YOUR_STATIC_IP"
+    
+    # For better session affinity
+    service.beta.kubernetes.io/azure-load-balancer-enable-high-availability-ports: "false"
+    
+    # DNS label for the public IP (creates DNS name like hub-a5c-ai.region.cloudapp.azure.com)
+    service.beta.kubernetes.io/azure-dns-label-name: "hub-a5c-ai"
+spec:
+  type: LoadBalancer
+  selector:
+    app: hub-backend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8080
+    protocol: TCP

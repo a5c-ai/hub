@@ -40,7 +40,7 @@ test.describe('File Editor & Management Features', () => {
             private: false,
             language: 'TypeScript',
             default_branch: 'main',
-            clone_url: 'https://hub.example.com/testuser/awesome-project.git',
+            clone_url: 'https://hub.a5c.ai/testuser/awesome-project.git',
             stargazers_count: 42,
             forks_count: 8,
             issues_count: 5,

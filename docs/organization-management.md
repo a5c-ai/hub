@@ -343,7 +343,7 @@ GET /api/v1/organizations/acme/activities/export?
 
 ```javascript
 // Subscribe to real-time activity updates
-const ws = new WebSocket('wss://hub.example.com/api/v1/organizations/acme/activities/stream');
+const ws = new WebSocket('wss://hub.a5c.ai/api/v1/organizations/acme/activities/stream');
 
 ws.onmessage = (event) => {
   const activity = JSON.parse(event.data);

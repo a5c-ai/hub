@@ -132,7 +132,7 @@ analytics:
 ### Getting Organization Analytics
 ```bash
 curl -H "Authorization: Bearer {token}" \
-  "https://hub.example.com/api/v1/orgs/myorg/analytics"
+  "https://hub.a5c.ai/api/v1/orgs/myorg/analytics"
 ```
 
 Response:
@@ -161,14 +161,14 @@ Response:
 ### Exporting Data
 ```bash
 curl -H "Authorization: Bearer {token}" \
-  "https://hub.example.com/api/v1/analytics/export?format=csv&start_date=2024-01-01" \
+  "https://hub.a5c.ai/api/v1/analytics/export?format=csv&start_date=2024-01-01" \
   -o analytics_export.csv
 ```
 
 ### Performance Metrics
 ```bash
 curl -H "Authorization: Bearer {token}" \
-  "https://hub.example.com/api/v1/analytics/performance"
+  "https://hub.a5c.ai/api/v1/analytics/performance"
 ```
 
 Response:
