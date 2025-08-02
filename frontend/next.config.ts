@@ -20,6 +20,8 @@ const baseConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   // Optimize output and compression
   compress: true,
+  // Generate standalone build output for Docker image
+  output: 'standalone',
   // Skip type errors during production builds; skip ESLint during production builds to avoid lint warnings failure
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
