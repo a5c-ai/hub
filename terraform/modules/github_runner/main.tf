@@ -59,6 +59,7 @@ resource "helm_release" "arc_runner_set" {
   namespace        = var.runners_namespace
   create_namespace = false
   timeout          = 600
+  force_update     = true
 
   values = [
     yamlencode({

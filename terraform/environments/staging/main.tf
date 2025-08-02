@@ -282,6 +282,14 @@ resource "azurerm_role_assignment" "agic_application_gateway_contributor" {
   principal_id         = module.aks.agic_identity_object_id
 
   depends_on = [module.aks]
+
+  lifecycle {
+    ignore_changes = [
+      scope,
+      role_definition_name,
+      principal_id,
+    ]
+  }
 }
 
 resource "azurerm_role_assignment" "agic_resource_group_reader" {
@@ -290,6 +298,14 @@ resource "azurerm_role_assignment" "agic_resource_group_reader" {
   principal_id         = module.aks.agic_identity_object_id
 
   depends_on = [module.aks]
+
+  lifecycle {
+    ignore_changes = [
+      scope,
+      role_definition_name,
+      principal_id,
+    ]
+  }
 }
 
 # GitHub Runner Controller and RunnerDeployment
