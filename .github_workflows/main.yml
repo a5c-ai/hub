@@ -107,7 +107,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -227,7 +226,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -286,7 +284,6 @@ jobs:
         with:
           go-version-file: 'go.mod'  # Use go.mod to determine version automatically
           check-latest: false  # Disable version checking to speed up builds
-          cache: false  # Disable distribution cache for toolchain
 
       - name: Cache Go modules
         uses: actions/cache@v3
