@@ -19,7 +19,9 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "type-check": "tsc --noEmit",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "fix-deps": "bash scripts/fix-dependencies.sh",
+    "test-deps": "node scripts/test-deps.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
@@ -54,6 +56,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/showdown": "^2.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.3",
     "husky": "^9.1.7",
@@ -63,6 +67,6 @@
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "~5.8.3"
   }
 }

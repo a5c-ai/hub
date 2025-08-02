@@ -1,50 +1,57 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Updated Dockerfile with dependency fixes
+# This version addresses the npm peer dependency warnings
 
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies needed for node-gyp
-RUN apk add --no-cache python3 make g++
-
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json* ./
+COPY .npmrc ./
 
-# Install all dependencies for build stage
-RUN npm ci --legacy-peer-deps && npm cache clean --force
+# Install dependencies with clean cache
+RUN npm ci --prefer-offline --no-audit
 
-# Copy source code
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED 1
 
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS production
-
+# Production image, copy all the files and run next
+FROM base AS runner
 WORKDIR /app
 
-# Install only production dependencies (skip prepare scripts)
-COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps && npm cache clean --force
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./
-COPY --from=builder /app/package.json ./
 
-# Create non-root user
-RUN addgroup -g 1001 -S hub && \
-    adduser -S hub -u 1001 -G hub
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
 
-# Change ownership of the app directory
-RUN chown -R hub:hub /app
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Switch to non-root user
-USER hub
+USER nextjs
 
-# Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
