@@ -48,6 +48,6 @@ github_auth_method          = "token"  # Use token authentication (simpler for C
 # Runner Configuration
 runner_scale_set_name   = "hub-dev-runners"
 runner_min_replicas     = 0
-runner_max_replicas     = 5
+runner_max_replicas     = 2
 runner_container_mode   = "dind"
 runner_labels          = ["development", "linux"]

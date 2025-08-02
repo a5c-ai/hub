@@ -79,7 +79,17 @@ resource "helm_release" "arc_runner_set" {
         spec = {
           containers = [{
             name  = "runner"
-            image = var.runner_image != null ? var.runner_image : "ghcr.io/actions/actions-runner:latest"
+            image = var.runner_image != null ? var.runner_image : "ghcr.io/actions/actions-runner:2.319.1"
+            resources = {
+              requests = {
+                cpu    = "100m"
+                memory = "256Mi"
+              }
+              limits = {
+                cpu    = "1000m"
+                memory = "1Gi"
+              }
+            }
           }]
         }
       }
