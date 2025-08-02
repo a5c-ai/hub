@@ -30,9 +30,15 @@ func migrate001_5Up(db *gorm.DB) error {
 		return err
 	}
 
-	// Add the IssueID field to pull_requests table if it doesn't exist
+	// Add missing columns to pull_requests table
 	if !db.Migrator().HasColumn(&models.PullRequest{}, "issue_id") {
 		if err := db.Migrator().AddColumn(&models.PullRequest{}, "issue_id"); err != nil {
+			return err
+		}
+	}
+
+	if !db.Migrator().HasColumn(&models.PullRequest{}, "base_repository_id") {
+		if err := db.Migrator().AddColumn(&models.PullRequest{}, "base_repository_id"); err != nil {
 			return err
 		}
 	}
