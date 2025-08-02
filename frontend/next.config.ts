@@ -9,6 +9,8 @@ import runtimeCaching from 'next-pwa/cache';
 const baseConfig: NextConfig = {
   // React strict mode
   reactStrictMode: true,
+  // Enable standalone output for Docker builds
+  output: 'standalone',
   // Performance optimizations
   poweredByHeader: false,
   // Memory optimizations for CI builds
