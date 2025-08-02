@@ -73,6 +73,13 @@ resource "azurerm_kubernetes_cluster" "main" {
     secret_rotation_interval = "2m"
   }
 
+  dynamic "ingress_application_gateway" {
+    for_each = var.enable_application_gateway_ingress && var.application_gateway_id != null ? [1] : []
+    content {
+      gateway_id = var.application_gateway_id
+    }
+  }
+
   maintenance_window_auto_upgrade {
     frequency   = "Weekly"
     interval    = 1

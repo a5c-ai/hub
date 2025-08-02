@@ -147,3 +147,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "application_gateway_id" {
+  description = "The ID of the Application Gateway for AGIC"
+  type        = string
+  default     = null
+}
+
+variable "enable_application_gateway_ingress" {
+  description = "Enable Application Gateway Ingress Controller"
+  type        = bool
+  default     = false
+}

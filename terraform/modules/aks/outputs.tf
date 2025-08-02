@@ -49,3 +49,18 @@ output "cluster_identity_client_id" {
   description = "The client ID of the cluster identity"
   value       = azurerm_user_assigned_identity.aks.client_id
 }
+
+output "ingress_application_gateway" {
+  description = "The Application Gateway Ingress Controller configuration"
+  value       = var.enable_application_gateway_ingress ? azurerm_kubernetes_cluster.main.ingress_application_gateway : null
+}
+
+output "agic_identity_client_id" {
+  description = "The client ID of the AGIC identity"
+  value       = var.enable_application_gateway_ingress ? azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].client_id : null
+}
+
+output "agic_identity_object_id" {
+  description = "The object ID of the AGIC identity"
+  value       = var.enable_application_gateway_ingress ? azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id : null
+}
