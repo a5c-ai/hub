@@ -26,7 +26,7 @@ postgresql_storage_mb            = 32768
 postgresql_backup_retention_days = 7
 
 # AKS Configuration
-kubernetes_version = "1.28"
+kubernetes_version = "1.30.12"
 aks_node_count    = 2
 aks_vm_size       = "Standard_D2s_v5"
 

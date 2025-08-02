@@ -1,0 +1,114 @@
+name: Infrastructure Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+      - 'terraform/**/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+
+jobs:
+  terraform:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+      discussions: write
+      packages: write
+      pages: write
+      repository-projects: write
+      security-events: write
+      statuses: write
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'development' }}
+    env:
+      TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ~1.5
+    - name: prepare azure credentials json
+      id: prepare-azure-credentials
+      env:
+        AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        AZURE_APPLICATION_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      run: |
+        echo "{\"clientId\": \"${{ env.AZURE_APPLICATION_CLIENT_ID }}\", \"clientSecret\": \"${{ env.AZURE_APPLICATION_CLIENT_SECRET }}\", \"tenantId\": \"${{ env.AZURE_TENANT_ID }}\", \"subscriptionId\": \"${{ env.AZURE_SUBSCRIPTION_ID }}\"}" | jq -r tostring > azure-credentials.json
+        echo "::set-output name=azure-credentials::$(cat azure-credentials.json)"
+    - name: Azure CLI login
+      uses: azure/login@v1
+      with:
+        creds: ${{ steps.prepare-azure-credentials.outputs.azure-credentials }}
+    - name: Terraform Init
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+        ARM_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        cat > backend.conf <<EOF
+        resource_group_name  = "a5ctf-rg"
+        storage_account_name = "a5ctfstorage"
+        container_name       = "tf-main"
+        key                  = "main.terraform.tfstate"
+        EOF
+        terraform init -backend-config=backend.conf
+
+    - name: Terraform Validate
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+        ARM_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform validate
+
+    - name: Terraform Plan
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+        ARM_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform plan -out=tfplan
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main'
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'development' }}
+        TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+        ARM_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_APPLICATION_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      run: |
+        cd terraform/environments/${{ github.event.inputs.environment || 'development' }}
+        terraform apply -auto-approve tfplan
