@@ -130,6 +130,11 @@ spec:
             secretKeyRef:
               name: hub-secrets
               key: db-password
+        - name: REPOSITORY_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: hub-config
+              key: REPOSITORY_PATH
         resources:
           requests:
             memory: "256Mi"

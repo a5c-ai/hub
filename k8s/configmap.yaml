@@ -29,6 +29,7 @@ data:
   # Git configuration
   GIT_DATA_PATH: "/repositories"
   GIT_TEMP_PATH: "/tmp/git"
+  REPOSITORY_PATH: "/repositories"
   # Application settings
   MAX_UPLOAD_SIZE: "100MB"
   SESSION_TIMEOUT: "24h"
