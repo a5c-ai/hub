@@ -26,7 +26,7 @@ postgresql_storage_mb            = 32768
 postgresql_backup_retention_days = 7
 
 # AKS Configuration
-kubernetes_version = "1.28"
+kubernetes_version = "1.30"
 aks_node_count    = 2
 aks_vm_size       = "Standard_D2s_v5"
 
@@ -40,7 +40,7 @@ alert_email_receivers = [
 
 # GitHub Actions Runner Controller (ARC) Configuration
 enable_github_runners        = true
-github_config_url           = "https://github.com/YOUR-ORG-NAME"  # Replace with your GitHub organization URL
+github_config_url           = "https://github.com/tmusk"  # Replace with your GitHub organization URL
 github_auth_method          = "token"  # Use token authentication (simpler for CI/CD)
 # github_token will be provided via environment variable TF_VAR_github_token
 
