@@ -22,13 +22,14 @@ type PullRequest struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
 	RepositoryID     uuid.UUID        `json:"repository_id" gorm:"type:uuid;not null;index"`
+	IssueID          *uuid.UUID       `json:"issue_id" gorm:"type:uuid;index"` // Link to related issue
 	Number           int              `json:"number" gorm:"not null"`
 	Title            string           `json:"title" gorm:"not null;size:255"`
 	Body             string           `json:"body" gorm:"type:text"`
 	UserID           *uuid.UUID       `json:"user_id" gorm:"type:uuid;index"`
 	HeadRepositoryID *uuid.UUID       `json:"head_repository_id" gorm:"type:uuid;index"`
-	HeadBranch       string           `json:"head_branch" gorm:"not null;size:255"`
 	BaseBranch       string           `json:"base_branch" gorm:"not null;size:255"`
+	HeadBranch       string           `json:"head_branch" gorm:"not null;size:255"`
 	State            PullRequestState `json:"state" gorm:"type:varchar(50);not null;check:state IN ('open','closed','merged')"`
 	Draft            bool             `json:"draft" gorm:"default:false"`
 	Merged           bool             `json:"merged" gorm:"default:false"`
@@ -38,9 +39,11 @@ type PullRequest struct {
 
 	// Relationships
 	Repository     Repository  `json:"repository,omitempty" gorm:"foreignKey:RepositoryID"`
+	Issue          *Issue      `json:"issue,omitempty" gorm:"foreignKey:IssueID"`
 	User           *User       `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	HeadRepository *Repository `json:"head_repository,omitempty" gorm:"foreignKey:HeadRepositoryID"`
 	MergedBy       *User       `json:"merged_by,omitempty" gorm:"foreignKey:MergedByID"`
+	Comments       []Comment   `json:"comments,omitempty" gorm:"foreignKey:PullRequestID"`
 }
 
 func (pr *PullRequest) TableName() string {
