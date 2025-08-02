@@ -1,3 +1,9 @@
+variable "manage_cert_manager" {
+  description = "Whether to manage cert-manager via Terraform. Set to false if already installed manually."
+  type        = bool
+  default     = true
+}
+
 variable "cert_manager_version" {
   description = "Version of cert-manager Helm chart to install"
   type        = string

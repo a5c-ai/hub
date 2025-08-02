@@ -1,7 +1,8 @@
 # cert-manager Terraform module for AKS
 
-# cert-manager Helm release
+# cert-manager Helm release (only if managing via Terraform)
 resource "helm_release" "cert_manager" {
+  count = var.manage_cert_manager ? 1 : 0
   name       = "cert-manager"
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
@@ -37,7 +38,7 @@ resource "helm_release" "cert_manager" {
 
 # Wait for cert-manager to be ready before creating issuers
 resource "time_sleep" "wait_for_cert_manager" {
-  depends_on = [helm_release.cert_manager]
+  depends_on = var.manage_cert_manager ? [helm_release.cert_manager[0]] : []
   create_duration = "60s"
 }
 
