@@ -142,7 +142,11 @@ fi
 if [[ -f "$OUTPUT_DIR/$BINARY_NAME" ]]; then
     log "Binary information:"
     ls -lh "$OUTPUT_DIR/$BINARY_NAME"
-    file "$OUTPUT_DIR/$BINARY_NAME"
+    if command -v file >/dev/null 2>&1; then
+        file "$OUTPUT_DIR/$BINARY_NAME"
+    else
+        warn "'file' command not found; skipping binary file type information"
+    fi
 fi
 
 # Run a quick validation
