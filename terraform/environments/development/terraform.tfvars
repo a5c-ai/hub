@@ -43,6 +43,7 @@ enable_github_runners        = true
 github_config_url           = "https://github.com/a5c-ai"  # Replace with your GitHub organization URL
 github_auth_method          = "token"  # Use token authentication (simpler for CI/CD)
 # github_token will be provided via environment variable TF_VAR_github_token
+# Force secret recreation: 2025-08-02
 
 # Runner Configuration
 runner_scale_set_name   = "hub-dev-runners"
