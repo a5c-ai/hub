@@ -142,7 +142,7 @@ fi
 if [[ -f "$OUTPUT_DIR/$BINARY_NAME" ]]; then
     log "Binary information:"
     ls -lh "$OUTPUT_DIR/$BINARY_NAME"
-    file "$OUTPUT_DIR/$BINARY_NAME"
+    # file "$OUTPUT_DIR/$BINARY_NAME"
 fi
 
 # Run a quick validation

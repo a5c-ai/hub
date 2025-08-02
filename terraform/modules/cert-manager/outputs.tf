@@ -5,12 +5,12 @@ output "namespace" {
 
 output "helm_release_name" {
   description = "The name of the cert-manager Helm release"
-  value       = helm_release.cert_manager.name
+  value       = var.manage_cert_manager ? helm_release.cert_manager[0].name : "cert-manager"
 }
 
 output "helm_release_status" {
   description = "The status of the cert-manager Helm release"
-  value       = helm_release.cert_manager.status
+  value       = var.manage_cert_manager ? helm_release.cert_manager[0].status : "externally-managed"
 }
 
 output "cluster_issuer_name" {
