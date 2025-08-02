@@ -38,6 +38,9 @@ metadata:
     
     # External DNS for automatic DNS record creation
     external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
+    
+    # cert-manager automatic certificate provisioning
+    cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   tls:
   - hosts:

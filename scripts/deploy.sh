@@ -249,24 +249,46 @@ if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n
     fi
 fi
 
-# Ensure cert-manager is installed in the cluster
-install_cert_manager() {
-    deploy_log "Ensuring cert-manager is installed on the cluster..."
+# Check if cert-manager is already installed (e.g., via Terraform)
+check_cert_manager() {
+    deploy_log "Checking cert-manager installation status..."
+    
+    # Check if cert-manager namespace exists and has pods running
+    if kubectl get namespace cert-manager >/dev/null 2>&1; then
+        if kubectl get pods -n cert-manager -l app=cert-manager --field-selector=status.phase=Running >/dev/null 2>&1; then
+            deploy_log "✅ cert-manager is already installed and running (likely via Terraform)"
+            return 0
+        else
+            warn "⚠️ cert-manager namespace exists but pods are not running"
+        fi
+    fi
+    
+    # If not installed via infrastructure, install manually
+    install_cert_manager_manually
+}
+
+# Fallback: Install cert-manager manually if not managed by infrastructure
+install_cert_manager_manually() {
+    deploy_log "Installing cert-manager manually (fallback for dev environments)..."
     if ! command -v helm &> /dev/null; then
         warn "Helm not found; skipping cert-manager installation. Please install Helm to enable automatic certificate management."
         return
     fi
+    
     # Add Jetstack Helm repository if missing
-    # Suppress error when no Helm repositories are configured
     if ! helm repo list 2>/dev/null | grep -q '^jetstack\s'; then
         helm repo add jetstack https://charts.jetstack.io
     fi
     helm repo update
+    
     # Install or upgrade cert-manager with CRDs
     helm upgrade --install cert-manager jetstack/cert-manager \
         --namespace cert-manager \
         --create-namespace \
-        --set installCRDs=true
+        --set installCRDs=true \
+        --timeout=300s
+        
+    deploy_log "✅ cert-manager installed manually"
 }
 
 # Safety check for production
@@ -319,8 +341,8 @@ fi
 deploy_kubernetes() {
     deploy_log "Deploying with Kubernetes..."
 
-    # Install cert-manager before deploying application resources
-    install_cert_manager
+    # Check/install cert-manager before deploying application resources  
+    check_cert_manager
     local k8s_args="$ENVIRONMENT"
     if [[ "$DRY_RUN" == "true" ]]; then
         k8s_args="$k8s_args --dry-run"

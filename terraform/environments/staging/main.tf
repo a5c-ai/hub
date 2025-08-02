@@ -294,6 +294,22 @@ resource "azurerm_role_assignment" "agic_resource_group_reader" {
   depends_on = [module.aks]
 }
 
+# cert-manager for TLS certificates
+module "cert_manager" {
+  source = "../../modules/cert-manager"
+  
+  cert_manager_version = "v1.15.3"
+  email               = "support@a5c.ai"
+  environment         = local.environment
+  
+  cluster_issuer_name         = "letsencrypt-production"
+  staging_cluster_issuer_name = "letsencrypt-staging"
+  
+  tags = local.common_tags
+  
+  depends_on = [module.aks]
+}
+
 # GitHub Runner Controller and RunnerDeployment
 data "azurerm_kubernetes_cluster" "cluster" {
   name                = module.aks.cluster_name

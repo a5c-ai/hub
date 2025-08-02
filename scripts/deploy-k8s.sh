@@ -133,6 +133,7 @@ check_cert_manager() {
 }
 
 check_cert_manager
+CERT_MANAGER_AVAILABLE=$?
 
 ## Create or update namespace
 log "Creating/updating namespace: $NAMESPACE"
@@ -174,8 +175,14 @@ apply_kubectl_manifests() {
         "$CONFIG_DIR/configmap.yaml"
         "$CONFIG_DIR/secrets.yaml"
         "$CONFIG_DIR/storage.yaml"
-        "$CONFIG_DIR/cert-manager-issuers.yaml"
     )
+    
+    # Only apply certificates if cert-manager is available
+    if [[ "$CERT_MANAGER_AVAILABLE" == "0" ]]; then
+        manifests+=("$CONFIG_DIR/certificates.yaml")
+    else
+        warn "Skipping certificates.yaml - cert-manager not available"
+    fi
     
     if [[ "$SKIP_DEPENDENCIES" == "false" ]]; then
         manifests+=(
@@ -298,7 +305,7 @@ if [[ "$DRY_RUN" == "false" ]]; then
     fi
     
     # Check certificate status if cert-manager is available
-    if kubectl get namespace cert-manager >/dev/null 2>&1; then
+    if [[ "$CERT_MANAGER_AVAILABLE" == "0" ]]; then
         log "Certificate status:"
         if kubectl get certificate -n "$NAMESPACE" >/dev/null 2>&1; then
             kubectl get certificate -n "$NAMESPACE"
@@ -314,6 +321,9 @@ if [[ "$DRY_RUN" == "false" ]]; then
         else
             warn "No certificates found in namespace $NAMESPACE"
         fi
+    else
+        warn "Skipping certificate status check - cert-manager not available"
+        warn "TLS certificates will need to be managed manually or via infrastructure"
     fi
 fi
 

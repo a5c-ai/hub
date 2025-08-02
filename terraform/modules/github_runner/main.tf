@@ -75,29 +75,9 @@ resource "helm_release" "arc_runner_set" {
       maxRunners = var.max_runners
       
       # Use DinD mode for simplicity and compatibility
-      # Kubernetes mode requires additional service account permissions
+      # Remove all custom configurations to let ARC handle everything automatically
       containerMode = {
-        type = var.container_mode == "kubernetes" ? "kubernetes" : "dind"
-      }
-      
-      # Minimal template configuration for DinD mode
-      # Let ARC handle volumes and other pod configuration automatically
-      template = {
-        spec = {
-          containers = [{
-            name = "runner"
-            resources = {
-              requests = {
-                cpu    = "100m"
-                memory = "256Mi"
-              }
-              limits = {
-                cpu    = "1000m"
-                memory = "1Gi"
-              }
-            }
-          }]
-        }
+        type = "dind"
       }
     })
   ]
