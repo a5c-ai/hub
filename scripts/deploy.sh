@@ -257,7 +257,8 @@ install_cert_manager() {
         return
     fi
     # Add Jetstack Helm repository if missing
-    if ! helm repo list | grep -q '^jetstack\s'; then
+    # Suppress error when no Helm repositories are configured
+    if ! helm repo list 2>/dev/null | grep -q '^jetstack\s'; then
         helm repo add jetstack https://charts.jetstack.io
     fi
     helm repo update
