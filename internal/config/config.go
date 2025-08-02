@@ -206,7 +206,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("jwt.secret", "your-secret-key")
 	viper.SetDefault("jwt.expiration_hour", 24)
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000"})
-	viper.SetDefault("storage.repository_path", "/var/lib/hub/repositories")
+	viper.SetDefault("storage.repository_path", "/repositories")
 	viper.SetDefault("storage.artifacts.backend", "filesystem")
 	viper.SetDefault("storage.artifacts.base_path", "/var/lib/hub/artifacts")
 	viper.SetDefault("storage.artifacts.max_size_mb", 1024)
