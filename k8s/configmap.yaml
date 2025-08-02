@@ -33,3 +33,6 @@ data:
   MAX_UPLOAD_SIZE: "100MB"
   SESSION_TIMEOUT: "24h"
   CORS_ORIGINS: "https://hub.a5c.ai"
+  # Artifact storage (override default to use repository volume)
+  ARTIFACT_STORAGE_BACKEND: "filesystem"
+  ARTIFACT_STORAGE_PATH: "/repositories/artifacts"

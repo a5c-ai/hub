@@ -745,8 +745,11 @@ teams:
 # For single-node deployments
 storage:
   backend: local
-  path: /var/lib/hub/repositories
+  repository_path: /var/lib/hub/repositories
   backup_path: /var/lib/hub/backups
+  artifacts:
+    backend: filesystem
+    base_path: /var/lib/hub/artifacts
 ```
 
 #### Network Storage (NFS)
