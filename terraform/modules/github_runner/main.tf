@@ -95,6 +95,11 @@ resource "helm_release" "arc_runner_set" {
             name = "runner-workspace"
             ephemeral = {
               volumeClaimTemplate = {
+                metadata = {
+                  labels = {
+                    app = "github-runner"
+                  }
+                }
                 spec = {
                   accessModes = ["ReadWriteOnce"]
                   storageClassName = var.storage_class_name

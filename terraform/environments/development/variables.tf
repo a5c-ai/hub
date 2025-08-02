@@ -191,3 +191,10 @@ variable "public_dns_zone_name" {
   type        = string
   default     = ""
 }
+
+# AGIC Role Assignment Configuration
+variable "create_agic_role_assignments" {
+  description = "Whether to create AGIC role assignments (set to false if they already exist)"
+  type        = bool
+  default     = false
+}
