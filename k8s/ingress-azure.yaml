@@ -56,7 +56,7 @@ spec:
             port:
               number: 8080
       # Health check endpoints
-      - path: /health
+      - path: /api/health
         pathType: Prefix
         backend:
           service:

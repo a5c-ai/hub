@@ -150,7 +150,7 @@ spec:
             port:
               number: 8080
       # Health and readiness checks
-      - path: /health
+      - path: /api/health
         pathType: Prefix
         backend:
           service:
