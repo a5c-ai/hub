@@ -43,6 +43,12 @@ resource "kubernetes_secret" "github_secret" {
   }
 
   type = "Opaque"
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations["terraform.io/last-updated"],
+    ]
+  }
   
   depends_on = [kubernetes_namespace.runners]
 }
