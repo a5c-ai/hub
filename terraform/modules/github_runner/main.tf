@@ -74,8 +74,10 @@ resource "helm_release" "arc_runner_set" {
       minRunners = var.min_runners
       maxRunners = var.max_runners
       
+      # Use DinD mode for simplicity and compatibility
+      # Kubernetes mode requires additional service account permissions
       containerMode = {
-        type = var.container_mode
+        type = var.container_mode == "kubernetes" ? "kubernetes" : "dind"
       }
       
       template = {
@@ -93,15 +95,6 @@ resource "helm_release" "arc_runner_set" {
                 memory = "1Gi"
               }
             }
-            volumeMounts = [{
-              name = "work"
-              mountPath = "/home/runner/_work"
-            }]
-          }]
-          # Use simple volume configuration for runner workspace
-          volumes = [{
-            name = "work"
-            emptyDir = {}
           }]
         }
       }
