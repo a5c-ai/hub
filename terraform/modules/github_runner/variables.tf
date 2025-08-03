@@ -13,13 +13,13 @@ variable "runners_namespace" {
 variable "controller_chart_version" {
   description = "Version of the gha-runner-scale-set-controller Helm chart"
   type        = string
-  default     = "0.9.3"
+  default     = "0.10.0"
 }
 
 variable "runner_set_chart_version" {
   description = "Version of the gha-runner-scale-set Helm chart"
   type        = string
-  default     = "0.9.3"
+  default     = "0.10.0"
 }
 
 variable "github_config_url" {
