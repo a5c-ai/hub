@@ -45,7 +45,8 @@ resource "time_sleep" "wait_for_cert_manager" {
 
 # Let's Encrypt Staging ClusterIssuer
 resource "kubernetes_manifest" "letsencrypt_staging" {
-  manifest = {
+count   = var.manage_cert_manager ? 1 : 0
+manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
     metadata = {
@@ -71,12 +72,13 @@ resource "kubernetes_manifest" "letsencrypt_staging" {
     }
   }
 
-  depends_on = [time_sleep.wait_for_cert_manager[0]]
+  depends_on = var.manage_cert_manager ? [time_sleep.wait_for_cert_manager[0]] : []
 }
 
 # Let's Encrypt Production ClusterIssuer
 resource "kubernetes_manifest" "letsencrypt_production" {
-  manifest = {
+count   = var.manage_cert_manager ? 1 : 0
+manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
     metadata = {
@@ -102,5 +104,5 @@ resource "kubernetes_manifest" "letsencrypt_production" {
     }
   }
 
-  depends_on = [time_sleep.wait_for_cert_manager[0]]
+  depends_on = var.manage_cert_manager ? [time_sleep.wait_for_cert_manager[0]] : []
 }
