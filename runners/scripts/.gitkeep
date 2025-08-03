@@ -1,2 +1,1 @@
-# This directory is for custom scripts to be included in the runner image
-# Add any shell scripts here that you want available in your GitHub runners
+// placeholder to ensure runners/scripts directory exists for Docker COPY
