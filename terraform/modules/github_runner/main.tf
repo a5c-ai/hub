@@ -115,20 +115,18 @@ resource "helm_release" "arc_runner_set" {
       }
       
       # Use custom runner image if specified, otherwise use default with optional init container
-      template = var.runner_image != null ? {
-        spec = {
+      template = {
+        spec = var.runner_image != null ? {
           containers = [{
-            name = "runner"
+            name  = "runner"
             image = var.runner_image
           }]
-        }
-      } : var.enable_init_container ? {
-        spec = {
+        } : var.enable_init_container ? {
           initContainers = [{
-            name = "install-prerequisites"
-            image = "alpine:latest"
+            name    = "install-prerequisites"
+            image   = "alpine:latest"
             command = ["/bin/sh"]
-            args = ["-c", <<-EOT
+            args    = ["-c", <<-EOT
               echo "Installing prerequisites..."
               apk add --no-cache curl wget git
               # Install tools to shared volume
@@ -138,27 +136,27 @@ resource "helm_release" "arc_runner_set" {
             EOT
             ]
             volumeMounts = [{
-              name = "shared-tools"
+              name      = "shared-tools"
               mountPath = "/shared"
             }]
           }]
           containers = [{
-            name = "runner"
-            env = [{
-              name = "PATH"
+            name         = "runner"
+            env          = [{
+              name  = "PATH"
               value = "/shared:$PATH"
             }]
             volumeMounts = [{
-              name = "shared-tools"
+              name      = "shared-tools"
               mountPath = "/shared"
             }]
           }]
           volumes = [{
-            name = "shared-tools"
+            name     = "shared-tools"
             emptyDir = {}
           }]
-        }
-      } : {}
+        } : {}
+      }
     })
   ]
 
