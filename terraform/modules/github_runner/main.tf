@@ -155,7 +155,15 @@ resource "helm_release" "arc_runner_set" {
             name     = "shared-tools"
             emptyDir = {}
           }]
-        } : {}
+        } : {
+          # Ensure ephemeral workspace volumeClaimTemplate.spec exists to satisfy controller requirements
+          volumes = [{
+            name     = "workspace"
+            ephemeral = {
+              volumeClaimTemplate = { spec = {} }
+            }
+          }]
+        }
       }
     })
   ]
