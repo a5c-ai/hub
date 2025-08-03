@@ -146,14 +146,14 @@ resource "helm_release" "arc_runner_set" {
       # Use custom runner image or init container overrides, merged into template map for consistent typing
       template = merge(
         {},
-        var.runner_image != null ? {
+        var.runner_image != null ? tomap({
           spec = {
             containers = [{
               name  = "runner"
               image = var.runner_image
             }]
           }
-        } : var.enable_init_container ? {
+        }) : var.enable_init_container ? tomap({
           spec = {
             initContainers = [{
               name    = "install-prerequisites"
@@ -189,7 +189,7 @@ resource "helm_release" "arc_runner_set" {
               emptyDir = {}
             }]
           }
-        } : {}
+        }) : {}
       )
     })
   ]
