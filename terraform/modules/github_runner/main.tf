@@ -79,6 +79,25 @@ resource "null_resource" "cleanup_existing_runner_set" {
   ]
 }
 
+# Define volume spec configuration
+locals {
+  # Base volume spec without storage class
+  base_volume_spec = {
+    accessModes = ["ReadWriteOnce"]
+    resources = {
+      requests = {
+        storage = var.ephemeral_storage_size
+      }
+    }
+  }
+  
+  # Volume spec with optional storage class
+  volume_spec = var.storage_class_name != "" ? merge(
+    local.base_volume_spec,
+    { storageClassName = var.storage_class_name }
+  ) : local.base_volume_spec
+}
+
 # Create the runner scale set
 resource "helm_release" "arc_runner_set" {
   name             = var.runner_scale_set_name
@@ -115,34 +134,15 @@ resource "helm_release" "arc_runner_set" {
       }
       
       # Use custom runner image if specified, otherwise use default with optional init container
-      template = {
-        spec = var.runner_image != null ? {
+      template = var.runner_image != null ? {
+        spec = {
           containers = [{
             name  = "runner"
             image = var.runner_image
           }]
-          volumes = [{
-            name     = "workspace"
-            ephemeral = {
-              volumeClaimTemplate = {
-                metadata = {
-                  name = "workspace"
-                }
-                spec = merge(
-                  {
-                    accessModes = ["ReadWriteOnce"]
-                    resources = {
-                      requests = {
-                        storage = var.ephemeral_storage_size
-                      }
-                    }
-                  },
-                  var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
-                )
-              }
-            }
-          }]
-        } : var.enable_init_container ? {
+        }
+      } : var.enable_init_container ? {
+        spec = {
           initContainers = [{
             name    = "install-prerequisites"
             image   = "alpine:latest"
@@ -172,56 +172,12 @@ resource "helm_release" "arc_runner_set" {
               mountPath = "/shared"
             }]
           }]
-          volumes = [
-            {
-              name     = "workspace"
-              ephemeral = {
-                volumeClaimTemplate = {
-                  metadata = {
-                    name = "workspace"
-                  }
-                  spec = {
-                    storageClassName = var.storage_class_name
-                    accessModes      = ["ReadWriteOnce"]
-                    resources = {
-                      requests = {
-                        storage = var.ephemeral_storage_size
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            {
-              name     = "shared-tools"
-              emptyDir = {}
-            }
-          ]
-        } : {
-          # Ensure ephemeral workspace volumeClaimTemplate.spec exists to satisfy controller requirements
           volumes = [{
-            name     = "workspace"
-            ephemeral = {
-              volumeClaimTemplate = {
-                metadata = {
-                  name = "workspace"
-                }
-                spec = merge(
-                  {
-                    accessModes = ["ReadWriteOnce"]
-                    resources = {
-                      requests = {
-                        storage = var.ephemeral_storage_size
-                      }
-                    }
-                  },
-                  var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
-                )
-              }
-            }
+            name     = "shared-tools"
+            emptyDir = {}
           }]
         }
-      }
+      } : {}
     })
   ]
 
