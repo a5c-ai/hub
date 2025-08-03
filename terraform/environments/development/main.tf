@@ -305,7 +305,7 @@ module "cert_manager" {
   source = "../../modules/cert-manager"
   
   # Set to false if cert-manager is already installed manually to avoid conflicts
-  manage_cert_manager = false  # Change to true after importing existing release
+  manage_cert_manager = true  # Change to true after importing existing release
   
   cert_manager_version = "v1.15.3"
   email               = "support@a5c.ai"

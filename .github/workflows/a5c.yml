@@ -75,7 +75,7 @@ on:
     - cron: '*/30 * * * *'
   workflow_run:
     types: [completed]
-    workflows: [Build, Deploy,Tests,Release,E2E Tests,Infrastructure Deployment,Integration Tests]
+    workflows: [Build, Deploy,Tests,Release,E2E Tests,Infrastructure Deployment,Integration Tests,Coverage Report]
 
   # Manual Triggers
   workflow_dispatch:
