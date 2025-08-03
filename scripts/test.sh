@@ -123,7 +123,8 @@ export GO_ENV="$TEST_ENV"
 if [[ "$CI" == "true" ]]; then
     test_log "Installing sqlite3 C library for Go sqlite3 driver..."
     sudo apt-get update
-    sudo apt-get install -y libsqlite3-dev
+    # Install C library and compiler for CGO support
+    sudo apt-get install -y libsqlite3-dev gcc
     export CGO_ENABLED=1
 fi
 
