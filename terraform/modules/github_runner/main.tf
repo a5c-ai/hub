@@ -140,6 +140,7 @@ resource "helm_release" "arc_runner_set" {
               }
             }
           }]
+          nodeSelector = var.runner_node_selector
         } : var.enable_init_container ? {
           initContainers = [{
             name    = "install-prerequisites"
@@ -159,6 +160,7 @@ resource "helm_release" "arc_runner_set" {
               mountPath = "/shared"
             }]
           }]
+          nodeSelector = var.runner_node_selector
           containers = [{
             name         = "runner"
             env          = [{
@@ -195,6 +197,7 @@ resource "helm_release" "arc_runner_set" {
               emptyDir = {}
             }
           ]
+          nodeSelector = var.runner_node_selector
         } : {
           # Ensure ephemeral workspace volumeClaimTemplate.spec exists to satisfy controller requirements
           volumes = [{
@@ -216,6 +219,7 @@ resource "helm_release" "arc_runner_set" {
               }
             }
           }]
+          nodeSelector = var.runner_node_selector
         }
       }
     })

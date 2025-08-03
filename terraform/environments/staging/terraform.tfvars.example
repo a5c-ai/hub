@@ -35,8 +35,8 @@ aks_min_node_count   = 2
 aks_max_node_count   = 6
 
 # Worker Node Pool Configuration (optional)
-create_worker_node_pool = false
-worker_vm_size         = "Standard_D4s_v5"
+create_worker_node_pool = true
+worker_vm_size         = "Standard_D8s_v5"
 worker_node_count      = 2
 worker_min_node_count  = 1
 worker_max_node_count  = 4
@@ -61,6 +61,7 @@ github_repository      = "<your-repo-name>"
 runner_deployment_name = "runner"
 runner_replicas        = 2
 runner_labels = { env = "staging" }
+runner_node_selector = { "nodepool-type" = "worker" }
 
 # AGIC Configuration - Enable for Application Gateway management
 create_agic_role_assignments = true

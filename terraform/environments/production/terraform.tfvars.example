@@ -82,6 +82,7 @@ github_repository      = "<your-repo-name>"
 runner_deployment_name = "runner"
 runner_replicas        = 2
 runner_labels = { env = "prod" }
+runner_node_selector = { "nodepool-type" = "worker" }
 
 alert_sms_receivers = [
   {

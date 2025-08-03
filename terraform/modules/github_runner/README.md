@@ -85,7 +85,9 @@ module "github_runner" {
   runner_image = "ghcr.io/my-org/custom-runner:latest"
   
   # Optional: Runner labels
-  runner_labels = ["gpu", "large"]
+  runner_labels        = ["gpu", "large"]
+  # Optional: Node selector for runner pods (e.g., to target worker node pool)
+  runner_node_selector = { "nodepool-type" = "worker" }
 }
 ```
 
@@ -121,6 +123,7 @@ jobs:
 | `container_mode` | Container mode (dind or kubernetes) | `string` | `"dind"` | no |
 | `runner_image` | Custom runner image | `string` | `null` | no |
 | `runner_labels` | Additional labels for runners | `list(string)` | `[]` | no |
+| `runner_node_selector` | Node selector to schedule runner pods on specific nodes (e.g., worker node pool) | `map(string)` | `{}` | no |
 
 ## Outputs
 
@@ -162,4 +165,3 @@ kubectl get runnerscaleset -n arc-runners
 - Verify GitHub App permissions
 - Check the Installation ID in the GitHub organization settings
 - Ensure the private key is correctly formatted
-

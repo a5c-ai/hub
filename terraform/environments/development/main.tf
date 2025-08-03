@@ -246,7 +246,8 @@ module "aks" {
   
   # Development environment
   environment               = local.environment
-  create_worker_node_pool   = false  # No worker pool in development
+  create_worker_node_pool   = true   # Enable worker pool for running GitHub runners
+  worker_vm_size            = "Standard_D8s_v5"
   
   # Application Gateway integration
   application_gateway_id               = module.security.application_gateway_id
@@ -385,6 +386,7 @@ module "github_runner" {
   container_mode       = var.runner_container_mode
   runner_labels        = var.runner_labels
   runner_image         = var.runner_image
+  runner_node_selector = { "nodepool-type" = "worker" }
 
   # Development-specific settings
   controller_namespace = "arc-systems"

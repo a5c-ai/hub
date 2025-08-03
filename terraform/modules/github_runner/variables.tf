@@ -95,6 +95,12 @@ variable "runner_labels" {
   default     = []
 }
 
+variable "runner_node_selector" {
+  description = "Node selector to schedule runner pods on specific nodes, e.g., worker node pool"
+  type        = map(string)
+  default     = {}
+}
+
 variable "container_mode" {
   description = "Container mode for runners (dind or kubernetes)"
   type        = string
