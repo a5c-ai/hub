@@ -92,10 +92,11 @@ locals {
   }
   
   # Volume spec with optional storage class
-  volume_spec = var.storage_class_name != "" ? merge(
+  # Always merge base spec with optional storageClassName for consistent types
+  volume_spec = merge(
     local.base_volume_spec,
-    { storageClassName = var.storage_class_name }
-  ) : local.base_volume_spec
+    var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
+  )
 }
 
 # Create the runner scale set
@@ -133,51 +134,54 @@ resource "helm_release" "arc_runner_set" {
         type = var.container_mode
       }
       
-      # Use custom runner image if specified, otherwise use default with optional init container
-      template = var.runner_image != null ? {
-        spec = {
-          containers = [{
-            name  = "runner"
-            image = var.runner_image
-          }]
-        }
-      } : var.enable_init_container ? {
-        spec = {
-          initContainers = [{
-            name    = "install-prerequisites"
-            image   = "alpine:latest"
-            command = ["/bin/sh"]
-            args    = ["-c", <<-EOT
-              echo "Installing prerequisites..."
-              apk add --no-cache curl wget git
-              # Install tools to shared volume
-              wget -O /shared/kubectl https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
-              chmod +x /shared/kubectl
-              echo "Prerequisites installed!"
-            EOT
-            ]
-            volumeMounts = [{
-              name      = "shared-tools"
-              mountPath = "/shared"
+      # Use custom runner image or init container overrides, merged into template map for consistent typing
+      template = merge(
+        {},
+        var.runner_image != null ? {
+          spec = {
+            containers = [{
+              name  = "runner"
+              image = var.runner_image
             }]
-          }]
-          containers = [{
-            name         = "runner"
-            env          = [{
-              name  = "PATH"
-              value = "/shared:$PATH"
+          }
+        } : var.enable_init_container ? {
+          spec = {
+            initContainers = [{
+              name    = "install-prerequisites"
+              image   = "alpine:latest"
+              command = ["/bin/sh"]
+              args    = ["-c", <<-EOT
+                echo "Installing prerequisites..."
+                apk add --no-cache curl wget git
+                # Install tools to shared volume
+                wget -O /shared/kubectl https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
+                chmod +x /shared/kubectl
+                echo "Prerequisites installed!"
+              EOT
+              ]
+              volumeMounts = [{
+                name      = "shared-tools"
+                mountPath = "/shared"
+              }]
             }]
-            volumeMounts = [{
-              name      = "shared-tools"
-              mountPath = "/shared"
+            containers = [{
+              name         = "runner"
+              env          = [{
+                name  = "PATH"
+                value = "/shared:$PATH"
+              }]
+              volumeMounts = [{
+                name      = "shared-tools"
+                mountPath = "/shared"
+              }]
             }]
-          }]
-          volumes = [{
-            name     = "shared-tools"
-            emptyDir = {}
-          }]
-        }
-      } : {}
+            volumes = [{
+              name     = "shared-tools"
+              emptyDir = {}
+            }]
+          }
+        } : {}
+      )
     })
   ]
 
