@@ -109,11 +109,56 @@ resource "helm_release" "arc_runner_set" {
       minRunners = var.min_runners
       maxRunners = var.max_runners
       
-      # Use DinD mode for simplicity and compatibility
-      # Remove all custom configurations to let ARC handle everything automatically
+      # Container mode - use variable (dind or kubernetes)
       containerMode = {
-        type = "dind"
+        type = var.container_mode
       }
+      
+      # Use custom runner image if specified, otherwise use default with optional init container
+      template = var.runner_image != null ? {
+        spec = {
+          containers = [{
+            name = "runner"
+            image = var.runner_image
+          }]
+        }
+      } : var.enable_init_container ? {
+        spec = {
+          initContainers = [{
+            name = "install-prerequisites"
+            image = "alpine:latest"
+            command = ["/bin/sh"]
+            args = ["-c", <<-EOT
+              echo "Installing prerequisites..."
+              apk add --no-cache curl wget git
+              # Install tools to shared volume
+              wget -O /shared/kubectl https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
+              chmod +x /shared/kubectl
+              echo "Prerequisites installed!"
+            EOT
+            ]
+            volumeMounts = [{
+              name = "shared-tools"
+              mountPath = "/shared"
+            }]
+          }]
+          containers = [{
+            name = "runner"
+            env = [{
+              name = "PATH"
+              value = "/shared:$PATH"
+            }]
+            volumeMounts = [{
+              name = "shared-tools"
+              mountPath = "/shared"
+            }]
+          }]
+          volumes = [{
+            name = "shared-tools"
+            emptyDir = {}
+          }]
+        }
+      } : {}
     })
   ]
 

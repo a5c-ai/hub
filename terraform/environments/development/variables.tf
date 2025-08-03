@@ -198,3 +198,10 @@ variable "create_agic_role_assignments" {
   type        = bool
   default     = false
 }
+
+# Runner Image Configuration
+variable "runner_image" {
+  description = "Custom Docker image for GitHub Actions runners (optional)"
+  type        = string
+  default     = null
+}

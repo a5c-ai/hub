@@ -49,8 +49,11 @@ github_auth_method          = "token"  # Use token authentication (simpler for C
 runner_scale_set_name   = "hub-dev-runners"
 runner_min_replicas     = 0
 runner_max_replicas     = 2
-runner_container_mode   = "kubernetes"
+runner_container_mode   = "kubernetes"  # Use Kubernetes mode (more efficient than dind)
 runner_labels          = ["development", "linux"]
+
+# Custom Runner Image with Prerequisites
+runner_image = "acrhubdevwestus3.azurecr.io/hub/github-runner:latest"
 
 # AGIC Configuration - Enable for Application Gateway management
 create_agic_role_assignments = true

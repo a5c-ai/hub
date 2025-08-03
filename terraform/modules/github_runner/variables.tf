@@ -116,3 +116,9 @@ variable "storage_class_name" {
   type        = string
   default     = "default"
 }
+
+variable "enable_init_container" {
+  description = "Enable init container to install prerequisites dynamically"
+  type        = bool
+  default     = false
+}

@@ -384,6 +384,7 @@ module "github_runner" {
   max_runners          = var.runner_max_replicas
   container_mode       = var.runner_container_mode
   runner_labels        = var.runner_labels
+  runner_image         = var.runner_image
 
   # Development-specific settings
   controller_namespace = "arc-systems"
