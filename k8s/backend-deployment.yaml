@@ -144,7 +144,7 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /api/health
+            path: /health
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -153,7 +153,7 @@ spec:
         # Use /health for readiness since /ready endpoint is not implemented
         readinessProbe:
           httpGet:
-            path: /api/health
+            path: /health
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -161,7 +161,7 @@ spec:
           failureThreshold: 3
         startupProbe:
           httpGet:
-            path: /api/health
+            path: /health
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10

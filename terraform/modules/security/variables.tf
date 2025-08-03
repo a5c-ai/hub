@@ -145,17 +145,18 @@ variable "ssl_certificate_password" {
   sensitive   = true
 }
 
-variable "health_probe_path" {
-  description = "The path for health probes"
-  type        = string
-  default     = "/health"
-}
-
-variable "health_probe_host" {
-  description = "The host for health probes"
-  type        = string
-  default     = "127.0.0.1"
-}
+# Health probe variables removed - AGIC manages health probes dynamically
+# variable "health_probe_path" {
+#   description = "The path for health probes"
+#   type        = string
+#   default     = "/health"
+# }
+# 
+# variable "health_probe_host" {
+#   description = "The host for health probes"
+#   type        = string
+#   default     = "127.0.0.1"
+# }
 
 variable "backend_address_pools" {
   description = "List of backend address pools"

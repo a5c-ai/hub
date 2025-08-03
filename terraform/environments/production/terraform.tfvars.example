@@ -97,3 +97,6 @@ alert_webhook_receivers = [
     service_uri = "https://events.pagerduty.com/integration/YOUR_INTEGRATION_KEY/enqueue"
   }
 ]
+
+# AGIC Configuration - Enable for Application Gateway management
+create_agic_role_assignments = true

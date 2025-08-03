@@ -51,3 +51,6 @@ runner_min_replicas     = 0
 runner_max_replicas     = 2
 runner_container_mode   = "kubernetes"
 runner_labels          = ["development", "linux"]
+
+# AGIC Configuration - Enable for Application Gateway management
+create_agic_role_assignments = true

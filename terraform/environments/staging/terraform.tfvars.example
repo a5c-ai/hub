@@ -61,3 +61,6 @@ github_repository      = "<your-repo-name>"
 runner_deployment_name = "runner"
 runner_replicas        = 2
 runner_labels = { env = "staging" }
+
+# AGIC Configuration - Enable for Application Gateway management
+create_agic_role_assignments = true

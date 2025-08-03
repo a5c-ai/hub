@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: backend
   annotations:
     # Azure Load Balancer annotations for Azure integration
-    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/api/health"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/health"
     service.beta.kubernetes.io/azure-load-balancer-health-probe-protocol: "http"
     service.beta.kubernetes.io/azure-load-balancer-health-probe-interval: "5"
     service.beta.kubernetes.io/azure-load-balancer-health-probe-num-of-probe: "2"

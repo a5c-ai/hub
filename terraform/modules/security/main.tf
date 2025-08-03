@@ -83,24 +83,15 @@ resource "azurerm_application_gateway" "main" {
     name = "${var.application_gateway_name}-beap"
   }
 
+  # Minimal backend HTTP settings - AGIC will manage the actual configurations
   backend_http_settings {
     name                  = "${var.application_gateway_name}-be-htst"
     cookie_based_affinity = "Disabled"
-    path                  = "/path1/"
+    path                  = "/"
     port                  = 80
     protocol              = "Http"
     request_timeout       = 60
-    probe_name           = "${var.application_gateway_name}-probe"
-  }
-
-  backend_http_settings {
-    name                  = "${var.application_gateway_name}-be-htst-https"
-    cookie_based_affinity = "Disabled"
-    path                  = "/"
-    port                  = 443
-    protocol              = "Https"
-    request_timeout       = 60
-    probe_name           = "${var.application_gateway_name}-probe-https"
+    # Remove probe reference to let AGIC manage health probes dynamically
   }
 
   http_listener {
@@ -137,30 +128,13 @@ resource "azurerm_application_gateway" "main" {
       rule_type                  = "Basic"
       http_listener_name         = "${var.application_gateway_name}-httplstn-https"
       backend_address_pool_name  = "${var.application_gateway_name}-beap"
-      backend_http_settings_name = "${var.application_gateway_name}-be-htst-https"
+      backend_http_settings_name = "${var.application_gateway_name}-be-htst"
       priority                   = 200
     }
   }
 
-  probe {
-    name                = "${var.application_gateway_name}-probe"
-    protocol            = "Http"
-    path                = var.health_probe_path
-    host                = var.health_probe_host
-    interval            = 30
-    timeout             = 30
-    unhealthy_threshold = 3
-  }
-
-  probe {
-    name                = "${var.application_gateway_name}-probe-https"
-    protocol            = "Https"
-    path                = var.health_probe_path
-    host                = var.health_probe_host
-    interval            = 30
-    timeout             = 30
-    unhealthy_threshold = 3
-  }
+  # Static probes removed - AGIC will manage health probes dynamically
+  # based on Kubernetes service and ingress configurations
 
   dynamic "ssl_certificate" {
     for_each = var.ssl_certificate_data != null ? [1] : []
