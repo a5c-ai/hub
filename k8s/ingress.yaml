@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: hub-ingress
-  namespace: hub
+  namespace: hub-development
   labels:
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: ingress
@@ -33,7 +33,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
     
     # cert-manager automatic certificate provisioning
-    cert-manager.io/cluster-issuer: letsencrypt-production
+    # Removed: cert-manager.io/cluster-issuer annotation to prevent duplicate certificates
+    # Certificate is managed separately via certificates.yaml
 spec:
   tls:
   - hosts:

@@ -4,7 +4,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: hub-tls
-  namespace: hub
+  namespace: hub-development
   labels:
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: tls-certificate
