@@ -117,6 +117,12 @@ variable "storage_class_name" {
   default     = "default"
 }
 
+variable "ephemeral_storage_size" {
+  description = "Storage size for ephemeral workspace PVC"
+  type        = string
+  default     = "1Gi"
+}
+
 variable "enable_init_container" {
   description = "Enable init container to install prerequisites dynamically"
   type        = bool

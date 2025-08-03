@@ -160,7 +160,17 @@ resource "helm_release" "arc_runner_set" {
           volumes = [{
             name     = "workspace"
             ephemeral = {
-              volumeClaimTemplate = { spec = {} }
+              volumeClaimTemplate = {
+                spec = {
+                  storageClassName = var.storage_class_name
+                  accessModes      = ["ReadWriteOnce"]
+                  resources = {
+                    requests = {
+                      storage = var.ephemeral_storage_size
+                    }
+                  }
+                }
+              }
             }
           }]
         }
