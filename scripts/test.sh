@@ -188,7 +188,8 @@ run_go_tests() {
     fi
     
     test_log "Running Go unit tests..."
-    
+    # Ensure cgo is enabled for tests; go-sqlite3 requires cgo to work
+    export CGO_ENABLED=1
     # Set up test database if needed
     export DB_HOST="${TEST_DB_HOST:-localhost}"
     # Use DB_PORT from initial test setup (propagate non-default TEST_DB_PORT if set)
