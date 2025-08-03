@@ -162,4 +162,5 @@ kubectl get runnerscaleset -n arc-runners
 - Verify GitHub App permissions
 - Check the Installation ID in the GitHub organization settings
 - Ensure the private key is correctly formatted
-
+| `storage_class_name` | Storage class name for ephemeral workspace PVC | `string` | `""` | no |
+| `ephemeral_storage_size` | Storage size for ephemeral workspace PVC | `string` | `"1Gi"` | no |
