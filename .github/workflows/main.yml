@@ -93,7 +93,7 @@ env:
 
 jobs:
   build:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     timeout-minutes: 30  # Reduced timeout with optimized scripts
     strategy:
       matrix:
@@ -187,7 +187,7 @@ jobs:
           if-no-files-found: error
           
   test:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     timeout-minutes: 30  # Increased timeout for test phase
     needs: build
     steps:
@@ -243,7 +243,7 @@ jobs:
           ./scripts/test.sh
         
   deploy:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     timeout-minutes: 25  # Increased timeout for deploy phase
     needs: test
     # Only deploy on main branch

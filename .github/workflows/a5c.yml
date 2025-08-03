@@ -92,7 +92,7 @@ on:
 jobs:
   # Single job that handles all agent routing and execution
   a5c:
-    runs-on: hub-dev-runners
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
