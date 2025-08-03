@@ -170,29 +170,31 @@ resource "helm_release" "arc_runner_set" {
               mountPath = "/shared"
             }]
           }]
-          volumes = [{
-            name     = "shared-tools"
-            emptyDir = {}
-          },
-          {
-            name     = "workspace"
-            ephemeral = {
-              volumeClaimTemplate = {
-                metadata = {
-                  name = "workspace"
-                }
-                spec = {
-                  storageClassName = var.storage_class_name
-                  accessModes      = ["ReadWriteOnce"]
-                  resources = {
-                    requests = {
-                      storage = var.ephemeral_storage_size
+          volumes = [
+            {
+              name     = "workspace"
+              ephemeral = {
+                volumeClaimTemplate = {
+                  metadata = {
+                    name = "workspace"
+                  }
+                  spec = {
+                    storageClassName = var.storage_class_name
+                    accessModes      = ["ReadWriteOnce"]
+                    resources = {
+                      requests = {
+                        storage = var.ephemeral_storage_size
+                      }
                     }
                   }
                 }
               }
+            },
+            {
+              name     = "shared-tools"
+              emptyDir = {}
             }
-          }]
+          ]
         } : {
           # Ensure ephemeral workspace volumeClaimTemplate.spec exists to satisfy controller requirements
           volumes = [{

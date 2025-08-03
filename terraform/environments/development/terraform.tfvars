@@ -56,4 +56,4 @@ runner_labels          = ["development", "linux"]
 runner_image = "acrhubdevwestus3.azurecr.io/hub/github-runner:latest"
 
 # AGIC Configuration - Enable for Application Gateway management
-create_agic_role_assignments = true
+create_agic_role_assignments = false
