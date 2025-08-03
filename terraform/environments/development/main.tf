@@ -389,6 +389,10 @@ module "github_runner" {
   # Development-specific settings
   controller_namespace = "arc-systems"
   runners_namespace   = "arc-runners"
+  
+  # Storage settings - use managed-premium for ephemeral storage
+  storage_class_name   = "managed-premium"
+  ephemeral_storage_size = "10Gi"
 
   depends_on = [
     module.aks,

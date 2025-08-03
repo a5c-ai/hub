@@ -128,15 +128,17 @@ resource "helm_release" "arc_runner_set" {
                 metadata = {
                   name = "workspace"
                 }
-                spec = {
-                  storageClassName = var.storage_class_name
-                  accessModes      = ["ReadWriteOnce"]
-                  resources = {
-                    requests = {
-                      storage = var.ephemeral_storage_size
+                spec = merge(
+                  {
+                    accessModes = ["ReadWriteOnce"]
+                    resources = {
+                      requests = {
+                        storage = var.ephemeral_storage_size
+                      }
                     }
-                  }
-                }
+                  },
+                  var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
+                )
               }
             }
           }]
@@ -204,15 +206,17 @@ resource "helm_release" "arc_runner_set" {
                 metadata = {
                   name = "workspace"
                 }
-                spec = {
-                  storageClassName = var.storage_class_name
-                  accessModes      = ["ReadWriteOnce"]
-                  resources = {
-                    requests = {
-                      storage = var.ephemeral_storage_size
+                spec = merge(
+                  {
+                    accessModes = ["ReadWriteOnce"]
+                    resources = {
+                      requests = {
+                        storage = var.ephemeral_storage_size
+                      }
                     }
-                  }
-                }
+                  },
+                  var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
+                )
               }
             }
           }]

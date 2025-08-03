@@ -112,9 +112,9 @@ variable "runner_image" {
 }
 
 variable "storage_class_name" {
-  description = "Storage class name for ephemeral volumes (currently unused - kept for future use)"
+  description = "Storage class name for ephemeral volumes"
   type        = string
-  default     = "default"
+  default     = ""  # Empty string to use cluster default
 }
 
 variable "ephemeral_storage_size" {
