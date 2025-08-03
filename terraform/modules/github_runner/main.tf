@@ -129,9 +129,18 @@ resource "helm_release" "arc_runner_set" {
       minRunners = var.min_runners
       maxRunners = var.max_runners
       
-      # Container mode - use variable (dind or kubernetes)
+      # Container mode - use variable (dind or kubernetes); configure work volume for kubernetes mode
       containerMode = {
-        type = var.container_mode
+        type                         = var.container_mode
+        kubernetesModeWorkVolumeClaim = {
+          accessModes      = ["ReadWriteOnce"]
+          storageClassName = var.storage_class_name
+          resources = {
+            requests = {
+              storage = var.ephemeral_storage_size
+            }
+          }
+        }
       }
       
       # Use custom runner image or init container overrides, merged into template map for consistent typing
