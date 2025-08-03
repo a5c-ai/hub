@@ -121,6 +121,22 @@ resource "helm_release" "arc_runner_set" {
             name  = "runner"
             image = var.runner_image
           }]
+          volumes = [{
+            name     = "workspace"
+            ephemeral = {
+              volumeClaimTemplate = {
+                spec = {
+                  storageClassName = var.storage_class_name
+                  accessModes      = ["ReadWriteOnce"]
+                  resources = {
+                    requests = {
+                      storage = var.ephemeral_storage_size
+                    }
+                  }
+                }
+              }
+            }
+          }]
         } : var.enable_init_container ? {
           initContainers = [{
             name    = "install-prerequisites"
@@ -154,6 +170,22 @@ resource "helm_release" "arc_runner_set" {
           volumes = [{
             name     = "shared-tools"
             emptyDir = {}
+          },
+          {
+            name     = "workspace"
+            ephemeral = {
+              volumeClaimTemplate = {
+                spec = {
+                  storageClassName = var.storage_class_name
+                  accessModes      = ["ReadWriteOnce"]
+                  resources = {
+                    requests = {
+                      storage = var.ephemeral_storage_size
+                    }
+                  }
+                }
+              }
+            }
           }]
         } : {
           # Ensure ephemeral workspace volumeClaimTemplate.spec exists to satisfy controller requirements
