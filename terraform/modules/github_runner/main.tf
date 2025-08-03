@@ -125,6 +125,9 @@ resource "helm_release" "arc_runner_set" {
             name     = "workspace"
             ephemeral = {
               volumeClaimTemplate = {
+                metadata = {
+                  name = "workspace"
+                }
                 spec = {
                   storageClassName = var.storage_class_name
                   accessModes      = ["ReadWriteOnce"]
@@ -175,6 +178,9 @@ resource "helm_release" "arc_runner_set" {
             name     = "workspace"
             ephemeral = {
               volumeClaimTemplate = {
+                metadata = {
+                  name = "workspace"
+                }
                 spec = {
                   storageClassName = var.storage_class_name
                   accessModes      = ["ReadWriteOnce"]
@@ -193,6 +199,9 @@ resource "helm_release" "arc_runner_set" {
             name     = "workspace"
             ephemeral = {
               volumeClaimTemplate = {
+                metadata = {
+                  name = "workspace"
+                }
                 spec = {
                   storageClassName = var.storage_class_name
                   accessModes      = ["ReadWriteOnce"]
