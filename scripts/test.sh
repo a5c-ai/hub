@@ -119,6 +119,14 @@ log "Build first: $BUILD_FIRST"
 export NODE_ENV="test"
 export GO_ENV="$TEST_ENV"
 
+# In CI environment, ensure sqlite3 C library is available and enable CGO for go-sqlite3 driver
+if [[ "$CI" == "true" ]]; then
+    test_log "Installing sqlite3 C library for Go sqlite3 driver..."
+    sudo apt-get update
+    sudo apt-get install -y libsqlite3-dev
+    export CGO_ENABLED=1
+fi
+
 # Configure test database parameters
 export DB_HOST="${TEST_DB_HOST:-localhost}"
 # Determine port for test database: use TEST_DB_PORT if set, otherwise default to non-standard port to avoid conflicts
