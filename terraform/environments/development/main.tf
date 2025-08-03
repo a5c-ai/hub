@@ -240,7 +240,7 @@ module "aks" {
   node_count                 = var.aks_node_count
   vm_size                    = var.aks_vm_size
   min_node_count            = 1
-  max_node_count            = 3
+  max_node_count            = 10
   availability_zones        = []  
   enable_auto_scaling       = true
   

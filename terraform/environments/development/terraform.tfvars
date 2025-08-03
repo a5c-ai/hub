@@ -34,7 +34,7 @@ aks_vm_size       = "Standard_D2s_v5"
 alert_email_receivers = [
   {
     name          = "dev-team"
-    email_address = "your-email@example.com"  # Replace with your actual email
+    email_address = "dev@a5c.ai"  # Replace with your actual email
   }
 ]
 
