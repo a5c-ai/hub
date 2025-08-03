@@ -119,8 +119,8 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
 RUN mkdir -p /usr/local/scripts
 
 # Copy any custom scripts (if they exist)
-COPY runners/scripts/ /usr/local/scripts/ 2>/dev/null || true
-RUN chmod +x /usr/local/scripts/* 2>/dev/null || true
+COPY runners/scripts/ /usr/local/scripts/
+RUN chmod +x /usr/local/scripts/* || true
 
 # Set up environment variables
 ENV PATH="/usr/local/go/bin:/usr/local/scripts:${PATH}"
