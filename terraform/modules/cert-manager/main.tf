@@ -72,7 +72,7 @@ manifest = {
     }
   }
 
-  depends_on = var.manage_cert_manager ? [time_sleep.wait_for_cert_manager[0]] : []
+  depends_on = [time_sleep.wait_for_cert_manager]
 }
 
 # Let's Encrypt Production ClusterIssuer
@@ -104,5 +104,5 @@ manifest = {
     }
   }
 
-  depends_on = var.manage_cert_manager ? [time_sleep.wait_for_cert_manager[0]] : []
+  depends_on = [time_sleep.wait_for_cert_manager]
 }
