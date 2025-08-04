@@ -128,3 +128,9 @@ variable "enable_init_container" {
   type        = bool
   default     = false
 }
+
+variable "runner_node_selector" {
+  description = "Node selector labels to schedule GitHub runner pods on specific node pools"
+  type        = map(string)
+  default     = {}
+}
