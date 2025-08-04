@@ -12,7 +12,7 @@
 
 👥 Humans stepped in solely to review and approve issues & PRs.
 
-💡 **≈ 10,000 developer hours replaced.** Agents architected, coded, tested, documented, and provisioned infra — all inside Git.
+💡 **Thousands of developer hours freed.** Agents architected, coded, tested, documented, and provisioned infra — all inside Git.
 
 🤖 **Fully autonomous build loop.** From system design to edge-case fixes, every commit was planned and executed by agents, with humans in the loop only for final approvals.
 
