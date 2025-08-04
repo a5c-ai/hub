@@ -20,7 +20,7 @@ The selected stack balances performance, developer productivity, operational sim
 | **Caching Layer** | Redis Cluster | Memcached | Advanced data structures, persistence options |
 | **Search Engine** | Elasticsearch | PostgreSQL Full-Text | Advanced search capabilities, scalability |
 | **Object Storage** | Azure Blob Storage | Local File System | Scalability, durability, cloud-native benefits |
-| **Container Platform** | Docker + AKS | Docker Swarm | Kubernetes ecosystem, Azure integration |
+| **Container Platform** | Docker + Kubernetes (AKS, EKS, GKE) with NGINX ingress | Docker Swarm | Kubernetes ecosystem, cloud-native integration |
 | **Infrastructure as Code** | Terraform | ARM Templates | Multi-cloud support, mature ecosystem |
 | **Git Backend** | go-git with libgit2 | Native git commands | Performance, library integration |
 

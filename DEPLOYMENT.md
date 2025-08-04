@@ -19,7 +19,30 @@ The Hub application consists of:
 - kubectl configured for your cluster
 - Helm 3.8+ (optional, for Helm deployments)
 
-### Azure-specific Requirements
+### Cloud & Ingress Controller Requirements
+- **Ingress Controller**: NGINX Ingress Controller (nginx-ingress)
+- **Cert-manager**: for TLS certificate issuance and renewal
+- **Storage Classes**: `managed-premium`, `azure-files` (for Azure), or equivalent for other clouds
+
+#### Install NGINX Ingress Controller
+
+To install the NGINX Ingress Controller using Helm:
+
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --set controller.publishService.enabled=true
+```
+
+Or deploy via kubectl:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
+```
+
+#### Azure-specific Requirements (optional)
 - Azure CLI logged in (for Azure Container Registry)
 - Environment variables for service principal and AKS context:
   - `AZURE_APPLICATION_CLIENT_ID`
@@ -27,20 +50,16 @@ The Hub application consists of:
   - `AZURE_TENANT_ID`
   - `AZURE_RESOURCE_GROUP_NAME`
   - `AZURE_AKS_CLUSTER_NAME`
-  
-  The build and deploy scripts will automatically perform ACR login and fetch AKS credentials when these variables are set.
 
-  To allow the AKS cluster to pull images from your Azure Container Registry without imagePullSecrets, grant pull permissions:
+The deploy scripts will automatically perform ACR login and fetch AKS credentials when these variables are set.
 
-  ```bash
-  az aks update --name $AZURE_AKS_CLUSTER_NAME \
-    --resource-group $AZURE_RESOURCE_GROUP_NAME \
-    --attach-acr <ACR_NAME>
-  ```
-- AKS cluster with:
-  - Ingress controller (nginx-ingress)
-  - Cert-manager for TLS certificates
-  - Storage classes: `managed-premium`, `azure-files`
+To allow the AKS cluster to pull images from your Azure Container Registry without imagePullSecrets, grant pull permissions:
+
+```bash
+az aks update --name $AZURE_AKS_CLUSTER_NAME \
+  --resource-group $AZURE_RESOURCE_GROUP_NAME \
+  --attach-acr <ACR_NAME>
+```
 
 ## Quick Start
 
