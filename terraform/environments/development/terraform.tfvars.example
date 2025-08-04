@@ -30,6 +30,13 @@ kubernetes_version = "1.28"
 aks_node_count    = 2
 aks_vm_size       = "Standard_D2s_v5"
 
+# Worker Node Pool Configuration (optional)
+create_worker_node_pool = true
+worker_vm_size         = "Standard_D4s_v5"
+worker_node_count      = 2
+worker_min_node_count  = 1
+worker_max_node_count  = 4
+
 # Monitoring Configuration
 alert_email_receivers = [
   {

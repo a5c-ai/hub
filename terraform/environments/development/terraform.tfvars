@@ -28,7 +28,12 @@ postgresql_backup_retention_days = 7
 # AKS Configuration
 kubernetes_version = "1.30"
 aks_node_count    = 2
-aks_vm_size       = "Standard_D2s_v5"
+# Note: Add worker node pool for GitHub runners (bigger and stronger nodes)
+create_worker_node_pool = true
+worker_vm_size         = "Standard_D4s_v5"
+worker_node_count      = 2
+worker_min_node_count  = 1
+worker_max_node_count  = 4
 
 # Monitoring Configuration
 alert_email_receivers = [
