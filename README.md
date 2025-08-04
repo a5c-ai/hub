@@ -2,11 +2,11 @@
 
 ---
 
-🚀 **Built by [a5c.ai](https://a5c.ai)** — autonomous AI agents that work like a top-tier engineering squad.
+🚀 **Built by [a5c.ai](https://a5c.ai)** - autonomous AI agents that work like a top-tier engineering squad.
 
 🕒 **24 hours start-to-finish.** Your prompt (see repo description) was the only human input.
 
-💡 **≈ 10,000 developer hours replaced.** Agents designed, coded, tested, documented, and provisioned infra — all inside Git.
+💡 **≈ 10,000 developer hours replaced.** Agents designed, coded, tested, documented, and provisioned infra - all inside Git.
 
 🤖 **Fully autonomous.** From system architecture to edge-case fixes, every commit was planned and merged by agents.
 
