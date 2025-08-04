@@ -164,7 +164,10 @@ resource "helm_release" "arc_runner_set" {
               name     = "shared-tools"
               emptyDir = {}
             }] : []
-          } : {},
+          } : {
+            containers = []
+            volumes    = []
+          },
           var.enable_init_container ? {
             initContainers = [{
               name    = "install-prerequisites"
