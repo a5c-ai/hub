@@ -63,7 +63,7 @@ manifest = {
           {
             http01 = {
               ingress = {
-                class = "azure/application-gateway"
+                class = "nginx"
               }
             }
           }
@@ -94,8 +94,8 @@ manifest = {
         solvers = [
           {
             http01 = {
-              ingress = {
-                class = "azure/application-gateway"
+            ingress = {
+                class = "nginx"
               }
             }
           }
