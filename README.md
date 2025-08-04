@@ -1,3 +1,7 @@
+[![99% built by agents](https://img.shields.io/badge/99%25-built%20by%20agents-blue.svg)](https://a5c.ai)
+
+> This entire codebase, product definition and everything in it was created entirely with the a5c.ai platform and 99% by AI agents.
+
 # Hub - Self-Hosted Git Hosting Service
 
 ---
