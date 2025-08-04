@@ -50,3 +50,12 @@ runner_min_replicas     = 0
 runner_max_replicas     = 5
 runner_container_mode   = "dind"
 runner_labels          = ["development", "linux"]
+# Ingress NGINX Controller Configuration
+ingress_nginx_controller_enabled       = true
+ingress_nginx_controller_release_name  = "ingress-nginx"
+ingress_nginx_controller_chart_version = ""  # set desired ingress-nginx Helm chart version
+ingress_nginx_controller_namespace     = "ingress-nginx"
+# ingress_nginx_controller_values can be used to override default chart values, e.g.,
+# ingress_nginx_controller_values = {
+#   "controller.ingressClassResource.default" = "true"
+# }
