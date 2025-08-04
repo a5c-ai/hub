@@ -200,6 +200,37 @@ variable "github_owner" {
   default     = ""
 }
 
+# Ingress NGINX Controller
+variable "ingress_nginx_controller_enabled" {
+  description = "Enable provisioning of the ingress-nginx controller"
+  type        = bool
+  default     = true
+}
+
+variable "ingress_nginx_controller_release_name" {
+  description = "Helm release name for the ingress-nginx controller"
+  type        = string
+  default     = "ingress-nginx"
+}
+
+variable "ingress_nginx_controller_chart_version" {
+  description = "Version of the ingress-nginx Helm chart"
+  type        = string
+  default     = ""
+}
+
+variable "ingress_nginx_controller_namespace" {
+  description = "Namespace to install ingress-nginx controller into"
+  type        = string
+  default     = "ingress-nginx"
+}
+
+variable "ingress_nginx_controller_values" {
+  description = "Overrides for the ingress-nginx Helm chart values"
+  type        = map(string)
+  default     = {}
+}
+
 variable "github_repository" {
   description = "GitHub repository name"
   type        = string

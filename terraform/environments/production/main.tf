@@ -371,7 +371,19 @@ provider "helm" {
     client_certificate     = try(base64decode(data.azurerm_kubernetes_cluster.cluster.kube_config[0].client_certificate), "")
     client_key             = try(base64decode(data.azurerm_kubernetes_cluster.cluster.kube_config[0].client_key), "")
     cluster_ca_certificate = try(base64decode(data.azurerm_kubernetes_cluster.cluster.kube_config[0].cluster_ca_certificate), "")
-  }
+
+
+# NGINX Ingress Controller
+module "ingress_nginx" {
+  source        = "../../modules/ingress-nginx"
+
+  enabled       = var.ingress_nginx_controller_enabled
+  release_name  = var.ingress_nginx_controller_release_name
+  chart_version = var.ingress_nginx_controller_chart_version
+  namespace     = var.ingress_nginx_controller_namespace
+  values        = var.ingress_nginx_controller_values
+
+  depends_on = [module.aks]
 }
 
 # Temporarily disabled due to Helm deployment issues
