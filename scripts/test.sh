@@ -214,10 +214,15 @@ run_go_tests() {
         test_log "Running with coverage..."
         go_test_flags="$go_test_flags -coverprofile=coverage.out -covermode=atomic"
         
-        # Run tests with coverage
-        if go test $go_test_flags ./...; then
+        # Detect Go packages with test files
+        test_log "Detecting Go packages with test files..."
+        local pkgs
+        pkgs=$(go list -f '{{if .TestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v '^$')
+
+        # Run tests with coverage on packages that have tests
+        if go test $go_test_flags $pkgs; then
             test_log "Go tests passed ✅"
-            
+
             # Generate coverage report
             go tool cover -html=coverage.out -o coverage.html
             go tool cover -func=coverage.out | tail -1
