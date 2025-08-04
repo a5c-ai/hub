@@ -152,11 +152,7 @@ resource "helm_release" "arc_runner_set" {
               name  = "runner"
               image = var.runner_image
             }]
-            volumes = [{
-              name     = "shared-tools"
-              emptyDir = {}
-            }]
-          } : { containers = [], volumes = [] },
+          } : {},
           var.enable_init_container ? {
             initContainers = [{
               name    = "install-prerequisites"
@@ -175,7 +171,23 @@ resource "helm_release" "arc_runner_set" {
                 mountPath = "/shared"
               }]
             }]
-          } : { initContainers = [] }
+            containers = [{
+              name  = "runner"
+              image = var.runner_image
+              env = [{
+                name  = "PATH"
+                value = "/shared:$PATH"
+              }]
+              volumeMounts = [{
+                name      = "shared-tools"
+                mountPath = "/shared"
+              }]
+            }]
+            volumes = [{
+              name     = "shared-tools"
+              emptyDir = {}
+            }]
+          } : {}
         )
       })
     })
