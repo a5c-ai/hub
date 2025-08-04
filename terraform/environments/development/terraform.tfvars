@@ -53,6 +53,13 @@ github_auth_method          = "token"  # Use token authentication (simpler for C
 # Runner Configuration
 runner_scale_set_name   = "hub-dev-runners"
 runner_min_replicas     = 0
+
+# Ingress NGINX Controller health probe for Azure LB
+ingress_nginx_controller_values = {
+  "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-health-probe-port"         = "10254"
+  "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-health-probe-request-path" = "/healthz"
+}
+
 runner_max_replicas     = 20
 runner_container_mode   = "kubernetes"  # Use Kubernetes mode (more efficient than dind)
 runner_labels          = ["development", "linux"]
