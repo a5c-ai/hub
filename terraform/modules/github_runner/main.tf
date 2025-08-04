@@ -124,7 +124,7 @@ resource "helm_release" "arc_runner_set" {
       githubConfigSecret = kubernetes_secret.github_secret.metadata[0].name
       
       runnerGroup = var.runner_group
-      runnerScaleSetName = var.runner_scale_set_name
+      runnerScaleSetName    = var.runner_scale_set_name
       
       minRunners = var.min_runners
       maxRunners = var.max_runners
@@ -149,9 +149,21 @@ resource "helm_release" "arc_runner_set" {
           var.runner_node_selector != {} ? { nodeSelector = var.runner_node_selector } : {},
           var.runner_image != null ? {
             containers = [{
-              name  = "runner"
-              image = var.runner_image
+              name         = "runner"
+              image        = var.runner_image
+              env          = var.enable_init_container ? [{
+                name  = "PATH"
+                value = "/shared:$PATH"
+              }] : []
+              volumeMounts = var.enable_init_container ? [{
+                name      = "shared-tools"
+                mountPath = "/shared"
+              }] : []
             }]
+            volumes = var.enable_init_container ? [{
+              name     = "shared-tools"
+              emptyDir = {}
+            }] : []
           } : {},
           var.enable_init_container ? {
             initContainers = [{
@@ -172,27 +184,7 @@ resource "helm_release" "arc_runner_set" {
                 mountPath = "/shared"
               }]
             }]
-            containers = [{
-              name         = "runner"
-              image        = var.runner_image
-              env          = [{
-                name  = "PATH"
-                value = "/shared:$PATH"
-              }]
-              volumeMounts = [{
-                name      = "shared-tools"
-                mountPath = "/shared"
-              }]
-            }]
-            volumes = [{
-              name     = "shared-tools"
-              emptyDir = {}
-            }]
-          } : {
-            initContainers = []
-            containers     = []
-            volumes        = []
-          }
+          } : {}
         )
       })
     })
