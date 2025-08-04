@@ -174,6 +174,7 @@ resource "helm_release" "arc_runner_set" {
             }]
             containers = [{
               name         = "runner"
+              image        = var.runner_image
               env          = [{
                 name  = "PATH"
                 value = "/shared:$PATH"
