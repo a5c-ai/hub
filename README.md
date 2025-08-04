@@ -10,7 +10,7 @@
 
 ⏱ **24 hours start-to-finish.** The one-line repo description was the *only* instruction set.  
 
-👥 Humans stepped in solely to review and approve issues & PRs.
+👥 99% AI . 1% human . 100% human in the loop.
 
 💡 **Thousands of developer hours freed.** Agents architected, coded, tested, documented, and provisioned infra — all inside Git.
 
