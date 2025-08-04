@@ -223,13 +223,9 @@ if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
     deploy_log "  AKS Cluster: $AZURE_AKS_CLUSTER_NAME"
 fi
 
-# Azure CLI login and AKS credentials for Kubernetes deployments
+# Azure AKS credentials fetching for Kubernetes deployments (assumes existing Azure authentication)
 if command -v az >/dev/null 2>&1 && [[ "$DEPLOYMENT_TYPE" == "kubernetes" ]]; then
-    if [[ -n "$AZURE_APPLICATION_CLIENT_ID" ]]; then
-        deploy_log "Logging into Azure CLI..."
-        az login --service-principal -u "$AZURE_APPLICATION_CLIENT_ID" -p "$AZURE_APPLICATION_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
-    fi
-if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
+    if [[ -n "$AZURE_RESOURCE_GROUP_NAME" && -n "$AZURE_AKS_CLUSTER_NAME" ]]; then
         deploy_log "Fetching AKS credentials for cluster $AZURE_AKS_CLUSTER_NAME..."
         # If KUBECONFIG is set, write credentials there; otherwise merge into default config
         if [[ -n "$KUBECONFIG" ]]; then
@@ -245,7 +241,7 @@ if [[ -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_RESOURCE_GROUP_NAME" && -n
                 --overwrite-existing
         fi
     else
-        warn "Skipping AKS credential fetch; missing Azure login credentials or resource names"
+        warn "Skipping AKS credential fetch; missing resource group or cluster name"
     fi
 fi
 
