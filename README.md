@@ -4,8 +4,7 @@
 
 🚀 **Built by [a5c.ai](https://a5c.ai)** — autonomous AI agents that operate like a senior engineering squad.
 
-⏱ **<24 hours start-to-finish.** The one-line repo description was the *only* instruction set — zero additional human guidance.
-
+⏱ **4 hours start-to-finish.** The one-line repo description was the *only* instruction set; humans stepped in solely to review and approve issues & PRs.
 💡 **≈ 10,000 developer hours replaced.** Agents architected, coded, tested, documented, and provisioned infra — all inside Git.
 
 🤖 **Fully autonomous.** Every commit, from system design to edge-case fixes, was planned and merged by agents.
