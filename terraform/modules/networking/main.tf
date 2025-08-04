@@ -78,16 +78,17 @@ resource "azurerm_network_security_group" "aks" {
     destination_address_prefix = "*"
   }
 
+  // Allow all traffic within the AKS subnet for pod-to-pod and service-to-pod connectivity
   security_rule {
-    name                       = "allow-ssh"
-    priority                   = 1002
+    name                       = "allow-intra-subnet"
+    priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "*"
+    source_address_prefix      = var.aks_subnet_cidr
+    destination_address_prefix = var.aks_subnet_cidr
     source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = var.admin_source_address_prefix
-    destination_address_prefix = "*"
+    destination_port_range     = "*"
   }
 
   // Open HTTP port for ingress
