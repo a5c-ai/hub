@@ -121,6 +121,10 @@ jobs:
 | `container_mode` | Container mode (dind or kubernetes) | `string` | `"dind"` | no |
 | `runner_image` | Custom runner image | `string` | `null` | no |
 | `runner_labels` | Additional labels for runners | `list(string)` | `[]` | no |
+| `controller_chart_version` | Version of the ARC controller Helm chart | `string` | `"0.12.1"` | no |
+| `runner_set_chart_version` | Version of the runner scale set Helm chart | `string` | `"0.12.1"` | no |
+| `storage_class_name` | Storage class name for ephemeral workspace PVC | `string` | `""` | no |
+| `ephemeral_storage_size` | Storage size for ephemeral workspace PVC | `string` | `"1Gi"` | no |
 
 ## Outputs
 
@@ -162,5 +166,3 @@ kubectl get runnerscaleset -n arc-runners
 - Verify GitHub App permissions
 - Check the Installation ID in the GitHub organization settings
 - Ensure the private key is correctly formatted
-| `storage_class_name` | Storage class name for ephemeral workspace PVC | `string` | `""` | no |
-| `ephemeral_storage_size` | Storage size for ephemeral workspace PVC | `string` | `"1Gi"` | no |
