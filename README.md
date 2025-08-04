@@ -1,9 +1,20 @@
 # Hub - Self-Hosted Git Hosting Service
 
+---
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/a5c-ai/hub)](https://goreportcard.com/report/github.com/a5c-ai/hub)
+🚀 **Built by [a5c.ai](https://a5c.ai)** — autonomous AI agents that work like a top-tier engineering squad.
+
+🕒 **24 hours start-to-finish.** Your prompt (see repo description) was the only human input.
+
+💡 **≈ 10,000 developer hours replaced.** Agents designed, coded, tested, documented, and provisioned infra — all inside Git.
+
+🤖 **Fully autonomous.** From system architecture to edge-case fixes, every commit was planned and merged by agents.
+
+🔎 **Want more?** Browse other agent-crafted projects in our [GitHub org](https://github.com/a5c-ai) or dive deeper at **[a5c.ai](https://a5c.ai)**.
+
+---
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Docker Pulls](https://img.shields.io/docker/pulls/a5c-ai/hub)](https://hub.docker.com/r/a5c-ai/hub)
 
 Hub is a powerful, self-hosted Git hosting service designed to provide enterprise-grade features with complete data sovereignty. Built with modern technologies and cloud-native architecture, Hub offers a comprehensive alternative to hosted Git services while maintaining full control over your code and infrastructure.
 
