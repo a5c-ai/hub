@@ -276,8 +276,6 @@ module "aks" {
   log_retention_days        = var.log_retention_days
   
   # Application Gateway integration
-  application_gateway_id               = module.security.application_gateway_id
-  enable_application_gateway_ingress   = true
   
   tags = local.common_tags
 }

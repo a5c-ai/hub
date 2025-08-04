@@ -249,8 +249,6 @@ module "aks" {
   create_worker_node_pool   = false  # No worker pool in development
   
   # Application Gateway integration
-  application_gateway_id               = module.security.application_gateway_id
-  enable_application_gateway_ingress   = true
   
   tags = local.common_tags
 }

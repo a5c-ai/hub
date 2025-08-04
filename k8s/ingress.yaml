@@ -7,35 +7,19 @@ metadata:
     app.kubernetes.io/name: hub
     app.kubernetes.io/component: ingress
   annotations:
-    # Azure Application Gateway Ingress Controller configuration
-    kubernetes.io/ingress.class: azure/application-gateway
-    
+    # NGINX Ingress Controller configuration
+    kubernetes.io/ingress.class: nginx
+
     # SSL redirect to ensure HTTPS
-    appgw.ingress.kubernetes.io/ssl-redirect: "true"
-    
-    # Let AGIC auto-detect health probes per service
-    
-    # Connection settings
-    appgw.ingress.kubernetes.io/connection-draining: "true"
-    appgw.ingress.kubernetes.io/connection-draining-timeout: "60"
-    appgw.ingress.kubernetes.io/request-timeout: "30"
-    
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
     # Backend protocol
-    appgw.ingress.kubernetes.io/backend-protocol: "http"
-    
-    # Cookie-based session affinity
-    appgw.ingress.kubernetes.io/cookie-based-affinity: "false"
-    
-    # Request routing rule priority
-    appgw.ingress.kubernetes.io/rule-priority: "100"
-    
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+
     # External DNS for automatic DNS record creation
     external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
-    
-    # cert-manager automatic certificate provisioning
-    # Removed: cert-manager.io/cluster-issuer annotation to prevent duplicate certificates
-    # Certificate is managed separately via certificates.yaml
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - hub.a5c.ai

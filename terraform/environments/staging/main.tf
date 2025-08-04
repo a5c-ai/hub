@@ -243,8 +243,6 @@ module "aks" {
   environment               = local.environment
   
   # Application Gateway integration
-  application_gateway_id               = module.security.application_gateway_id
-  enable_application_gateway_ingress   = true
   
   tags = local.common_tags
 }
