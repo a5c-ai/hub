@@ -10,7 +10,11 @@ func init() {
 }
 
 func migrate001Up(db *gorm.DB) error {
-	// Enable UUID extension
+	// Enable UUID extensions for UUID generation
+	// pgcrypto provides gen_random_uuid(), and uuid-ossp provides uuid_generate_v4()
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"").Error; err != nil {
+		return err
+	}
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
 		return err
 	}
