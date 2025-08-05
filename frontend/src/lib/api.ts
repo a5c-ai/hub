@@ -4,7 +4,7 @@ import type { PluginManifest } from '@/types';
 
 // Create axios instance with default configuration
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? '/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

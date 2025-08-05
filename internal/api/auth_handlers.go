@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	"github.com/a5c-ai/hub/internal/auth"
@@ -168,10 +169,14 @@ func (h *AuthHandlers) OAuthRedirect(c *gin.Context) {
 	// In production, store in Redis or secure session
 	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutes
 
-	// Get redirect URI from query parameter or use default
+	// Get redirect URI from query parameter or build from request
 	redirectURI := c.Query("redirect_uri")
 	if redirectURI == "" {
-		redirectURI = "http://localhost:8080/api/v1/auth/oauth/" + provider + "/callback"
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		redirectURI = fmt.Sprintf("%s://%s/api/v1/auth/oauth/%s/callback", scheme, c.Request.Host, provider)
 	}
 
 	authURL := oauthProvider.GetAuthURL(state, redirectURI)
@@ -199,10 +204,14 @@ func (h *AuthHandlers) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	// Get redirect URI from query parameter or use default
+	// Get redirect URI from query parameter or build from request
 	redirectURI := c.Query("redirect_uri")
 	if redirectURI == "" {
-		redirectURI = "http://localhost:8080/api/v1/auth/oauth/" + provider + "/callback"
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		redirectURI = fmt.Sprintf("%s://%s/api/v1/auth/oauth/%s/callback", scheme, c.Request.Host, provider)
 	}
 
 	response, err := h.oauthService.HandleCallback(c.Request.Context(), provider, code, state, redirectURI)
