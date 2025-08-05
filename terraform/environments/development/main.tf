@@ -396,7 +396,8 @@ module "github_runner" {
   max_runners          = var.runner_max_replicas
   container_mode       = var.runner_container_mode
   runner_labels        = var.runner_labels
-  runner_node_selector = { "nodepool-type" = "worker" }
+  # Only select worker node pool when created; otherwise no selector to allow default pool
+  runner_node_selector = var.create_worker_node_pool ? { "nodepool-type" = "worker" } : {}
   runner_image         = var.runner_image
 
   # Development-specific settings
