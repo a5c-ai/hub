@@ -719,7 +719,7 @@ export const useAuthStore = create<AuthState>()(
 import axios, { AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/store/auth'
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'
+const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
 
 export const api = axios.create({
   baseURL,
