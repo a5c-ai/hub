@@ -67,7 +67,7 @@ export function LoginForm() {
     sessionStorage.setItem('oauth_state', state);
     
     // Redirect to OAuth URL - use the API base URL
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+    const baseURL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
     window.location.href = `${baseURL}/auth/oauth/${provider}?state=${state}`;
   };
 
