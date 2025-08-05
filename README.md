@@ -151,6 +151,8 @@ You can also automate infrastructure deployment via the GitHub Actions workflow 
 
 ## 📖 Documentation
 
+**E2E Tests:** Run full end-to-end Playwright tests against production (hub.a5c.ai) via the GitHub Actions workflow defined in `.github_workflows/e2e-tests.yml` (manual dispatch).
+
 ### User Guides
 - **[User Guide](docs/user-guide.md)** - Complete guide for end users
 - **[Admin Guide](docs/admin-guide.md)** - Deployment and administration
