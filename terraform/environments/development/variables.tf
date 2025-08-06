@@ -110,6 +110,37 @@ variable "aks_vm_size" {
   default     = "Standard_D2s_v5"
 }
 
+# Worker Node Pool Configuration (optional)
+variable "create_worker_node_pool" {
+  description = "Create an additional worker node pool"
+  type        = bool
+  default     = false
+}
+
+variable "worker_vm_size" {
+  description = "The size of the virtual machines in the worker node pool"
+  type        = string
+  default     = "Standard_D4s_v5"
+}
+
+variable "worker_node_count" {
+  description = "The number of nodes in the worker node pool"
+  type        = number
+  default     = 2
+}
+
+variable "worker_min_node_count" {
+  description = "The minimum number of nodes in the worker node pool"
+  type        = number
+  default     = 1
+}
+
+variable "worker_max_node_count" {
+  description = "The maximum number of nodes in the worker node pool"
+  type        = number
+  default     = 4
+}
+
 # Monitoring Variables
 variable "alert_email_receivers" {
   description = "List of email receivers for alerts"
