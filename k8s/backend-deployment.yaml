@@ -90,12 +90,12 @@ spec:
             secretKeyRef:
               name: hub-secrets
               key: jwt-secret
-        - name: GITHUB_CLIENT_ID
+        - name: AUTH_GITHUB_CLIENT_ID
           valueFrom:
             secretKeyRef:
               name: hub-secrets
               key: github-oauth-client-id
-        - name: GITHUB_CLIENT_SECRET
+        - name: AUTH_GITHUB_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: hub-secrets
