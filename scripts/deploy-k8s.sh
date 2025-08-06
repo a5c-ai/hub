@@ -46,6 +46,8 @@ usage() {
     echo "  --dry-run               Perform a dry run"
     echo "  --skip-dependencies     Skip dependency deployments (PostgreSQL, Redis)"
     echo "  --wait                  Wait for deployments to be ready"
+    echo "  --enable-ssh            Enable SSH Git server access (port 2222)"
+    echo "  --ssh-method METHOD     SSH exposure method: 'nginx-tcp' or 'loadbalancer' (default: nginx-tcp)"
     echo "  -h, --help              Show this help message"
     echo ""
     echo "Examples:"
@@ -60,6 +62,8 @@ VALUES_FILE=""
 DRY_RUN=false
 SKIP_DEPENDENCIES=false
 WAIT_FOR_READY=false
+ENABLE_SSH=false
+SSH_METHOD="nginx-tcp"
 
 # Parse command line arguments
 shift # Remove the environment argument
@@ -84,6 +88,14 @@ while [[ $# -gt 0 ]]; do
         --wait)
             WAIT_FOR_READY=true
             shift
+            ;;
+        --enable-ssh)
+            ENABLE_SSH=true
+            shift
+            ;;
+        --ssh-method)
+            SSH_METHOD="$2"
+            shift 2
             ;;
         -h|--help)
             usage
@@ -161,6 +173,63 @@ if [[ -n "$REGISTRY" && -n "$AZURE_APPLICATION_CLIENT_ID" && -n "$AZURE_APPLICAT
     fi
 fi
 
+# Function to configure SSH access for Git operations
+configure_ssh_access() {
+    log "Configuring SSH access for Git operations..."
+    
+    local apply_cmd="kubectl apply"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        apply_cmd="kubectl apply --dry-run=client"
+    fi
+    
+    if [[ "$SSH_METHOD" == "nginx-tcp" ]]; then
+        log "Configuring NGINX TCP services for SSH..."
+        
+        # Check if NGINX ingress controller exists
+        if kubectl get ns ingress-nginx &>/dev/null; then
+            if [[ -f "$CONFIG_DIR/tcp-services-configmap.yaml" ]]; then
+                log "Applying TCP services ConfigMap..."
+                # Replace namespace placeholder with actual namespace
+                sed "s/NAMESPACE_PLACEHOLDER/$NAMESPACE/g" "$CONFIG_DIR/tcp-services-configmap.yaml" | \
+                $apply_cmd -f -
+                
+                warn "Note: You need to update NGINX controller to use tcp-services ConfigMap"
+                warn "  1. Edit deployment: kubectl edit deployment ingress-nginx-controller -n ingress-nginx"
+                warn "  2. Add arg: --tcp-services-configmap=\$(POD_NAMESPACE)/tcp-services"
+                warn "  3. Edit service: kubectl edit service ingress-nginx-controller -n ingress-nginx"
+                warn "  4. Add port 22 to the service ports section"
+            else
+                error "TCP services ConfigMap not found: $CONFIG_DIR/tcp-services-configmap.yaml"
+                error "Please ensure the file exists before enabling SSH with nginx-tcp method"
+                exit 1
+            fi
+        else
+            error "NGINX ingress controller namespace not found. Please install NGINX ingress first."
+            exit 1
+        fi
+        
+    elif [[ "$SSH_METHOD" == "loadbalancer" ]]; then
+        log "Creating LoadBalancer service for SSH..."
+        
+        if [[ -f "$CONFIG_DIR/ssh-loadbalancer-service.yaml" ]]; then
+            log "Applying SSH LoadBalancer service..."
+            sed '/^[[:space:]]*namespace:/d' "$CONFIG_DIR/ssh-loadbalancer-service.yaml" | \
+            $apply_cmd -f - -n "$NAMESPACE"
+            
+            log "SSH LoadBalancer service created. External IP will be assigned shortly."
+            log "Check status: kubectl get service hub-ssh-service -n $NAMESPACE"
+        else
+            error "SSH LoadBalancer service manifest not found: $CONFIG_DIR/ssh-loadbalancer-service.yaml"
+            error "Please ensure the file exists before enabling SSH with loadbalancer method"
+            exit 1
+        fi
+    else
+        error "Invalid SSH method: $SSH_METHOD. Use 'nginx-tcp' or 'loadbalancer'"
+    fi
+    
+    log "SSH configuration completed. Git SSH will be available on port 22."
+}
+
 # Function to apply kubectl manifests
 apply_kubectl_manifests() {
     local apply_cmd="kubectl apply -f"
@@ -216,6 +285,11 @@ apply_kubectl_manifests() {
             warn "Manifest not found: $manifest"
         fi
     done
+    
+    # Configure SSH if enabled
+    if [[ "$ENABLE_SSH" == "true" ]]; then
+        configure_ssh_access
+    fi
 }
 
 # Function to deploy using Helm
@@ -325,6 +399,44 @@ if [[ "$DRY_RUN" == "false" ]]; then
         warn "Skipping certificate status check - cert-manager not available"
         warn "TLS certificates will need to be managed manually or via infrastructure"
     fi
+fi
+
+# Show SSH configuration status if enabled
+if [[ "$ENABLE_SSH" == "true" ]]; then
+    log ""
+    log "SSH Git Server Status:"
+    log "===================="
+    
+    if [[ "$SSH_METHOD" == "nginx-tcp" ]]; then
+        log "SSH configured via NGINX TCP services"
+        log "  - Port 22 will forward to backend SSH service (port 2222)"
+        log "  - Remember to update NGINX controller configuration (see warnings above)"
+        log ""
+        log "Test SSH connectivity:"
+        log "  ssh git@hub.a5c.ai"
+    elif [[ "$SSH_METHOD" == "loadbalancer" ]]; then
+        log "SSH configured via LoadBalancer service"
+        log "  - Service: hub-ssh-service"
+        log ""
+        log "Check external IP status:"
+        log "  kubectl get service hub-ssh-service -n $NAMESPACE"
+        
+        # Try to get the external IP
+        EXTERNAL_IP=$(kubectl get service hub-ssh-service -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        if [[ -n "$EXTERNAL_IP" ]]; then
+            log "  External IP: $EXTERNAL_IP"
+            log ""
+            log "Test SSH connectivity:"
+            log "  ssh git@$EXTERNAL_IP"
+        else
+            log "  External IP: <pending>"
+            log "  Run the command above to check when IP is assigned"
+        fi
+    fi
+    
+    log ""
+    log "Clone repositories via SSH:"
+    log "  git clone git@<domain>:owner/repo.git"
 fi
 
 log "Deployment completed successfully!"

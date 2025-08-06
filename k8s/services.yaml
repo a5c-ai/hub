@@ -21,6 +21,10 @@ spec:
     protocol: TCP
     port: 8080
     targetPort: 8080
+  - name: ssh
+    protocol: TCP
+    port: 2222
+    targetPort: 2222
   type: ClusterIP
 
 ---

@@ -34,6 +34,9 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        - containerPort: 2222
+          name: ssh
+          protocol: TCP
         env:
         - name: PORT
           valueFrom:
@@ -135,6 +138,12 @@ spec:
             configMapKeyRef:
               name: hub-config
               key: REPOSITORY_PATH
+        - name: SSH_ENABLED
+          value: "true"
+        - name: SSH_PORT
+          value: "2222"
+        - name: SSH_HOST_KEY_PATH
+          value: "/var/lib/hub/ssh/ssh_host_key"
         resources:
           requests:
             memory: "256Mi"
@@ -172,6 +181,9 @@ spec:
           mountPath: /repositories
         - name: git-temp
           mountPath: /tmp/git
+        - name: ssh-keys
+          mountPath: /var/lib/hub/ssh
+          readOnly: false
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
@@ -183,6 +195,8 @@ spec:
         persistentVolumeClaim:
           claimName: hub-repositories-pvc
       - name: git-temp
+        emptyDir: {}
+      - name: ssh-keys
         emptyDir: {}
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

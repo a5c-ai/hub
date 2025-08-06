@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-ssh-service
+  namespace: hub
+  labels:
+    app: hub-backend
+    app.kubernetes.io/name: hub
+    app.kubernetes.io/component: ssh
+  annotations:
+    # Azure Load Balancer annotations
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "hub-resources"
+    # External DNS for automatic DNS record creation
+    external-dns.alpha.kubernetes.io/hostname: ssh.hub.a5c.ai
+    # You can also use the main domain if preferred
+    # external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
+spec:
+  type: LoadBalancer
+  selector:
+    app: hub-backend
+  ports:
+  - name: ssh
+    protocol: TCP
+    port: 22           # External port
+    targetPort: 2222   # Container port
+  sessionAffinity: ClientIP  # Maintain session affinity for SSH connections

@@ -53,6 +53,8 @@ usage() {
     echo "  --version VERSION        Version tag for deployment"
     echo "  --dry-run               Perform a dry run (preview changes)"
     echo "  --rollback              Rollback to previous version"
+    echo "  --enable-ssh            Enable SSH Git server access"
+    echo "  --ssh-method METHOD     SSH exposure method: 'nginx-tcp' or 'loadbalancer' (default: nginx-tcp)"
     echo "  --help                  Show this help message"
     echo ""
     echo "Environment variables:"
@@ -85,6 +87,8 @@ usage() {
 # Default options
 DRY_RUN=false
 ROLLBACK=false
+ENABLE_SSH=false
+SSH_METHOD="nginx-tcp"
 
 # Skip tests in CI environment (tests already run in separate CI job)
 if [[ "$CI" == "true" ]]; then
@@ -132,6 +136,14 @@ while [[ $# -gt 0 ]]; do
         --rollback)
             ROLLBACK=true
             shift
+            ;;
+        --enable-ssh)
+            ENABLE_SSH=true
+            shift
+            ;;
+        --ssh-method)
+            SSH_METHOD="$2"
+            shift 2
             ;;
         --help)
             usage
@@ -322,6 +334,14 @@ deploy_kubernetes() {
     fi
     
     k8s_args="$k8s_args --wait"
+    
+    # Add SSH options if enabled
+    if [[ "$ENABLE_SSH" == "true" ]]; then
+        k8s_args="$k8s_args --enable-ssh"
+        if [[ -n "$SSH_METHOD" ]]; then
+            k8s_args="$k8s_args --ssh-method $SSH_METHOD"
+        fi
+    fi
     
     if [[ "$ROLLBACK" == "true" ]]; then
         deploy_log "Rolling back Kubernetes deployment..."

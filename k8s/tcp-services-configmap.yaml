@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tcp-services
+  namespace: ingress-nginx  # This should be the namespace where NGINX controller is installed
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+data:
+  # Map external port 22 to the hub-backend-service SSH port
+  # Format: <external-port>: "<namespace>/<service-name>:<service-port>"
+  # Note: The namespace will be dynamically replaced during deployment
+  22: "NAMESPACE_PLACEHOLDER/hub-backend-service:2222"

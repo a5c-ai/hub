@@ -29,8 +29,8 @@ RUN addgroup -g 1001 -S hub && \
     adduser -S hub -u 1001 -G hub
 
 # Create necessary directories
-RUN mkdir -p /repositories /app && \
-    chown -R hub:hub /repositories /app
+RUN mkdir -p /repositories /app /var/lib/hub/ssh && \
+    chown -R hub:hub /repositories /app /var/lib/hub
 
 WORKDIR /app
 
@@ -40,8 +40,8 @@ COPY --from=builder /app/main .
 # Switch to non-root user
 USER hub
 
-# Expose port
-EXPOSE 8080
+# Expose ports
+EXPOSE 8080 2222
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
