@@ -72,6 +72,8 @@ usage() {
     echo "  AZURE_TENANT_ID               Azure AD tenant ID for Azure login"
     echo "  AZURE_RESOURCE_GROUP_NAME     Azure resource group for AKS credentials"
     echo "  AZURE_AKS_CLUSTER_NAME        AKS cluster name for kubectl context"
+    echo "  GITHUB_CLIENT_ID              GitHub OAuth app client ID"
+    echo "  GITHUB_CLIENT_SECRET          GitHub OAuth app client secret"
     echo ""
     echo "Examples:"
     echo "  $0 staging               # Deploy to staging"
@@ -330,6 +332,20 @@ deploy_kubernetes() {
             kubectl rollout undo deployment/hub-frontend -n "hub-${ENVIRONMENT}"
         fi
     else
+        # Sync GitHub OAuth credentials to Kubernetes secret
+        NS="hub-${ENVIRONMENT}"
+        if [[ -n "$GITHUB_CLIENT_ID" && -n "$GITHUB_CLIENT_SECRET" ]]; then
+            deploy_log "Syncing GitHub OAuth credentials to secret hub-secrets in namespace $NS"
+            if [[ "$DRY_RUN" == "true" ]]; then
+                kubectl patch secret hub-secrets -n "$NS" --type merge \
+                  -p "{\"data\":{\"github-oauth-client-id\":\"$(echo -n \"$GITHUB_CLIENT_ID\" | base64)\",\"github-oauth-client-secret\":\"$(echo -n \"$GITHUB_CLIENT_SECRET\" | base64)\"}}"
+            else
+                kubectl patch secret hub-secrets -n "$NS" --type merge \
+                  -p "{\"data\":{\"github-oauth-client-id\":\"$(echo -n \"$GITHUB_CLIENT_ID\" | base64)\",\"github-oauth-client-secret\":\"$(echo -n \"$GITHUB_CLIENT_SECRET\" | base64)\"}}"
+            fi
+        else
+            warn "GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET not set; skipping GitHub OAuth secret sync"
+        fi
         ./scripts/deploy-k8s.sh $k8s_args
     fi
 }
