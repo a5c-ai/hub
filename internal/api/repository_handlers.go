@@ -15,8 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"gopkg.in/yaml.v3"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // RepositoryResponse represents a repository with additional fields for API responses
@@ -112,8 +113,8 @@ func (h *RepositoryHandlers) convertToRepositoryResponse(repo *models.Repository
 		ForksCount:      repo.ForksCount,
 		WatchersCount:   repo.WatchersCount,
 		OpenIssuesCount: int(openIssuesCount),
-		CloneURL:        fmt.Sprintf("http://localhost:8080/%s/%s.git", owner.Username, repo.Name),
-		SSHURL:          fmt.Sprintf("git@localhost:%s/%s.git", owner.Username, repo.Name),
+		CloneURL:        fmt.Sprintf("https://hub.a5c.ai/%s/%s.git", owner.Username, repo.Name),
+		SSHURL:          fmt.Sprintf("git@hub.a5c.ai:%s/%s.git", owner.Username, repo.Name),
 		Size:            repo.SizeKB,
 		PushedAt:        pushedAtStr,
 	}, nil
