@@ -187,7 +187,11 @@ resource "helm_release" "arc_runner_set" {
               name     = "shared-tools"
               emptyDir = {}
             }]
-          } : {}
+          } : {
+            initContainers = []
+            containers     = []
+            volumes        = []
+          }
         )
       })
     })
