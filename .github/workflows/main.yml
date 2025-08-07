@@ -291,4 +291,4 @@ jobs:
           export DEPLOY_TIMEOUT=25m
           
           # Run deployment with verbose output
-          ./scripts/deploy.sh --enable-ssh --ssh-method nginx-tcp
+          ./scripts/deploy.sh

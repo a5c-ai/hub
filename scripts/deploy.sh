@@ -87,7 +87,7 @@ usage() {
 # Default options
 DRY_RUN=false
 ROLLBACK=false
-ENABLE_SSH=false
+ENABLE_SSH=true
 SSH_METHOD="nginx-tcp"
 
 # Skip tests in CI environment (tests already run in separate CI job)
