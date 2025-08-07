@@ -85,6 +85,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	// Initialize import/export handlers
 	importHandlers := NewImportHandlers(database)
 	exportHandlers := NewExportHandlers(database)
+	// Initialize GitHub-specific handlers for repository creation and import
+	githubService := services.NewGitHubService(logger)
+	githubHandlers := NewGitHubHandlers(githubService, logger)
 
 	orgController := controllers.NewOrganizationController(orgService, memberService, invitationService, activityService)
 	teamController := controllers.NewTeamController(teamService, teamMembershipService, permissionService)
@@ -301,6 +304,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 			protected.GET("/repositories/import/:job_id", importHandlers.GetImportStatus)
 			protected.POST("/repositories/:owner/:repo/export", exportHandlers.InitiateExport)
 			protected.GET("/repositories/:owner/:repo/export/:job_id", exportHandlers.GetExportStatus)
+			// GitHub create/import endpoints (feature stub)
+			protected.POST("/repositories/github/create", githubHandlers.InitiateGitHubCreate)
+			protected.POST("/repositories/github/import", githubHandlers.InitiateGitHubImport)
 
 			// Repository creation endpoint (without group to avoid trailing slash issues)
 			protected.POST("/repositories", repoHandlers.CreateRepository)
