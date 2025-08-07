@@ -86,6 +86,12 @@ GITLAB_CLIENT_ID=your-gitlab-client-id
 GITLAB_CLIENT_SECRET=your-gitlab-client-secret
 GITLAB_BASE_URL=https://gitlab.example.com
 
+# GitHub Integration Tokens
+# Per-organization tokens (JSON map)
+GITHUB_TOKENS_ORGANIZATIONS='{"your-org":"org-token"}'
+# Per-user tokens (JSON map)
+GITHUB_TOKENS_USERS='{"your-user":"user-token"}'
+
 # LDAP Configuration
 LDAP_HOST=ldap.example.com
 LDAP_PORT=389
@@ -126,6 +132,16 @@ oauth:
     client_id: "your-gitlab-client-id"
     client_secret: "your-gitlab-client-secret"
     base_url: "https://gitlab.example.com"
+
+# GitHub Integration Tokens
+github:
+  client_id: "your-github-client-id"
+  client_secret: "your-github-client-secret"
+  tokens:
+    organizations:
+      your-org: "org-token"
+    users:
+      your-user: "user-token"
 
 saml:
   enabled: true

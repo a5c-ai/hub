@@ -37,3 +37,13 @@ lfs:
     account_name: "<dev-account-name>"
     account_key: "<dev-account-key>"
     container_name: "<dev-container-name>"
+
+# GitHub integration configuration for development
+github:
+  client_id: "<dev-github-client-id>"
+  client_secret: "<dev-github-client-secret>"
+  tokens:
+    organizations:
+      your-dev-org: "<dev-organization-token>"
+    users:
+      your-dev-user: "<dev-user-token>"

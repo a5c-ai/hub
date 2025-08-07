@@ -54,4 +54,14 @@ lfs:
   azure:
     account_name: "<your-account-name>"
     account_key: "<your-account-key>"
-    container_name: "<your-container-name>"
+  container_name: "<your-container-name>"
+
+# GitHub integration configuration
+github:
+  client_id: "<your-github-client-id>"
+  client_secret: "<your-github-client-secret>"
+  tokens:
+    organizations:
+      your-org: "<organization-token>"
+    users:
+      your-user: "<user-token>"
