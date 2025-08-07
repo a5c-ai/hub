@@ -109,9 +109,9 @@ func SetupRoutes(router *gin.Engine, database *db.Database, logger *logrus.Logge
 	git := router.Group("/")
 	git.Use(gitHandlers.GitMiddleware())
 	{
-		git.GET("/:owner/:repo/info/refs", gitHandlers.InfoRefs)
-		git.POST("/:owner/:repo/git-upload-pack", gitHandlers.UploadPack)
-		git.POST("/:owner/:repo/git-receive-pack", gitHandlers.ReceivePack)
+		git.GET("/:owner/:repo.git/info/refs", gitHandlers.InfoRefs)
+		git.POST("/:owner/:repo.git/git-upload-pack", gitHandlers.UploadPack)
+		git.POST("/:owner/:repo.git/git-receive-pack", gitHandlers.ReceivePack)
 	}
 
 	v1 := router.Group("/api/v1")

@@ -18,6 +18,9 @@ metadata:
 
     # External DNS for automatic DNS record creation
     external-dns.alpha.kubernetes.io/hostname: hub.a5c.ai
+
+    # Use regex to route git operations to backend
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   tls:
@@ -51,9 +54,10 @@ spec:
             name: hub-backend-service
             port:
               number: 8080
-      # Git protocol endpoints
-      - path: /git
-        pathType: Prefix
+      # Git repository operations (must come before catch-all)
+      # Matches any path ending with .git and their sub-paths
+      - path: /([^/]+)/([^/]+)\.git(/.*)?
+        pathType: ImplementationSpecific
         backend:
           service:
             name: hub-backend-service

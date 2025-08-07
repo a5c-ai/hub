@@ -33,34 +33,20 @@ func NewGitHandlers(repositoryService services.RepositoryService, logger *logrus
 	}
 }
 
-// InfoRefs handles GET /{owner}/{repo}/info/refs
+// InfoRefs handles GET /{owner}/{repo.git}/info/refs
 func (h *GitHandlers) InfoRefs(c *gin.Context) {
 	owner := c.Param("owner")
-	repoWithGit := c.Param("repo")
+	repoName := c.Param("repo") // Already without .git suffix since route pattern is :repo.git
 	service := c.Query("service")
 
-	// Remove .git suffix if present - the route should include .git
-	repoName := strings.TrimSuffix(repoWithGit, ".git")
-
-	// If no .git suffix was found, this might not be a git request
-	if repoName == repoWithGit {
-		h.logger.WithFields(logrus.Fields{
-			"owner": owner,
-			"repo":  repoWithGit,
-		}).Error("Repository path does not end with .git")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
 	h.logger.WithFields(logrus.Fields{
-		"owner":         owner,
-		"repo_with_git": repoWithGit,
-		"repo":          repoName,
-		"service":       service,
+		"owner":   owner,
+		"repo":    repoName,
+		"service": service,
 	}).Info("Git info/refs request")
 
 	if repoName == "" {
-		h.logger.Error("Repository name is empty after parsing")
+		h.logger.Error("Repository name is empty")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -120,13 +106,10 @@ func (h *GitHandlers) InfoRefs(c *gin.Context) {
 	}
 }
 
-// UploadPack handles POST /{owner}/{repo}/git-upload-pack
+// UploadPack handles POST /{owner}/{repo.git}/git-upload-pack
 func (h *GitHandlers) UploadPack(c *gin.Context) {
 	owner := c.Param("owner")
-	repoWithGit := c.Param("repo")
-
-	// Remove .git suffix if present
-	repoName := strings.TrimSuffix(repoWithGit, ".git")
+	repoName := c.Param("repo") // Already without .git suffix since route pattern is :repo.git
 
 	h.logger.WithFields(logrus.Fields{
 		"owner": owner,
@@ -181,13 +164,10 @@ func (h *GitHandlers) UploadPack(c *gin.Context) {
 	h.handleGitCommand(c, repoPath, "git-upload-pack", "--stateless-rpc", repoPath)
 }
 
-// ReceivePack handles POST /{owner}/{repo}/git-receive-pack
+// ReceivePack handles POST /{owner}/{repo.git}/git-receive-pack
 func (h *GitHandlers) ReceivePack(c *gin.Context) {
 	owner := c.Param("owner")
-	repoWithGit := c.Param("repo")
-
-	// Remove .git suffix if present
-	repoName := strings.TrimSuffix(repoWithGit, ".git")
+	repoName := c.Param("repo") // Already without .git suffix since route pattern is :repo.git
 
 	h.logger.WithFields(logrus.Fields{
 		"owner": owner,
