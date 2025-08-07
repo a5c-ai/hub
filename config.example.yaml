@@ -55,3 +55,10 @@ lfs:
     account_name: "<your-account-name>"
     account_key: "<your-account-key>"
     container_name: "<your-container-name>"
+
+# GitHub integration for repository creation and import
+github:
+  # GitHub API base URL
+  api_url: https://api.github.com
+  # Personal access token for GitHub operations (set via environment or config)
+  # token: <your-github-access-token>
