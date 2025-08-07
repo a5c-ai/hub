@@ -5,22 +5,24 @@ import (
 )
 
 type Config struct {
-	Environment   string        `mapstructure:"environment"`
-	LogLevel      int           `mapstructure:"log_level"`
-	Server        Server        `mapstructure:"server"`
-	Database      Database      `mapstructure:"database"`
-	Redis         Redis         `mapstructure:"redis"`
-	JWT           JWT           `mapstructure:"jwt"`
-	CORS          CORS          `mapstructure:"cors"`
-	Storage       Storage       `mapstructure:"storage"`
-	Security      Security      `mapstructure:"security"`
-	OAuth         OAuth         `mapstructure:"oauth"`
-	SAML          SAML          `mapstructure:"saml"`
-	LDAP          LDAP          `mapstructure:"ldap"`
-	SMTP          SMTP          `mapstructure:"smtp"`
-	SSH           SSH           `mapstructure:"ssh"`
-	Elasticsearch Elasticsearch `mapstructure:"elasticsearch"`
-	Application   Application   `mapstructure:"application"`
+	Environment string   `mapstructure:"environment"`
+	LogLevel    int      `mapstructure:"log_level"`
+	Server      Server   `mapstructure:"server"`
+	Database    Database `mapstructure:"database"`
+	Redis       Redis    `mapstructure:"redis"`
+	JWT         JWT      `mapstructure:"jwt"`
+	CORS        CORS     `mapstructure:"cors"`
+	Storage     Storage  `mapstructure:"storage"`
+	Security    Security `mapstructure:"security"`
+	OAuth       OAuth    `mapstructure:"oauth"`
+	// GitHub integration tokens configuration
+	GitHub        GitHubIntegration `mapstructure:"github"`
+	SAML          SAML              `mapstructure:"saml"`
+	LDAP          LDAP              `mapstructure:"ldap"`
+	SMTP          SMTP              `mapstructure:"smtp"`
+	SSH           SSH               `mapstructure:"ssh"`
+	Elasticsearch Elasticsearch     `mapstructure:"elasticsearch"`
+	Application   Application       `mapstructure:"application"`
 	// Git LFS configuration
 	LFS LFS `mapstructure:"lfs"`
 }
@@ -129,6 +131,19 @@ type GitLabOAuth struct {
 	ClientSecret string `mapstructure:"client_secret"`
 	RedirectURL  string `mapstructure:"redirect_url"`
 	BaseURL      string `mapstructure:"base_url"`
+}
+
+// GitHubIntegration holds configuration for GitHub API integration tokens.
+type GitHubIntegration struct {
+	ClientID     string       `mapstructure:"client_id"`
+	ClientSecret string       `mapstructure:"client_secret"`
+	Tokens       GitHubTokens `mapstructure:"tokens"`
+}
+
+// GitHubTokens specifies per-organization and per-user personal access tokens.
+type GitHubTokens struct {
+	Organizations map[string]string `mapstructure:"organizations"`
+	Users         map[string]string `mapstructure:"users"`
 }
 
 type SAML struct {
@@ -303,6 +318,16 @@ func Load() (*Config, error) {
 	viper.BindEnv("lfs.azure.account_name", "LFS_AZURE_ACCOUNT_NAME")
 	viper.BindEnv("lfs.azure.account_key", "LFS_AZURE_ACCOUNT_KEY")
 	viper.BindEnv("lfs.azure.container_name", "LFS_AZURE_CONTAINER_NAME")
+
+	// GitHub integration defaults and env bindings
+	viper.SetDefault("github.client_id", "")
+	viper.SetDefault("github.client_secret", "")
+	viper.SetDefault("github.tokens.organizations", map[string]string{})
+	viper.SetDefault("github.tokens.users", map[string]string{})
+	viper.BindEnv("github.client_id", "GITHUB_CLIENT_ID")
+	viper.BindEnv("github.client_secret", "GITHUB_CLIENT_SECRET")
+	viper.BindEnv("github.tokens.organizations", "GITHUB_TOKENS_ORGANIZATIONS")
+	viper.BindEnv("github.tokens.users", "GITHUB_TOKENS_USERS")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

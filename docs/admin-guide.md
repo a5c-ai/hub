@@ -308,6 +308,15 @@ oauth:
     tenant_id: ${AZURE_AD_TENANT_ID}
     enabled: false
 
+# GitHub Integration Tokens
+# Configure personal access tokens for API operations on behalf of organizations and users
+github:
+  tokens:
+    organizations:
+      your-org: ${GITHUB_TOKENS_ORGANIZATIONS}  # JSON map of organization tokens
+    users:
+      your-user: ${GITHUB_TOKENS_USERS}          # JSON map of user tokens
+
 # Storage configuration
 storage:
   backend: local  # local, s3, azure_blob
