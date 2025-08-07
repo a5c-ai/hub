@@ -119,12 +119,9 @@ log "Build first: $BUILD_FIRST"
 export NODE_ENV="test"
 export GO_ENV="$TEST_ENV"
 
-# In CI environment, ensure sqlite3 C library is available and enable CGO for go-sqlite3 driver
+# In CI environment, enable CGO for go-sqlite3 driver (assumes sqlite3 C library and compiler are available)
 if [[ "$CI" == "true" ]]; then
-    test_log "Installing sqlite3 C library for Go sqlite3 driver..."
-    sudo apt-get update
-    # Install C library and compiler for CGO support
-    sudo apt-get install -y libsqlite3-dev gcc
+    test_log "Enabling CGO for go-sqlite3 driver (assumes sqlite3 C library and compiler are available)"
     export CGO_ENABLED=1
 fi
 
