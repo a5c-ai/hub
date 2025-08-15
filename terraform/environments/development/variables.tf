@@ -207,7 +207,7 @@ variable "runner_max_replicas" {
 variable "runner_container_mode" {
   description = "Container mode for runners (dind or kubernetes)"
   type        = string
-  default     = "dind"
+  default     = "kubernetes"
 }
 
 variable "runner_labels" {
