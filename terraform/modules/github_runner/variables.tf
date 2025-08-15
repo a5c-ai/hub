@@ -98,7 +98,7 @@ variable "runner_labels" {
 variable "container_mode" {
   description = "Container mode for runners (dind or kubernetes)"
   type        = string
-  default     = "dind"
+  default     = "kubernetes"
   validation {
     condition     = contains(["dind", "kubernetes"], var.container_mode)
     error_message = "Container mode must be either 'dind' or 'kubernetes'."
@@ -120,13 +120,13 @@ variable "storage_class_name" {
 variable "ephemeral_storage_size" {
   description = "Storage size for ephemeral workspace PVC"
   type        = string
-  default     = "1Gi"
+  default     = "10Gi"
 }
 
 variable "enable_init_container" {
   description = "Enable init container to install prerequisites dynamically"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "runner_node_selector" {
