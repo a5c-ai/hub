@@ -32,15 +32,16 @@ resource "azurerm_kubernetes_cluster" "main" {
   kubernetes_version  = var.kubernetes_version
 
   default_node_pool {
-    name                = "default"
-    node_count          = var.enable_auto_scaling ? null : var.node_count
-    vm_size             = var.vm_size
-    zones               = var.availability_zones
-    enable_auto_scaling = var.enable_auto_scaling
-    min_count           = var.enable_auto_scaling ? var.min_node_count : null
-    max_count           = var.enable_auto_scaling ? var.max_node_count : null
-    os_disk_size_gb    = var.os_disk_size_gb
-    vnet_subnet_id     = var.subnet_id
+    name                         = "default"
+    temporary_name_for_rotation  = "defaulttemp"
+    node_count                   = var.enable_auto_scaling ? null : var.node_count
+    vm_size                      = var.vm_size
+    zones                        = var.availability_zones
+    enable_auto_scaling          = var.enable_auto_scaling
+    min_count                    = var.enable_auto_scaling ? var.min_node_count : null
+    max_count                    = var.enable_auto_scaling ? var.max_node_count : null
+    os_disk_size_gb             = var.os_disk_size_gb
+    vnet_subnet_id              = var.subnet_id
 
     upgrade_settings {
       max_surge = var.max_surge
