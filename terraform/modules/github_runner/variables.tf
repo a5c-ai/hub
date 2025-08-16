@@ -108,7 +108,7 @@ variable "container_mode" {
 variable "runner_image" {
   description = "Custom runner image (optional)"
   type        = string
-  default     = null  # Uses default GitHub Actions runner image when null
+  default     = "acrhubdevelopmentwestus3.azurecr.io/hub/github-runner:latest"
 }
 
 variable "storage_class_name" {
