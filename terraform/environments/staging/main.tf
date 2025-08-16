@@ -160,11 +160,11 @@ module "container_registry" {
   tags                = local.common_tags
 }
 
-# Grant AKS permission to pull images from ACR
+# Grant AKS kubelet identity permission to pull images from ACR
 resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                = module.container_registry.registry_id
   role_definition_name = "AcrPull"
-  principal_id         = module.aks.cluster_identity_principal_id
+  principal_id         = module.aks.kubelet_identity[0].object_id
 }
 
 # PostgreSQL
