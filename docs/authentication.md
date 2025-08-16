@@ -75,8 +75,8 @@ SMTP_FROM=noreply@example.com
 SMTP_USE_TLS=true
 
 # OAuth Providers
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+AUTH_GITHUB_CLIENT_ID=your-github-client-id
+AUTH_GITHUB_CLIENT_SECRET=your-github-client-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 MICROSOFT_CLIENT_ID=your-microsoft-client-id
