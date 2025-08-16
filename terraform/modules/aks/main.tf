@@ -33,6 +33,7 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   default_node_pool {
     name                = "default"
+    temporary_name_for_rotation = "${var.cluster_name}-default-rotation"
     node_count          = var.enable_auto_scaling ? null : var.node_count
     vm_size             = var.vm_size
     zones               = var.availability_zones
