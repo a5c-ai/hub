@@ -92,6 +92,13 @@ variable "max_surge" {
   description = "The maximum number or percentage of nodes that can be created during an upgrade"
   type        = string
   default     = "10%"
+
+}
+
+variable "max_unavailable" {
+  description = "The maximum number or percentage of nodes that can be unavailable during an upgrade"
+  type        = string
+  default     = "1"
 }
 
 variable "log_retention_days" {
