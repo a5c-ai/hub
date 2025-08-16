@@ -44,7 +44,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     vnet_subnet_id              = var.subnet_id
 
     upgrade_settings {
-      max_surge = var.max_surge
+      max_surge       = var.max_surge
+      max_unavailable = var.max_unavailable
     }
 
     tags = var.tags
@@ -148,7 +149,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "worker" {
   node_taints = var.worker_node_taints
 
   upgrade_settings {
-    max_surge = var.max_surge
+    max_surge       = var.max_surge
+    max_unavailable = var.max_unavailable
   }
 
   tags = var.tags
