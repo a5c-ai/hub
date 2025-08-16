@@ -369,8 +369,8 @@ JWT_EXPIRY=24h
 SESSION_TIMEOUT=168h
 
 # OAuth
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+AUTH_GITHUB_CLIENT_ID=your-github-client-id
+AUTH_GITHUB_CLIENT_SECRET=your-github-client-secret
 AZURE_AD_CLIENT_ID=your-azure-ad-client-id
 AZURE_AD_CLIENT_SECRET=your-azure-ad-client-secret
 AZURE_AD_TENANT_ID=your-azure-ad-tenant-id
