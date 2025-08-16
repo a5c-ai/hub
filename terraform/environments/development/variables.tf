@@ -107,14 +107,14 @@ variable "aks_node_count" {
 variable "aks_vm_size" {
   description = "The size of the virtual machines in the AKS cluster"
   type        = string
-  default     = "Standard_D2s_v5"
+  default     = "Standard_D4s_v5"
 }
 
 # Worker Node Pool Configuration (optional)
 variable "create_worker_node_pool" {
   description = "Create an additional worker node pool"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "worker_vm_size" {
