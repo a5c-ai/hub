@@ -2,7 +2,6 @@ module github.com/a5c-ai/hub
 
 go 1.24.0
 
-toolchain go1.24.5
 
 require (
 	github.com/Azure/azure-storage-blob-go v0.15.0
