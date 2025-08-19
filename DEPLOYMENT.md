@@ -170,8 +170,8 @@ PORT: 8080
 DATABASE_URL: postgresql://...
 REDIS_URL: redis://...
 JWT_SECRET: <secret>
-GITHUB_CLIENT_ID: <secret>
-GITHUB_CLIENT_SECRET: <secret>
+AUTH_GITHUB_CLIENT_ID: <secret>
+AUTH_GITHUB_CLIENT_SECRET: <secret>
 DB_HOST: <value>
 DB_PORT: <value>
 DB_NAME: <value>
