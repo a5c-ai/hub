@@ -121,11 +121,52 @@ export GO_ENV="$TEST_ENV"
 
 # In CI environment, ensure sqlite3 C library is available and enable CGO for go-sqlite3 driver
 if [[ "$CI" == "true" ]]; then
-    test_log "Installing sqlite3 C library for Go sqlite3 driver..."
-    sudo apt-get update
-    # Install C library and compiler for CGO support
-    sudo apt-get install -y libsqlite3-dev gcc
+    test_log "Ensuring sqlite3 C library and build tools are available for CGO..."
+
+    # Set CGO on for tests using github.com/mattn/go-sqlite3
     export CGO_ENABLED=1
+
+    # Determine privilege escalation command (sudo if available and not root)
+    SUDO=""
+    if [[ $(id -u) -ne 0 ]]; then
+        if command -v sudo >/dev/null 2>&1; then
+            SUDO="sudo"
+        else
+            warn "sudo not available and not running as root; will attempt installs without sudo if possible"
+        fi
+    fi
+
+    install_sqlite_deps() {
+        if command -v apt-get >/dev/null 2>&1; then
+            test_log "Detected apt-get; installing libsqlite3-dev and gcc"
+            $SUDO apt-get update -y || true
+            $SUDO apt-get install -y libsqlite3-dev gcc || return 1
+            return 0
+        elif command -v apk >/dev/null 2>&1; then
+            test_log "Detected apk; installing sqlite-dev, gcc, musl-dev (build-base)"
+            $SUDO apk update || true
+            $SUDO apk add --no-cache sqlite-dev gcc musl-dev build-base || return 1
+            return 0
+        elif command -v dnf >/dev/null 2>&1; then
+            test_log "Detected dnf; installing sqlite-devel and gcc"
+            $SUDO dnf install -y sqlite-devel gcc || return 1
+            return 0
+        elif command -v yum >/dev/null 2>&1; then
+            test_log "Detected yum; installing sqlite-devel and gcc"
+            $SUDO yum install -y sqlite-devel gcc || return 1
+            return 0
+        elif command -v zypper >/dev/null 2>&1; then
+            test_log "Detected zypper; installing sqlite3-devel and gcc"
+            $SUDO zypper --non-interactive install sqlite3-devel gcc || return 1
+            return 0
+        else
+            return 2
+        fi
+    }
+
+    if ! install_sqlite_deps; then
+        warn "Could not install sqlite3 build dependencies on this runner. If go-sqlite3 tests fail, ensure libsqlite3 and a C compiler are available."
+    fi
 fi
 
 # Configure test database parameters
