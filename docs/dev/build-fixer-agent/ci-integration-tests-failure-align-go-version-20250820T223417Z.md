@@ -12,3 +12,13 @@ Plan:
 - Run `go mod tidy`, `go build ./...`, and `go test -short ./...` locally
 - Open a PR with explanation and verification steps; link the failing run
 
+
+Results:
+- Updated go.mod to `go 1.21.0`
+- Local verification succeeded:
+  - go mod tidy
+  - go build ./...
+  - go test -short ./...
+- Branch pushed: fix/ci-align-go-version-with-workflow
+- Unable to open PR due to GitHub Actions permission restrictions; created issue #729 requesting a human to open the PR and run the workflow
+
