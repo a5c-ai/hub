@@ -130,29 +130,19 @@ resource "helm_release" "arc_runner_set" {
       maxRunners = var.max_runners
       
       # Container mode - use variable (dind or kubernetes)
-      # When using kubernetes mode:
-      # - If use_pvc_for_work_volume is true, provide a PersistentVolumeClaimTemplate spec
-      # - Otherwise, omit and ARC will default to emptyDir for the work volume
-      containerMode = var.container_mode == "kubernetes" ? merge(
-        {
-          type = "kubernetes"
-        },
-        var.use_pvc_for_work_volume ? {
-          kubernetesMode = {
-            workVolumeClaim = {
-              spec = {
-                accessModes      = ["ReadWriteOnce"]
-                storageClassName = var.storage_class_name
-                resources = {
-                  requests = {
-                    storage = var.ephemeral_storage_size
-                  }
-                }
-              }
+      # ARC chart (0.12.x) expects kubernetesModeWorkVolumeClaim when type is kubernetes
+      containerMode = var.container_mode == "kubernetes" ? {
+        type = "kubernetes"
+        kubernetesModeWorkVolumeClaim = {
+          accessModes      = ["ReadWriteOnce"]
+          storageClassName = var.storage_class_name
+          resources = {
+            requests = {
+              storage = var.ephemeral_storage_size
             }
           }
-        } : {}
-      ) : {
+        }
+      } : {
         type = var.container_mode
       }
       

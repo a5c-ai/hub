@@ -416,11 +416,9 @@ module "github_runner" {
   controller_namespace = "arc-systems"
   runners_namespace   = "arc-runners"
   
-  # Storage settings for runner workspace
-  # Avoid Azure Disk attach limits by using emptyDir for work volume
-  use_pvc_for_work_volume = false
-  storage_class_name      = "managed-csi-premium"
-  ephemeral_storage_size  = "10Gi"
+  # Storage settings for runner workspace (use Azure Disk CSI)
+  storage_class_name     = "managed-csi-premium"
+  ephemeral_storage_size = "10Gi"
 
   depends_on = [
     module.aks,
