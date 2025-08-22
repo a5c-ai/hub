@@ -130,23 +130,31 @@ resource "helm_release" "arc_runner_set" {
       maxRunners = var.max_runners
       
       # Container mode - use variable (dind or kubernetes)
-      # If use_pvc_for_work_volume is true, configure PVC; otherwise ARC will use emptyDir
-      containerMode = merge(
+      # When using kubernetes mode:
+      # - If use_pvc_for_work_volume is true, provide a PersistentVolumeClaimTemplate spec
+      # - Otherwise, omit and ARC will default to emptyDir for the work volume
+      containerMode = var.container_mode == "kubernetes" ? merge(
         {
-          type = var.container_mode
+          type = "kubernetes"
         },
-        var.container_mode == "kubernetes" && var.use_pvc_for_work_volume ? {
-          kubernetesModeWorkVolumeClaim = {
-            accessModes      = ["ReadWriteOnce"]
-            storageClassName = var.storage_class_name
-            resources = {
-              requests = {
-                storage = var.ephemeral_storage_size
+        var.use_pvc_for_work_volume ? {
+          kubernetesMode = {
+            workVolumeClaim = {
+              spec = {
+                accessModes      = ["ReadWriteOnce"]
+                storageClassName = var.storage_class_name
+                resources = {
+                  requests = {
+                    storage = var.ephemeral_storage_size
+                  }
+                }
               }
             }
           }
         } : {}
-      )
+      ) : {
+        type = var.container_mode
+      }
       
       # Use custom runner image or init container overrides, merged into template map for consistent typing
       template = tomap({
