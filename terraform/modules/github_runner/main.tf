@@ -146,7 +146,7 @@ resource "helm_release" "arc_runner_set" {
       # Use custom runner image or init container overrides, merged into template map for consistent typing
       template = tomap({
         spec = merge(
-          { nodeSelector = var.runner_node_selector },
+          # { nodeSelector = var.runner_node_selector },
           var.runner_image != null ? {
             containers = [{
               name  = "runner"
