@@ -94,9 +94,14 @@ locals {
   # Volume spec with optional storage class
   # Always merge base spec with optional storageClassName for consistent types
   volume_spec = merge(
-    local.base_volume_spec,
-    var.storage_class_name != "" ? { storageClassName = var.storage_class_name } : {}
-  )
+          length(var.runner_node_selector) > 0 ? { nodeSelector = var.runner_node_selector } : {},
+          var.runner_image != null ? {
+            containers = [{
+              name  = "runner"
+              image = var.runner_image
+            }]
+          } : {}
+        )
 }
 
 # Create the runner scale set
