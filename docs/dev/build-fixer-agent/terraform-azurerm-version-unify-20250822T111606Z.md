@@ -15,3 +15,8 @@ Root env files require azurerm `~> 4.0` but modules require `~> 3.0`, causing co
 
 ## Notes
 This change does not alter resources; it aligns provider constraints to allow init/plan to proceed in CI.
+
+## Results
+- Updated azurerm provider versions in 8 module files to `~> 4.0`.
+- Created PR to merge the changes: will trigger Infrastructure Deployment workflow to verify `terraform init` passes.
+
