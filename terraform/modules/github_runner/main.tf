@@ -114,9 +114,13 @@ resource "helm_release" "arc_runner_set" {
     create_before_destroy = false
   }
   
-  # Temporarily disable atomic to get better error details
-  # atomic           = true
-  # force_update     = true
+  # Ensure Helm performs a full replace when the underlying CRD structure changes
+  # This avoids server-side patch validation issues on AutoscalingRunnerSet when
+  # switching work volume strategies (ephemeral/PVC <-> emptyDir)
+  force_update = true
+
+  # Temporarily disable atomic (keep default) to surface validation errors clearly
+  # atomic = false
 
   values = [
     yamlencode({

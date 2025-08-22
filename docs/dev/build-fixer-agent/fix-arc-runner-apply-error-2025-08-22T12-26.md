@@ -1,0 +1,1 @@
+Started analysis of failed run 17155198090. Plan: enforce Helm force_update for ARC runner set to avoid patching invalid AutoscalingRunnerSet when toggling work volume strategy (PVC vs emptyDir).\nCreated branch and will adjust terraform/modules/github_runner/main.tf accordingly.\n
