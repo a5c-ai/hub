@@ -43,7 +43,7 @@ jobs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: ~1.5
-    - name: prepare azure credentials json
+    - name: Prepare Azure credentials output
       id: prepare-azure-credentials
       env:
         AZURE_APPLICATION_CLIENT_ID: ${{ vars.AZURE_APPLICATION_CLIENT_ID }}
@@ -51,9 +51,17 @@ jobs:
         AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
         AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       run: |
-        echo "{\"clientId\": \"${{ env.AZURE_APPLICATION_CLIENT_ID }}\", \"clientSecret\": \"${{ env.AZURE_APPLICATION_CLIENT_SECRET }}\", \"tenantId\": \"${{ env.AZURE_TENANT_ID }}\", \"subscriptionId\": \"${{ env.AZURE_SUBSCRIPTION_ID }}\"}" | jq -r tostring > azure-credentials.json
-        # output the file to the job output
-        echo "::set-output name=azure-credentials::$(cat azure-credentials.json)"
+        set -euo pipefail
+        # Compose raw JSON (no extra stringification)
+        cat > azure-credentials.json <<EOF
+        {"clientId":"${AZURE_APPLICATION_CLIENT_ID}","clientSecret":"${AZURE_APPLICATION_CLIENT_SECRET}","tenantId":"${AZURE_TENANT_ID}","subscriptionId":"${AZURE_SUBSCRIPTION_ID}"}
+        EOF
+        # Expose as step output using the GITHUB_OUTPUT file
+        {
+          echo 'azure-credentials<<EOF'
+          cat azure-credentials.json
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
     - name: Azure CLI login
       uses: azure/login@v1
       with:
