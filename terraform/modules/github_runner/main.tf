@@ -160,9 +160,7 @@ resource "helm_release" "arc_runner_set" {
               command = ["/bin/sh"]
               args    = ["-c", <<-EOT
                 echo "Installing prerequisites..."
-                apk add --no-cache curl wget git
-                wget -O /shared/kubectl https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
-                chmod +x /shared/kubectl
+
                 echo "Prerequisites installed!"
               EOT
               ]
