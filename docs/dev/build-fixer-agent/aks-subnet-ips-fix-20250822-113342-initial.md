@@ -17,3 +17,9 @@ Results:
 Next Steps:
 - After merge, rerun Infrastructure Deployment and verify AKS Apply succeeds
 - Optionally further tune upgrade_settings.max_surge if needed
+
+## Results
+- Updated terraform/environments/development/main.tf: max_node_count set to 6
+- Pushed PR https://github.com/a5c-ai/hub/pull/734 and requested review
+- Local terraform validate unavailable; CI should confirm fix
+
