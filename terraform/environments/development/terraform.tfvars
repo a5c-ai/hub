@@ -28,6 +28,10 @@ postgresql_backup_retention_days = 7
 # AKS Configuration
 kubernetes_version = "1.30"
 aks_node_count    = 2
+# Keep vm_size aligned with current cluster to avoid rotation in this change
+# (vm_size change triggers temporary pool creation which can exceed /24 subnet IPs)
+aks_vm_size         = "Standard_D2s_v5"
+
 # Note: Add worker node pool for GitHub runners (bigger and stronger nodes)
 create_worker_node_pool = true
 worker_vm_size         = "Standard_D4s_v5"
