@@ -154,37 +154,14 @@ resource "helm_release" "arc_runner_set" {
             }]
           } : {},
           var.enable_init_container ? {
-            initContainers = [{
-              name    = "install-prerequisites"
-              image   = "alpine:latest"
-              command = ["/bin/sh"]
-              args    = ["-c", <<-EOT
-                echo "Installing prerequisites..."
-
-                echo "Prerequisites installed!"
-              EOT
-              ]
-              volumeMounts = [{
-                name      = "shared-tools"
-                mountPath = "/shared"
-              }]
-            }]
+            initContainers = []
             containers = [{
               name  = "runner"
               image = var.runner_image
-              env = [{
-                name  = "PATH"
-                value = "/shared:$PATH"
-              }]
-              volumeMounts = [{
-                name      = "shared-tools"
-                mountPath = "/shared"
-              }]
+              env = []
+              volumeMounts = []
             }]
-            volumes = [{
-              name     = "shared-tools"
-              emptyDir = {}
-            }]
+            volumes = []
           } : {
             initContainers = []
             containers     = []
