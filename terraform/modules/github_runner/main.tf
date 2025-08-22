@@ -130,29 +130,19 @@ resource "helm_release" "arc_runner_set" {
       maxRunners = var.max_runners
       
       # Container mode - use variable (dind or kubernetes)
-      # When using kubernetes mode:
-      # - If use_pvc_for_work_volume is true, provide a PersistentVolumeClaimTemplate spec
-      # - Otherwise, omit and ARC will default to emptyDir for the work volume
-      containerMode = var.container_mode == "kubernetes" ? merge(
-        {
-          type = "kubernetes"
-        },
-        var.use_pvc_for_work_volume ? {
-          kubernetesMode = {
-            workVolumeClaim = {
-              spec = {
-                accessModes      = ["ReadWriteOnce"]
-                storageClassName = var.storage_class_name
-                resources = {
-                  requests = {
-                    storage = var.ephemeral_storage_size
-                  }
-                }
-              }
-            }
+      # For kubernetes mode we always provide a valid PVC template for the work volume.
+      # This ensures that updates never fail CRD validation due to an incomplete
+      # volumeClaimTemplate (seen when attempting to patch an existing resource).
+      # If you want to switch to emptyDir in the future, first ensure the existing
+      # resource is fully deleted, then change this behavior.
+      containerMode = var.container_mode == "kubernetes" ? {
+        type = "kubernetes"
+        kubernetesMode = {
+          workVolumeClaim = {
+            spec = local.volume_spec
           }
-        } : {}
-      ) : {
+        }
+      } : {
         type = var.container_mode
       }
       
