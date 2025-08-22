@@ -116,8 +116,7 @@ resource "azurerm_monitor_diagnostic_setting" "postgresql" {
     category = "PostgreSQLLogs"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }

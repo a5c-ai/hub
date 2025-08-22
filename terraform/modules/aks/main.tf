@@ -37,7 +37,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     node_count                   = var.enable_auto_scaling ? null : var.node_count
     vm_size                      = var.vm_size
     zones                        = var.availability_zones
-    enable_auto_scaling          = var.enable_auto_scaling
+    auto_scaling_enabled         = var.enable_auto_scaling
     min_count                    = var.enable_auto_scaling ? var.min_node_count : null
     max_count                    = var.enable_auto_scaling ? var.max_node_count : null
     os_disk_size_gb             = var.os_disk_size_gb
@@ -45,7 +45,6 @@ resource "azurerm_kubernetes_cluster" "main" {
 
     upgrade_settings {
       max_surge       = var.max_surge
-      max_unavailable = var.max_unavailable
     }
 
     tags = var.tags
@@ -133,8 +132,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "worker" {
   name                  = "worker"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
   vm_size               = var.worker_vm_size
-  node_count            = var.worker_node_count
+  node_count            = var.enable_auto_scaling ? null : var.worker_node_count
   zones                 = var.availability_zones
+  auto_scaling_enabled  = var.enable_auto_scaling
 
   min_count            = var.enable_auto_scaling ? var.worker_min_node_count : null
   max_count            = var.enable_auto_scaling ? var.worker_max_node_count : null
@@ -150,7 +150,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "worker" {
 
   upgrade_settings {
     max_surge       = var.max_surge
-    max_unavailable = var.max_unavailable
   }
 
   tags = var.tags
