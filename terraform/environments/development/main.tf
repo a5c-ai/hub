@@ -247,9 +247,11 @@ module "aks" {
   node_count                 = var.aks_node_count
   vm_size                    = var.aks_vm_size
   min_node_count            = 1
-  # Reduce max_node_count to fit the /24 AKS subnet (10.0.1.0/24) capacity
-  # to avoid InsufficientSubnetSize errors during upgrades
-  max_node_count            = 8
+  # Reduce max_node_count further to fit the /24 AKS subnet (10.0.1.0/24)
+  # and avoid InsufficientSubnetSize errors during upgrades/rotation
+  # Calculation (approx.): maxPods(30) * (nodes + surge[~1]) <= 251 available IPs
+  # 30 * (6 + 1) = 210 < 251
+  max_node_count            = 6
   availability_zones        = []  
   enable_auto_scaling       = true
   
