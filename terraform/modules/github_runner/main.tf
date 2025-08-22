@@ -131,20 +131,22 @@ resource "helm_release" "arc_runner_set" {
       
       # Container mode - use variable (dind or kubernetes)
       # ARC chart (0.12.x) expects kubernetesModeWorkVolumeClaim when type is kubernetes
-      containerMode = var.container_mode == "kubernetes" ? {
-        type = "kubernetes"
-        kubernetesModeWorkVolumeClaim = {
-          accessModes      = ["ReadWriteOnce"]
-          storageClassName = var.storage_class_name
-          resources = {
-            requests = {
-              storage = var.ephemeral_storage_size
+      containerMode = merge(
+        {
+          type = var.container_mode
+        },
+        var.container_mode == "kubernetes" ? {
+          kubernetesModeWorkVolumeClaim = {
+            accessModes      = ["ReadWriteOnce"]
+            storageClassName = var.storage_class_name
+            resources = {
+              requests = {
+                storage = var.ephemeral_storage_size
+              }
             }
           }
-        }
-      } : {
-        type = var.container_mode
-      }
+        } : {}
+      )
       
       # Use custom runner image or init container overrides, merged into template map for consistent typing
       template = tomap({
