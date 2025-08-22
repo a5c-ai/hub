@@ -135,38 +135,37 @@ resource "helm_release" "arc_runner_set" {
       
       # Container mode - use variable (dind or kubernetes)
       # ARC chart (0.12.x) expects kubernetesModeWorkVolumeClaim when type is kubernetes
-      containerMode = merge(
-        {
-          type = var.container_mode
-        },
-        var.container_mode == "kubernetes" ? {
+      # Use attribute-level conditionals to keep types consistent for terraform validate
+      containerMode = {
+        type = var.container_mode
+        # When not in kubernetes mode, set these attributes to null to maintain
+        # consistent object typing across conditional branches
+        kubernetesMode = var.container_mode == "kubernetes" ? {
           # Allow jobs without explicit job.container to run
-          kubernetesMode = {
-            requireJobContainer = false
-          }
-          kubernetesModeWorkVolumeClaim = {
-            accessModes      = ["ReadWriteOnce"]
-            storageClassName = var.storage_class_name
-            resources = {
-              requests = {
-                storage = var.ephemeral_storage_size
-              }
+          requireJobContainer = false
+        } : null
+        kubernetesModeWorkVolumeClaim = var.container_mode == "kubernetes" ? {
+          accessModes      = ["ReadWriteOnce"]
+          storageClassName = var.storage_class_name
+          resources = {
+            requests = {
+              storage = var.ephemeral_storage_size
             }
           }
-        } : {}
-      )
+        } : null
+      }
       
-      # Use custom runner image or init container overrides, merged into template map for consistent typing
+      # Use custom runner image or init container overrides, keeping types consistent for terraform validate
       template = tomap({
-        spec = merge(
-          length(var.runner_node_selector) > 0 ? { nodeSelector = var.runner_node_selector } : {},
-          var.runner_image != null ? {
-            containers = [{
-              name  = "runner"
-              image = var.runner_image
-            }]
-          } : {}
-        )
+        spec = {
+          # If no node selector provided, use null to keep attribute type stable
+          nodeSelector = length(var.runner_node_selector) > 0 ? var.runner_node_selector : null
+          # If no custom image, set containers to null for consistent typing
+          containers = var.runner_image != null ? [{
+            name  = "runner"
+            image = var.runner_image
+          }] : null
+        }
       })
     })
   ]
