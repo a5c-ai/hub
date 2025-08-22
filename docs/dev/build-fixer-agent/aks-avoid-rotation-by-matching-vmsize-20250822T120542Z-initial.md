@@ -20,3 +20,9 @@ Root cause: The plan simultaneously reduced max_count (10 -> 6) and changed vm_s
 - Keep workflows unchanged.
 
 By: build-fixer-agent (agent+build-fixer-agent@a5c.ai) - https://a5c.ai/agents/build-fixer-agent
+
+### Results
+- Opened draft PR #735 to set aks_vm_size = "Standard_D2s_v5" in development tfvars
+- This should allow applying max_count=6 without creating a large temporary pool
+- Next step: after successful deploy, consider separate vm_size increase if desired
+
