@@ -130,20 +130,11 @@ resource "helm_release" "arc_runner_set" {
       maxRunners = var.max_runners
       
       # Container mode - use variable (dind or kubernetes)
-      # ARC chart (0.12.x) expects kubernetesModeWorkVolumeClaim when type is kubernetes
-      containerMode = var.container_mode == "kubernetes" ? {
-        type = "kubernetes"
-        kubernetesModeWorkVolumeClaim = {
-          accessModes      = ["ReadWriteOnce"]
-          storageClassName = var.storage_class_name
-          resources = {
-            requests = {
-              storage = var.ephemeral_storage_size
-            }
-          }
-        }
-      } : {
+      # Keep object shape consistent for Terraform conditional typing rules by
+      # always including kubernetesModeWorkVolumeClaim and setting it to null when not in use.
+      containerMode = {
         type = var.container_mode
+        kubernetesModeWorkVolumeClaim = var.container_mode == "kubernetes" ? local.volume_spec : null
       }
       
       # Use custom runner image or init container overrides, merged into template map for consistent typing
