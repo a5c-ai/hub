@@ -1,6 +1,6 @@
 # GitHub Actions Runner with Prerequisites
 # Based on official GitHub Actions runner
-FROM ghcr.io/actions/actions-runner:2.319.1
+FROM ghcr.io/actions/actions-runner:2.328.0
 
 # Switch to root for package installation
 USER root

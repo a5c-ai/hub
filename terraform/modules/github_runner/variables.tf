@@ -134,3 +134,9 @@ variable "runner_node_selector" {
   type        = map(string)
   default     = {}
 }
+
+variable "use_pvc_for_work_volume" {
+  description = "Whether to provision a PVC for the runner work volume (kubernetes mode). If false, uses emptyDir."
+  type        = bool
+  default     = false
+}
