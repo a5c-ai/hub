@@ -7,3 +7,7 @@ Plan:
 - Verify Terraform validates locally.
 - Open PR linking to failing run.
 
+Updates:
+- Implemented change in terraform/modules/github_runner/main.tf to always set containerMode.kubernetes.kubernetesMode.workVolumeClaim.spec = local.volume_spec.
+- Opened PR #737 with details and linked failing run.
+- Posted analysis and results as a commit comment on 7fed883e.
