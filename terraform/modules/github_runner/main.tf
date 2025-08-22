@@ -166,20 +166,6 @@ resource "helm_release" "arc_runner_set" {
               image = var.runner_image
             }]
           } : {},
-          var.enable_init_container ? {
-            initContainers = []
-            containers = [{
-              name  = "runner"
-              image = var.runner_image
-              env = []
-              volumeMounts = []
-            }]
-            volumes = []
-          } : {
-            initContainers = []
-            containers     = []
-            volumes        = []
-          }
         )
       })
     })

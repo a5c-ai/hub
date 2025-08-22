@@ -108,7 +108,7 @@ variable "container_mode" {
 variable "runner_image" {
   description = "Custom runner image (optional)"
   type        = string
-  default     = "acrhubdevelopmentwestus3.azurecr.io/hub/github-runner:latest"
+  default     = "ghcr.io/actions/actions-runner:2.328.0"
 }
 
 variable "storage_class_name" {

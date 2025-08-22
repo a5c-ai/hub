@@ -69,7 +69,7 @@ runner_container_mode   = "kubernetes"  # Use Kubernetes mode (more efficient th
 runner_labels          = ["development", "linux"]
 
 # Custom Runner Image with Prerequisites
-runner_image = "acrhubdevelopmentwestus3.azurecr.io/hub/github-runner:e9332fe"  # Fixed ACR name - uncomment when custom image is ready
+runner_image = "ghcr.io/actions/actions-runner:2.328.0"  # Fixed ACR name - uncomment when custom image is ready
 
 # AGIC Configuration - Enable for Application Gateway management
 create_agic_role_assignments = false
