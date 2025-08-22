@@ -8,3 +8,12 @@ Plan:
 - Validate Terraform syntax locally.
 - Open PR with details and link to failed run.
 
+
+Results:
+- Updated terraform/environments/development/main.tf to set max_node_count=8
+- Created draft PR #733 with context and links to failing run
+- Rationale: fit IP pre-allocation within /24 subnet and avoid InsufficientSubnetSize
+
+Next Steps:
+- After merge, rerun Infrastructure Deployment and verify AKS Apply succeeds
+- Optionally further tune upgrade_settings.max_surge if needed
