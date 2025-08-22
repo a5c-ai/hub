@@ -136,6 +136,10 @@ resource "helm_release" "arc_runner_set" {
           type = var.container_mode
         },
         var.container_mode == "kubernetes" ? {
+          # Allow jobs without explicit job.container to run
+          kubernetesMode = {
+            requireJobContainer = false
+          }
           kubernetesModeWorkVolumeClaim = {
             accessModes      = ["ReadWriteOnce"]
             storageClassName = var.storage_class_name
