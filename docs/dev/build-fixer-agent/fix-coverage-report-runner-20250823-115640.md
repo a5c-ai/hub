@@ -22,3 +22,10 @@ Coverage and unit tests do not require self-hosted capabilities. Using GitHub-ho
 - Workflow file: `.github/workflows/coverage-report.yml`
 - Related scripts: `scripts/test.sh`, `scripts/build.sh`
 
+
+## Results
+- Draft PR opened: https://github.com/a5c-ai/hub/pull/756
+- Infra issue opened: https://github.com/a5c-ai/hub/issues/757
+
+## Notes
+- Logs for the failed run were unavailable via `gh run view --log` and the API logs ZIP was empty, indicating the job never started (likely no matching self-hosted runner).
