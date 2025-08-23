@@ -121,11 +121,31 @@ export GO_ENV="$TEST_ENV"
 
 # In CI environment, ensure sqlite3 C library is available and enable CGO for go-sqlite3 driver
 if [[ "$CI" == "true" ]]; then
-    test_log "Installing sqlite3 C library for Go sqlite3 driver..."
-    sudo apt-get update
-    # Install C library and compiler for CGO support
-    sudo apt-get install -y libsqlite3-dev gcc
+    test_log "Ensuring sqlite3 C library and compiler are available for CGO..."
     export CGO_ENABLED=1
+    # Try to detect package manager and install deps when possible
+    install_cmd=""
+    if command -v apt-get >/dev/null 2>&1; then
+        install_cmd="apt-get update && apt-get install -y libsqlite3-dev gcc"
+    elif command -v apk >/dev/null 2>&1; then
+        install_cmd="apk add --no-cache sqlite-dev build-base gcc musl-dev"
+    elif command -v dnf >/dev/null 2>&1; then
+        install_cmd="dnf install -y sqlite-devel gcc make"
+    elif command -v yum >/dev/null 2>&1; then
+        install_cmd="yum install -y sqlite-devel gcc make"
+    fi
+
+    if [[ -n "$install_cmd" ]]; then
+        if command -v sudo >/dev/null 2>&1; then
+            test_log "Installing build dependencies via sudo ($install_cmd)"
+            sudo sh -lc "$install_cmd" || warn "Dependency installation via sudo failed; proceeding"
+        else
+            test_log "Installing build dependencies ($install_cmd)"
+            sh -lc "$install_cmd" || warn "Dependency installation failed; proceeding"
+        fi
+    else
+        warn "No supported package manager found; assuming dependencies preinstalled"
+    fi
 fi
 
 # Configure test database parameters

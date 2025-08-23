@@ -98,3 +98,6 @@ temp/
 
 repositories/user/**
 backend.log
+
+# CI logs
+job.log
