@@ -121,11 +121,21 @@ export GO_ENV="$TEST_ENV"
 
 # In CI environment, ensure sqlite3 C library is available and enable CGO for go-sqlite3 driver
 if [[ "$CI" == "true" ]]; then
-    test_log "Installing sqlite3 C library for Go sqlite3 driver..."
-    sudo apt-get update
-    # Install C library and compiler for CGO support
-    sudo apt-get install -y libsqlite3-dev gcc
+    # Ensure CGO is enabled for go-sqlite3
     export CGO_ENABLED=1
+    # Check if sqlite3 development headers are present; install only if missing and possible
+    if [[ -f "/usr/include/sqlite3.h" ]]; then
+        test_log "Detected libsqlite3 headers; skipping installation."
+    else
+        test_log "libsqlite3 headers not found; attempting installation..."
+        if command -v sudo >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y libsqlite3-dev gcc || true
+        elif [[ "$(id -u)" -eq 0 ]] && command -v apt-get >/dev/null 2>&1; then
+            apt-get update && apt-get install -y libsqlite3-dev gcc || true
+        else
+            warn "Cannot install libsqlite3-dev (no sudo/root). Ensure runner image includes it."
+        fi
+    fi
 fi
 
 # Configure test database parameters
