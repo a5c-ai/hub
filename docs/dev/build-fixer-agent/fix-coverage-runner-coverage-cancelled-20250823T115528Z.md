@@ -13,3 +13,10 @@
 
 ## Notes
 - Multiple latest runs show `cancelled` with no steps: likely ARC runner availability/label issue as well. This PR ensures that once runners are available, coverage won’t fail on sqlite prereqs.
+
+## Results
+- Opened PR #755
+- Changes:
+  - Preinstall sqlite headers on runner image
+  - Guard CI sqlite install in `scripts/test.sh`
+- Next: validate after runners are healthy
