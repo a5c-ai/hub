@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     make \
     gcc \
     g++ \
+    pkg-config \
     # Development languages
     python3 \
     python3-pip \
@@ -40,6 +41,8 @@ RUN apt-get update && apt-get install -y \
     apt-transport-https \
     lsb-release \
     gnupg \
+    # C libraries for sqlite (needed by go-sqlite3 tests)
+    libsqlite3-dev \
     # Network tools
     netcat-openbsd \
     telnet \
