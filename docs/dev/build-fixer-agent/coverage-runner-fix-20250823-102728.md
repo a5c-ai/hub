@@ -14,3 +14,8 @@
 ## Notes
 - Kept steps identical; only runner label changed
 - This adheres to repo policy to not edit `.github/workflows/` directly
+
+## Update
+- Created branch `ci/fix-coverage-runner` and PR #746 (ready for review)
+- Opened issue #747 to restore self-hosted runner availability
+
