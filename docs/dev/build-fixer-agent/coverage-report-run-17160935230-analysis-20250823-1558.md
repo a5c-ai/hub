@@ -30,3 +30,8 @@ Per repo rules, do not edit files under `.github/workflows/` directly. Instead, 
 ## Notes
 - The test script installs `libsqlite3-dev` and `gcc` only when `CI=true`; GitHub-hosted `ubuntu-latest` supports `sudo apt-get`, so this path should work in CI. E2E remains disabled in coverage workflow.
 
+## Results (2025-08-23 15:59 UTC)
+- Added `.github_workflows/coverage-report.yml` with `runs-on: ubuntu-latest`, `CI=true`, and `--no-e2e --coverage`.
+- Local validation: `npm ci` in `frontend` completed; `go test ./... -run '^$' -count=0` compiled successfully.
+- Draft PR opened: https://github.com/a5c-ai/hub/pull/761
+
