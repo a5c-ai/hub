@@ -21,3 +21,11 @@
 ## Verification
 - Confirm script `scripts/test.sh --no-e2e` does unit + frontend tests with coverage and no DB container.
 - CI will use `actions/setup-go` and `actions/setup-node@v22` to ensure versions.
+
+## Results
+- Added `.github_workflows/coverage-report.yml` with `runs-on: ubuntu-latest` to avoid self-hosted runner unavailability.
+- Opened draft PR #750 and updated description with analysis and verification steps.
+
+## Next Steps
+- After approval, a maintainer can move the file to `.github/workflows/`.
+- Alternatively, restore availability for `hub-dev-runners` and close this PR if not needed.
