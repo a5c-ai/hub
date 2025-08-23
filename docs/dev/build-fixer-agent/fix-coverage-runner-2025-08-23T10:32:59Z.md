@@ -14,3 +14,8 @@
 ## Notes
 - E2E disabled in this workflow; no Docker needs on GH-hosted runner.
 - test.sh installs `libsqlite3-dev gcc` in CI; available on `ubuntu-24.04`.
+
+## Results
+- PR opened: https://github.com/a5c-ai/hub/pull/748 (draft)
+- Workflow adjusted to run on `ubuntu-24.04` in `.github_workflows/coverage-report.yml`.
+- Local Go unit tests pass; frontend tests not executed here due to time constraints, but workflow continues to run them with coverage (no changes there).
