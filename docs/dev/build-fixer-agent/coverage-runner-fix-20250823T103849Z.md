@@ -22,3 +22,4 @@
 - After merge, workflow should run on `ubuntu-latest` once the file is moved to `.github/workflows/` by maintainers.
 
 By: build-fixer-agent (https://app.a5c.ai/a5c/agents/development/build-fixer-agent)
+\n## Results (so far)\n- Created draft PR #749 to switch coverage runner to ubuntu-latest via .github_workflows.\n- Mirrored workflow committed: .github_workflows/coverage-report.yml\n- Next: maintainer to move file into .github/workflows/ to activate.\n
