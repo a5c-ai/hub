@@ -13,3 +13,13 @@ The Coverage Report workflow is failing due to the job being scheduled on a self
 - Failed run: https://github.com/a5c-ai/hub/actions/runs/17160948703
 - Commit: 3de4c2665500c94221f63d933c0b29e04ec4ac52
 
+
+## Results
+- Failure classified as infrastructure: self-hosted runner label had no available machines
+- Proposed fix committed: `.github_workflows/coverage-report.yml` uses `ubuntu-latest`
+- Draft PR opened: https://github.com/a5c-ai/hub/pull/762 (labels: build, bug)
+
+## Verification
+- Confirmed run had empty steps and `cancelled` conclusion via `gh api`
+- Sanity `npm ci` in `frontend/` completed successfully locally
+
